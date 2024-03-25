@@ -27,7 +27,8 @@ func RunsHandler(c *gin.Context) {
 
 func RunHandler(c *gin.Context) {
 	runId := c.Param("runId")
-	run, err := db.GetRun(runId)
+	_, brief := c.GetQuery("brief")
+	run, err := db.GetRun(runId, brief)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {

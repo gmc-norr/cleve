@@ -87,13 +87,34 @@ func GetRuns(brief bool) ([]*Run, error) {
 	} else {
 		filter = bson.D{}
 	}
-	opts := options.Find().SetSort(bson.D{{Key: "created", Value: -1}}).SetProjection(filter)
-	cursor, err := RunCollection.Find(context.TODO(), bson.D{}, opts)
-	defer cursor.Close(context.TODO())
 
+	sortStage := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "state_history", Value: bson.D{
+				{Key: "$sortArray", Value: bson.M{
+					"input": "$state_history", "sortBy": bson.D{{Key: "time", Value: -1}},
+				}},
+			}},
+			},
+		},
+	}
+
+	var aggPipeline mongo.Pipeline
+
+	if brief {
+		projectStage := bson.D{
+			{Key: "$project", Value: filter},
+		}
+		aggPipeline = mongo.Pipeline{sortStage, projectStage}
+	} else {
+		aggPipeline = mongo.Pipeline{sortStage}
+	}
+
+	cursor, err := RunCollection.Aggregate(context.TODO(), aggPipeline)
 	if err != nil {
 		return runs, err
 	}
+	defer cursor.Close(context.TODO())
 
 	for cursor.Next(context.TODO()) {
 		var r Run
@@ -115,15 +136,49 @@ func GetRuns(brief bool) ([]*Run, error) {
 	return runs, nil
 }
 
-func GetRun(runId string) (*Run, error) {
+func GetRun(runId string, brief bool) (*Run, error) {
 	var run *Run
+	
+	matchStage := bson.D{
+		{Key: "$match", Value: bson.D{{Key: "run_id", Value: runId}}},
+	}
 
-	res := RunCollection.FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}})
-	err := res.Decode(&run)
+	sortStage := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "state_history", Value: bson.D{
+				{Key: "$sortArray", Value: bson.M{
+					"input": "$state_history", "sortBy": bson.D{{Key: "time", Value: -1}},
+				}},
+			}},
+			},
+		},
+	}
+
+	unsetStage := bson.D{
+		{Key: "$unset", Value: "run_parameters"},
+	}
+
+	var aggPipeline mongo.Pipeline
+	if brief {
+		aggPipeline = mongo.Pipeline{matchStage, unsetStage, sortStage}
+	} else {
+		aggPipeline = mongo.Pipeline{matchStage, sortStage}
+	}
+
+	cursor, err := RunCollection.Aggregate(context.TODO(), aggPipeline)
 	if err != nil {
 		return run, err
 	}
 
+	ok := cursor.Next(context.TODO())
+	if !ok {
+		return run, mongo.ErrNoDocuments
+	}
+
+	if err = cursor.Decode(&run); err != nil {
+		return run, err
+	}
+	err = cursor.Decode(&run)
 	return run, err
 }
 
