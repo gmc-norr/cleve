@@ -51,8 +51,7 @@ func init() {
 
 	cobra.OnInitialize(func() {
 		if stateArg != "" {
-			var state runstate.RunState
-			if err := state.Set(stateString); err != nil {
+			if err := state.Set(stateArg); err != nil {
 				log.Fatalf("error: %s", err)
 			}
 		}

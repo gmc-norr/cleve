@@ -2,7 +2,7 @@ package runstate
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"time"
@@ -40,7 +40,7 @@ func (s RunState) String() string {
 func (s *RunState) Set(v string) error {
 	state, ok := ValidRunStates[v]
 	if !ok {
-		return errors.New("illegal state")
+		return fmt.Errorf("illegal state: %#v", v)
 	}
 	*s = state
 	return nil
