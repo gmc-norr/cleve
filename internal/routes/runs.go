@@ -14,7 +14,8 @@ import (
 )
 
 func RunsHandler(c *gin.Context) {
-	runs, err := db.GetRuns()
+	_, brief := c.GetQuery("brief")
+	runs, err := db.GetRuns(brief)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

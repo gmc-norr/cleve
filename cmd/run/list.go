@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-var csvOutput, jsonOutput bool
+var csvOutput, jsonOutput, brief bool
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List sequencing runs",
@@ -21,7 +21,7 @@ var listCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		db.Init()
-		runs, err := db.GetRuns()
+		runs, err := db.GetRuns(brief)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -38,6 +38,7 @@ var listCmd = &cobra.Command{
 func init() {
 	listCmd.Flags().BoolVar(&csvOutput, "csv", false, "Output in CSV format")
 	listCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output in CSV format")
+	listCmd.Flags().BoolVar(&brief, "brief", false, "Brief output")
 }
 
 func truncateString(str string, maxLen int) string {

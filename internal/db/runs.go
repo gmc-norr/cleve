@@ -7,7 +7,6 @@ import (
 	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"github.com/gmc-norr/cleve/runparameters"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -23,14 +22,14 @@ type Run struct {
 	Platform       string                      `bson:"platform" json:"platform"`
 	Created        time.Time                   `bson:"created" json:"created"`
 	StateHistory   []runstate.TimedRunState    `bson:"state_history" json:"state_history"`
-	RunParameters  runparameters.RunParameters `bson:"run_parameters" json:"run_parameters"`
+	RunParameters  runparameters.RunParameters `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
 }
 
 func (*Run) New() (Run, error) {
 	return Run{}, errors.New("not implemented")
 }
 
-func (r *Run) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+func (r *Run) UnmarshalBSON(data []byte) error {
 	var rawData bson.Raw
 	err := bson.Unmarshal(data, &rawData)
 	if err != nil {
@@ -54,32 +53,41 @@ func (r *Run) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 
 	rp := rawData.Lookup("run_parameters")
 
-	switch r.Platform {
-	case "NextSeq":
-		var nextSeqRP runparameters.NextSeqParameters
-		if err = rp.Unmarshal(&nextSeqRP); err != nil {
-			return err
+	if len(rp.Value) > 0 {
+		switch r.Platform {
+		case "NextSeq":
+			var nextSeqRP runparameters.NextSeqParameters
+			if err = rp.Unmarshal(&nextSeqRP); err != nil {
+				log.Println(err)
+				return err
+			}
+			r.RunParameters = nextSeqRP
+		case "NovaSeq":
+			var novaSeqRP runparameters.NovaSeqParameters
+			if err = rp.Unmarshal(&novaSeqRP); err != nil {
+				log.Println(err)
+				return err
+			}
+			r.RunParameters = novaSeqRP
+		default:
+			r.RunParameters = nil
 		}
-		r.RunParameters = nextSeqRP
-	case "NovaSeq":
-		var novaSeqRP runparameters.NovaSeqParameters
-		if err = rp.Unmarshal(&novaSeqRP); err != nil {
-			return err
-		}
-		r.RunParameters = novaSeqRP
-	default:
+	} else {
 		r.RunParameters = nil
 	}
 
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
-func GetRuns() ([]*Run, error) {
+func GetRuns(brief bool) ([]*Run, error) {
 	var runs []*Run
-	opts := options.Find().SetSort(bson.D{{Key: "created", Value: -1}})
+	var filter bson.D
+	if brief {
+		filter = bson.D{{Key: "run_parameters", Value: 0}}
+	} else {
+		filter = bson.D{}
+	}
+	opts := options.Find().SetSort(bson.D{{Key: "created", Value: -1}}).SetProjection(filter)
 	cursor, err := RunCollection.Find(context.TODO(), bson.D{}, opts)
 	defer cursor.Close(context.TODO())
 
