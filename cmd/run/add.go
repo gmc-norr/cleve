@@ -2,6 +2,7 @@ package run
 
 import (
 	"fmt"
+	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db"
 	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"github.com/gmc-norr/cleve/runparameters"
@@ -65,6 +66,7 @@ var addCmd = &cobra.Command{
 			Platform:       runParams.Platform(),
 			RunParameters:  runParams,
 			StateHistory:   []runstate.TimedRunState{{State: state, Time: time.Now()}},
+			Analysis:       []analysis.Analysis{},
 		}
 
 		if err = db.AddRun(&run); err != nil {

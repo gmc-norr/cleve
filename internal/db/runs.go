@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"github.com/gmc-norr/cleve/runparameters"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,10 +23,7 @@ type Run struct {
 	Created        time.Time                   `bson:"created" json:"created"`
 	StateHistory   []runstate.TimedRunState    `bson:"state_history" json:"state_history"`
 	RunParameters  runparameters.RunParameters `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
-}
-
-func (*Run) New() (Run, error) {
-	return Run{}, errors.New("not implemented")
+	Analysis       []analysis.Analysis         `bson:"analysis,omitempty" json:"analysis,omitempty"`
 }
 
 func (r *Run) UnmarshalBSON(data []byte) error {
@@ -43,13 +40,22 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 	r.Platform = rawData.Lookup("platform").StringValue()
 	r.Created = rawData.Lookup("created").Time()
 
-	var stateHistory []runstate.TimedRunState
-	err = rawData.Lookup("state_history").Unmarshal(&stateHistory)
+	err = rawData.Lookup("state_history").Unmarshal(&r.StateHistory)
 	if err != nil {
 		return err
 	}
 
-	r.StateHistory = stateHistory
+	ra := rawData.Lookup("analysis")
+	if len(ra.Value) > 0 {
+		err = ra.Unmarshal(&r.Analysis)
+		if err != nil {
+			return err
+		}
+	}
+
+	if r.Analysis == nil {
+		r.Analysis = []analysis.Analysis{}
+	}
 
 	rp := rawData.Lookup("run_parameters")
 
@@ -119,10 +125,13 @@ func GetRuns(brief bool, platform string, state string) ([]*Run, error) {
 		})
 	}
 
-	// Exclude run parameters
+	// Exclude run parameters and analysis
 	if brief {
 		aggPipeline = append(aggPipeline, bson.D{
-			{Key: "$project", Value: bson.D{{Key: "run_parameters", Value: 0}}},
+			{Key: "$project", Value: bson.D{
+				{Key: "run_parameters", Value: 0},
+				{Key: "analysis", Value: 0},
+			}},
 		})
 	}
 
@@ -216,6 +225,15 @@ func DeleteRun(runId string) error {
 func UpdateRunState(runId string, state runstate.RunState) error {
 	runState := runstate.TimedRunState{State: state, Time: time.Now()}
 	update := bson.D{{Key: "$push", Value: bson.D{{Key: "state_history", Value: runState}}}}
+	result, err := RunCollection.UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
+	if err == nil && result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return err
+}
+
+func UpdateRunAnalysis(runId string, analysis analysis.Analysis) error {
+	update := bson.D{{Key: "$push", Value: bson.D{{Key: "analysis", Value: analysis}}}}
 	result, err := RunCollection.UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
 	if err == nil && result.MatchedCount == 0 {
 		return mongo.ErrNoDocuments

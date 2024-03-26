@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db"
 	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"github.com/gmc-norr/cleve/runparameters"
@@ -92,6 +92,7 @@ func AddRunHandler(c *gin.Context) {
 		Platform:       runParams.Platform(),
 		RunParameters:  runParams,
 		StateHistory:   []runstate.TimedRunState{{State: state, Time: time.Now()}},
+		Analysis:       []analysis.Analysis{},
 	}
 
 	if err := db.AddRun(&run); err != nil {
@@ -105,33 +106,84 @@ func AddRunHandler(c *gin.Context) {
 func UpdateRunHandler(c *gin.Context) {
 	runId := c.Param("runId")
 
-	var stateRequest struct {
-		State *string `json:"state"`
+	var updateRequest struct {
+		State               string                `form:"state"`
+		AnalysisSummaryFile *multipart.FileHeader `form:"analysis_summary_file"`
+		AnalysisPath        string                `form:"analysis_path"`
+		AnalysisState       string                `form:"analysis_state"`
 	}
-	if err := json.NewDecoder(c.Request.Body).Decode(&stateRequest); err != nil {
-		if err == io.EOF {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "empty request body"})
+
+	if err := c.Bind(&updateRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if updateRequest.State != "" {
+		var state runstate.RunState
+		err := state.Set(updateRequest.State)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		if err = db.UpdateRunState(runId, state); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run state"})
+			return
+		}
+	}
+
+	nAnalysisParams := 0
+	if updateRequest.AnalysisPath != "" {
+		nAnalysisParams++
+	}
+	if updateRequest.AnalysisSummaryFile != nil {
+		nAnalysisParams++
+	}
+	if updateRequest.AnalysisState != "" {
+		nAnalysisParams++
+	}
+
+	if nAnalysisParams != 0 && nAnalysisParams != 3 {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "must provide all of path, state and summary file to update analysis"})
 		return
 	}
 
-	if stateRequest.State == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "state must be provided"})
-		return
-	}
+	if nAnalysisParams == 3 {
+		var state runstate.RunState
+		err := state.Set(updateRequest.AnalysisState)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		summaryFile, err := updateRequest.AnalysisSummaryFile.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "opening analysis summary file"})
+			return
+		}
+		defer summaryFile.Close()
+		summaryData, err := io.ReadAll(summaryFile)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading analysis summary file"})
+			return
+		}
 
-	var state runstate.RunState
-	err := state.Set(*stateRequest.State)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+		analysis, err := analysis.New(updateRequest.AnalysisPath, state, summaryData)
+		if analysis.Summary.RunID != runId {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "analysis run id does not match with the id of the run being updated"})
+			return
+		}
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "parsing analysis summary file"})
+			return
+		}
 
-	if err = db.UpdateRunState(runId, state); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		if err = db.UpdateRunAnalysis(runId, analysis); err != nil {
+			if err == mongo.ErrNoDocuments {
+				c.JSON(http.StatusNotFound, gin.H{"error": "run not found", "when": "updating run in database"})
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run in database"})
+			return
+		}
 	}
 
 	c.Status(http.StatusOK)
