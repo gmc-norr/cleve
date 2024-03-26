@@ -11,6 +11,7 @@ import (
 )
 
 var csvOutput, jsonOutput, brief bool
+var platform, state string
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List sequencing runs",
@@ -21,7 +22,7 @@ var listCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		db.Init()
-		runs, err := db.GetRuns(brief)
+		runs, err := db.GetRuns(brief, platform, state)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -39,6 +40,9 @@ func init() {
 	listCmd.Flags().BoolVar(&csvOutput, "csv", false, "Output in CSV format")
 	listCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output in CSV format")
 	listCmd.Flags().BoolVar(&brief, "brief", false, "Brief output")
+
+	listCmd.Flags().StringVar(&platform, "platform", "", "Filter by platform")
+	listCmd.Flags().StringVar(&state, "state", "", "Filter by state")
 }
 
 func truncateString(str string, maxLen int) string {

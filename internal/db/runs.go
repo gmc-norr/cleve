@@ -79,35 +79,51 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 	return nil
 }
 
-func GetRuns(brief bool) ([]*Run, error) {
+func GetRuns(brief bool, platform string, state string) ([]*Run, error) {
 	var runs []*Run
-	var filter bson.D
-	if brief {
-		filter = bson.D{{Key: "run_parameters", Value: 0}}
-	} else {
-		filter = bson.D{}
+
+	var aggPipeline mongo.Pipeline
+
+	// Filter on platform
+	if platform != "" {
+		aggPipeline = append(aggPipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "platform", Value: platform},
+			}},
+		})
 	}
 
-	sortStage := bson.D{
+	// Sort state history chronologically
+	aggPipeline = append(aggPipeline, bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "state_history", Value: bson.D{
 				{Key: "$sortArray", Value: bson.M{
 					"input": "$state_history", "sortBy": bson.D{{Key: "time", Value: -1}},
 				}},
 			}},
-			},
 		},
+		},
+	})
+
+	// Filter on most recent state
+	if state != "" {
+		aggPipeline = append(aggPipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "$expr", Value: bson.D{
+					{Key: "$eq", Value: bson.A{
+						bson.D{{Key: "$arrayElemAt", Value: bson.A{"$state_history.state", 0}}},
+						state,
+					}},
+				}},
+			}},
+		})
 	}
 
-	var aggPipeline mongo.Pipeline
-
+	// Exclude run parameters
 	if brief {
-		projectStage := bson.D{
-			{Key: "$project", Value: filter},
-		}
-		aggPipeline = mongo.Pipeline{sortStage, projectStage}
-	} else {
-		aggPipeline = mongo.Pipeline{sortStage}
+		aggPipeline = append(aggPipeline, bson.D{
+			{Key: "$project", Value: bson.D{{Key: "run_parameters", Value: 0}}},
+		})
 	}
 
 	cursor, err := RunCollection.Aggregate(context.TODO(), aggPipeline)
@@ -138,7 +154,7 @@ func GetRuns(brief bool) ([]*Run, error) {
 
 func GetRun(runId string, brief bool) (*Run, error) {
 	var run *Run
-	
+
 	matchStage := bson.D{
 		{Key: "$match", Value: bson.D{{Key: "run_id", Value: runId}}},
 	}
@@ -150,7 +166,7 @@ func GetRun(runId string, brief bool) (*Run, error) {
 					"input": "$state_history", "sortBy": bson.D{{Key: "time", Value: -1}},
 				}},
 			}},
-			},
+		},
 		},
 	}
 

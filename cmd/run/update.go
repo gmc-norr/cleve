@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	stateArg  string
-	state     runstate.RunState
-	updateCmd = &cobra.Command{
+	stateArg    string
+	stateUpdate runstate.RunState
+	updateCmd   = &cobra.Command{
 		Use:   "update [flags] run_id",
 		Short: "Update a sequencing run",
 		Args: func(cmd *cobra.Command, args []string) error {
@@ -26,8 +26,8 @@ var (
 			didSomething := false
 
 			if stateArg != "" {
-				log.Printf("Updating state of run %s to '%s'", args[0], state.String())
-				err := db.UpdateRunState(args[0], state)
+				log.Printf("Updating state of run %s to '%s'", args[0], stateUpdate.String())
+				err := db.UpdateRunState(args[0], stateUpdate)
 				if err != nil {
 					log.Fatalf("error: %s", err)
 				}
@@ -51,7 +51,7 @@ func init() {
 
 	cobra.OnInitialize(func() {
 		if stateArg != "" {
-			if err := state.Set(stateArg); err != nil {
+			if err := stateUpdate.Set(stateArg); err != nil {
 				log.Fatalf("error: %s", err)
 			}
 		}
