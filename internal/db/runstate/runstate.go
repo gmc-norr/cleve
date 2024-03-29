@@ -16,6 +16,7 @@ const (
 	Pending
 	Complete
 	Error
+	Moved
 	Unknown
 )
 
@@ -25,6 +26,7 @@ var ValidRunStates = map[string]RunState{
 	"pending":  Pending,
 	"complete": Complete,
 	"error":    Error,
+	"moved":    Moved,
 	"unknown":  Unknown,
 }
 
