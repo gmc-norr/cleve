@@ -2,8 +2,33 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve/internal/db"
 	"net/http"
 )
+
+func authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		requestKey := c.Request.Header.Get("Authorization")
+		if requestKey == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error":   "unauthorized",
+				"message": "missing authorization header",
+			})
+			return
+		}
+
+		_, err := db.GetKey(requestKey)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error":   "unauthorized",
+				"message": "invalid API key",
+			})
+			return
+		}
+
+		c.Next()
+	}
+}
 
 func NewRouter() http.Handler {
 	r := gin.Default()
@@ -15,8 +40,11 @@ func NewRouter() http.Handler {
 
 	r.GET("/api/runs", RunsHandler)
 	r.GET("/api/runs/:runId", RunHandler)
-	r.POST("/api/runs", AddRunHandler)
-	r.PATCH("/api/runs/:runId", UpdateRunHandler)
+
+	authEndpoints := r.Group("/")
+	authEndpoints.Use(authMiddleware())
+	authEndpoints.POST("/api/runs", AddRunHandler)
+	authEndpoints.PATCH("/api/runs/:runId", UpdateRunHandler)
 
 	return r
 }
