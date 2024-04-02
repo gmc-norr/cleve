@@ -12,6 +12,7 @@ import (
 
 var Client mongo.Client
 var RunCollection *mongo.Collection
+var KeyCollection *mongo.Collection
 
 func Init() {
 	mongo_db := viper.GetString("database.name")
@@ -39,6 +40,7 @@ func Init() {
 	}
 
 	RunCollection = Client.Database(viper.GetString("database.name")).Collection("runs")
+	KeyCollection = Client.Database(viper.GetString("database.name")).Collection("keys")
 
 	defer cancel()
 }

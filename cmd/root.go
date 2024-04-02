@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/gmc-norr/cleve/cmd/db"
+	"github.com/gmc-norr/cleve/cmd/key"
 	"github.com/gmc-norr/cleve/cmd/run"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,6 +24,7 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(run.RunCmd)
 	rootCmd.AddCommand(db.DbCmd)
+	rootCmd.AddCommand(key.KeyCmd)
 }
 
 func Execute() error {
