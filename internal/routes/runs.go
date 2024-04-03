@@ -50,6 +50,7 @@ func RunHandler(c *gin.Context) {
 func AddRunHandler(c *gin.Context) {
 	var addRunRequest struct {
 		Path             string                `form:"path" binding:"required"`
+		State            string                `form:"state" binding:"required"`
 		RunParameterFile *multipart.FileHeader `form:"runparameters" binding:"required"`
 	}
 
@@ -80,7 +81,7 @@ func AddRunHandler(c *gin.Context) {
 	}
 
 	var state runstate.RunState
-	if err = state.Set("new"); err != nil {
+	if err = state.Set(addRunRequest.State); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
