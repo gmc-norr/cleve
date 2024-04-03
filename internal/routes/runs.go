@@ -55,20 +55,20 @@ func AddRunHandler(c *gin.Context) {
 	}
 
 	if err := c.Bind(&addRunRequest); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing request body"})
 		return
 	}
 
 	paramsFile, err := addRunRequest.RunParameterFile.Open()
 	defer paramsFile.Close()
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "opening run parameters file"})
 		return
 	}
 
 	paramsData, err := io.ReadAll(paramsFile)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading run parameters file"})
 		return
 	}
 
