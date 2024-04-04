@@ -2,15 +2,15 @@ package analysis
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"github.com/gmc-norr/cleve/internal/db/runstate"
+	"path/filepath"
 )
 
 type Analysis struct {
 	AnalysisId string            `bson:"analysis_id" json:"analysis_id"`
 	Path       string            `bson:"path" json:"path"`
 	State      runstate.RunState `bson:"state" json:"state"`
-	Summary    AnalysisSummary   `bson:"summary" json:"summary"`
+	Summary    *AnalysisSummary  `bson:"summary" json:"summary"`
 }
 
 type AnalysisSummary struct {
@@ -45,6 +45,6 @@ func New(path string, state runstate.RunState, data []byte) (Analysis, error) {
 	analysis.AnalysisId = filepath.Base(path)
 	analysis.Path = path
 	analysis.State = state
-	analysis.Summary = summary
+	analysis.Summary = &summary
 	return analysis, err
 }

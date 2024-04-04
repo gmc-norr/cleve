@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"regexp"
 )
 
@@ -53,10 +54,10 @@ func AddAnalysisHandler(c *gin.Context) {
 	var addAnalysisRequest struct {
 		Path        string                `form:"path" binding:"required"`
 		State       string                `form:"state" binding:"required"`
-		SummaryFile *multipart.FileHeader `form:"summary_file" binding:"required"`
+		SummaryFile *multipart.FileHeader `form:"summary_file"`
 	}
 
-	if err := c.Bind(&addAnalysisRequest); err != nil {
+	if err := c.ShouldBind(&addAnalysisRequest); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusBadRequest,
 			gin.H{"error": err.Error(), "when": "parsing request body"},
@@ -73,39 +74,46 @@ func AddAnalysisHandler(c *gin.Context) {
 		return
 	}
 
-	summaryFile, err := addAnalysisRequest.SummaryFile.Open()
-	if err != nil {
-		c.AbortWithStatusJSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error(), "when": "opening summary file"},
-		)
-		return
+	var summary *analysis.AnalysisSummary
+	if addAnalysisRequest.SummaryFile != nil {
+		summaryFile, err := addAnalysisRequest.SummaryFile.Open()
+		if err != nil {
+			c.AbortWithStatusJSON(
+				http.StatusInternalServerError,
+				gin.H{"error": err.Error(), "when": "opening summary file"},
+			)
+			return
+		}
+
+		summaryData, err := io.ReadAll(summaryFile)
+		if err != nil {
+			c.AbortWithStatusJSON(
+				http.StatusInternalServerError,
+				gin.H{"error": err.Error(), "when": "reading summary file"},
+			)
+			return
+		}
+
+		s, err := analysis.ParseAnalysisSummary(summaryData)
+		if err != nil {
+			c.AbortWithStatusJSON(
+				http.StatusBadRequest,
+				gin.H{"error": err.Error(), "when": "parsing summary file"},
+			)
+			return
+		}
+		summary = &s
 	}
 
-	summaryData, err := io.ReadAll(summaryFile)
-	if err != nil {
-		c.AbortWithStatusJSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error(), "when": "reading summary file"},
-		)
-		return
-	}
-
-	a, err := analysis.New(
-		addAnalysisRequest.Path,
-		state,
-		summaryData,
-	)
-	if err != nil {
-		c.AbortWithStatusJSON(
-			http.StatusInternalServerError,
-			gin.H{"error": err.Error(), "when": "creating analysis object"},
-		)
-		return
+	a := analysis.Analysis{
+		AnalysisId: filepath.Base(addAnalysisRequest.Path),
+		Path:       addAnalysisRequest.Path,
+		State:      state,
+		Summary:    summary,
 	}
 
 	// Check that the analysis doesn't already exist
-	_, err = db.GetAnalysis(runId, a.AnalysisId)
+	_, err := db.GetAnalysis(runId, a.AnalysisId)
 	if err == nil {
 		c.AbortWithStatusJSON(
 			http.StatusConflict,
@@ -128,9 +136,11 @@ func AddAnalysisHandler(c *gin.Context) {
 	}
 
 	// Make sure that analyses are being added to the right run, and
-	// also that requeued analyses are correctly identified.
+	// also that requeued analyses are correctly identified. Only
+	// check this if the analysis summary is actually present, otherwise
+	// just add it blindly.
 	requeRegex := regexp.MustCompile(`-Requeued-\d+$`)
-	if requeRegex.ReplaceAllString(a.Summary.RunID, "") != runId {
+	if a.Summary != nil && requeRegex.ReplaceAllString(a.Summary.RunID, "") != runId {
 		c.AbortWithStatusJSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -142,8 +152,7 @@ func AddAnalysisHandler(c *gin.Context) {
 		return
 	}
 
-	err = db.AddAnalysis(runId, &a)
-	if err != nil {
+	if err := db.AddAnalysis(runId, &a); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			gin.H{"error": err.Error(), "when": "adding analysis"},
