@@ -40,11 +40,15 @@ func NewRouter() http.Handler {
 
 	r.GET("/api/runs", RunsHandler)
 	r.GET("/api/runs/:runId", RunHandler)
+	r.GET("/api/runs/:runId/analysis", AnalysesHandler)
+	r.GET("/api/runs/:runId/analysis/:analysisId", AnalysisHandler)
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware())
 	authEndpoints.POST("/api/runs", AddRunHandler)
 	authEndpoints.PATCH("/api/runs/:runId", UpdateRunHandler)
+	authEndpoints.POST("/api/runs/:runId/analysis", AddAnalysisHandler)
+	authEndpoints.PATCH("/api/runs/:runId/analysis/:analysisId", UpdateAnalysisHandler)
 
 	return r
 }

@@ -66,7 +66,7 @@ var addCmd = &cobra.Command{
 			Platform:       runParams.Platform(),
 			RunParameters:  runParams,
 			StateHistory:   []runstate.TimedRunState{{State: state, Time: time.Now()}},
-			Analysis:       []analysis.Analysis{},
+			Analysis:       []*analysis.Analysis{},
 		}
 
 		if err = db.AddRun(&run); err != nil {

@@ -23,7 +23,7 @@ type Run struct {
 	Created        time.Time                   `bson:"created" json:"created"`
 	StateHistory   []runstate.TimedRunState    `bson:"state_history" json:"state_history"`
 	RunParameters  runparameters.RunParameters `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
-	Analysis       []analysis.Analysis         `bson:"analysis,omitempty" json:"analysis,omitempty"`
+	Analysis       []*analysis.Analysis        `bson:"analysis,omitempty" json:"analysis,omitempty"`
 }
 
 func (r *Run) UnmarshalBSON(data []byte) error {
@@ -54,7 +54,7 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 	}
 
 	if r.Analysis == nil {
-		r.Analysis = []analysis.Analysis{}
+		r.Analysis = []*analysis.Analysis{}
 	}
 
 	rp := rawData.Lookup("run_parameters")
@@ -225,15 +225,6 @@ func DeleteRun(runId string) error {
 func UpdateRunState(runId string, state runstate.RunState) error {
 	runState := runstate.TimedRunState{State: state, Time: time.Now()}
 	update := bson.D{{Key: "$push", Value: bson.D{{Key: "state_history", Value: runState}}}}
-	result, err := RunCollection.UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
-	if err == nil && result.MatchedCount == 0 {
-		return mongo.ErrNoDocuments
-	}
-	return err
-}
-
-func UpdateRunAnalysis(runId string, analysis analysis.Analysis) error {
-	update := bson.D{{Key: "$push", Value: bson.D{{Key: "analysis", Value: analysis}}}}
 	result, err := RunCollection.UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
 	if err == nil && result.MatchedCount == 0 {
 		return mongo.ErrNoDocuments
