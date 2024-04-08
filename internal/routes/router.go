@@ -3,7 +3,11 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve/internal/db"
+	"github.com/spf13/viper"
+	"io"
+	"log"
 	"net/http"
+	"os"
 )
 
 func authMiddleware() gin.HandlerFunc {
@@ -31,6 +35,15 @@ func authMiddleware() gin.HandlerFunc {
 }
 
 func NewRouter(debug bool) http.Handler {
+	gin.DisableConsoleColor()
+	if viper.GetString("logfile") != "" {
+		f, err := os.Create(viper.GetString("logfile"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		gin.DefaultWriter = io.MultiWriter(f, os.Stdout)
+	}
+
 	if debug {
 		gin.SetMode(gin.DebugMode)
 	} else {

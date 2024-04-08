@@ -5,5 +5,7 @@ database:
   password: secret
   name: cleve
 
+logfile: cleve.log
+
 host: 127.0.0.1
 port: 8080

@@ -14,6 +14,7 @@ var (
 	debug	 bool
 	host     string
 	port     int
+	logfile  string
 	serveCmd = &cobra.Command{
 		Use:   "serve",
 		Short: "Serve the cleve api",
@@ -33,6 +34,8 @@ func init() {
 	serveCmd.Flags().BoolVar(&debug, "debug", false, "serve in debug mode")
 	serveCmd.Flags().StringVar(&host, "host", "localhost", "host")
 	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "port")
+	serveCmd.Flags().StringVar(&logfile, "logfile", "", "file to write logs in")
 	viper.BindPFlag("host", serveCmd.Flags().Lookup("host"))
 	viper.BindPFlag("port", serveCmd.Flags().Lookup("port"))
+	viper.BindPFlag("logfile", serveCmd.Flags().Lookup("logfile"))
 }
