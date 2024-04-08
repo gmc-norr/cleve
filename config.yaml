@@ -1,3 +1,4 @@
+# Mongo database configuration
 database:
   host: localhost
   port: 27017
@@ -5,7 +6,10 @@ database:
   password: secret
   name: cleve
 
+# If set, logs will be written to this file in addition to stdout
+# If not set, logs will only be written to stdout
 logfile: cleve.log
 
+# Host and port where cleve will be served
 host: 127.0.0.1
 port: 8080
