@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	debug	 bool
 	host     string
 	port     int
 	serveCmd = &cobra.Command{
@@ -21,7 +22,7 @@ var (
 			host := viper.GetString("host")
 			port := viper.GetInt("port")
 			addr := fmt.Sprintf("%s:%d", host, port)
-			router := routes.NewRouter()
+			router := routes.NewRouter(debug)
 			log.Printf("Serving on %s", addr)
 			log.Fatal(http.ListenAndServe(addr, router))
 		},
@@ -29,6 +30,7 @@ var (
 )
 
 func init() {
+	serveCmd.Flags().BoolVar(&debug, "debug", false, "serve in debug mode")
 	serveCmd.Flags().StringVar(&host, "host", "localhost", "host")
 	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "port")
 	viper.BindPFlag("host", serveCmd.Flags().Lookup("host"))

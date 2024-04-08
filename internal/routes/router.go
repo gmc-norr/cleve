@@ -30,7 +30,13 @@ func authMiddleware() gin.HandlerFunc {
 	}
 }
 
-func NewRouter() http.Handler {
+func NewRouter(debug bool) http.Handler {
+	if debug {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
 
