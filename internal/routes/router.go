@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve/internal/db"
 	"github.com/spf13/viper"
@@ -51,7 +52,7 @@ func NewRouter(debug bool) http.Handler {
 	}
 
 	r := gin.Default()
-	r.LoadHTMLGlob("templates/*")
+	r.LoadHTMLGlob(fmt.Sprintf("%s/templates/*", viper.GetString("assets")))
 
 	r.GET("/", func(c *gin.Context) {
 		IndexHandler(c, r.Routes())

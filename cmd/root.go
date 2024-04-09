@@ -47,6 +47,9 @@ func initConfig() {
 		log.Fatalf("error: %s", err)
 	}
 
+	// Assets
+	viper.SetDefault("assets", "/usr/share/cleve")
+
 	// Basic validation
 	dbConfig := viper.GetStringMap("database")
 	if dbConfig == nil {
