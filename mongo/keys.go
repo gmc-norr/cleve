@@ -8,32 +8,43 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func AddKey(k *cleve.APIKey) error {
-	_, err := GetUserKey(k.User)
-	if err != mongo.ErrNoDocuments {
+type APIKeyService struct {
+	coll *mongo.Collection
+}
+
+func (s *APIKeyService) Create(k *cleve.APIKey) error {
+	_, err := s.UserKey(k.User)
+	if err == nil {
 		return fmt.Errorf("key already exists for user %s", k.User)
 	}
-	if _, err := KeyCollection.InsertOne(context.TODO(), k); err != nil {
+	if err != mongo.ErrNoDocuments {
+		return err
+	}
+	if _, err := s.coll.InsertOne(context.TODO(), k); err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetKey(k string) (*cleve.APIKey, error) {
+func (s *APIKeyService) Delete(k string) error {
+	res, err := s.coll.DeleteOne(context.TODO(), bson.D{
+		{Key: "key", Value: k},
+	})
+	if res.DeletedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return err
+}
+
+func (s *APIKeyService) Get(k string) (*cleve.APIKey, error) {
 	var key cleve.APIKey
-	err := KeyCollection.FindOne(context.TODO(), bson.D{{Key: "key", Value: k}}).Decode(&key)
+	err := s.coll.FindOne(context.TODO(), bson.D{{Key: "key", Value: k}}).Decode(&key)
 	return &key, err
 }
 
-func GetUserKey(u string) (*cleve.APIKey, error) {
-	var key cleve.APIKey
-	err := KeyCollection.FindOne(context.TODO(), bson.D{{Key: "user", Value: u}}).Decode(&key)
-	return &key, err
-}
-
-func GetKeys() ([]*cleve.APIKey, error) {
+func (s *APIKeyService) All() ([]*cleve.APIKey, error) {
 	var keys []*cleve.APIKey
-	cursor, err := KeyCollection.Find(context.TODO(), bson.D{})
+	cursor, err := s.coll.Find(context.TODO(), bson.D{})
 	if err != nil {
 		return keys, err
 	}
@@ -43,12 +54,8 @@ func GetKeys() ([]*cleve.APIKey, error) {
 	return keys, nil
 }
 
-func DeleteKey(key string) error {
-	res, err := KeyCollection.DeleteOne(context.TODO(), bson.D{
-		{Key: "key", Value: key},
-	})
-	if res.DeletedCount == 0 {
-		return mongo.ErrNoDocuments
-	}
-	return err
+func (s *APIKeyService) UserKey(user string) (*cleve.APIKey, error) {
+	var key cleve.APIKey
+	err := s.coll.FindOne(context.TODO(), bson.D{{Key: "user", Value: user}}).Decode(&key)
+	return &key, err
 }

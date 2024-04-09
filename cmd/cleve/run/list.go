@@ -3,6 +3,7 @@ package run
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 	"log"
@@ -21,8 +22,11 @@ var listCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		mongo.Init()
-		runs, err := mongo.GetRuns(brief, platform, state)
+		db, err := mongo.Connect()
+		if err != nil {
+			log.Fatal(err)
+		}
+		runs, err := db.Runs.All(brief, platform, state)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -52,7 +56,7 @@ func truncateString(str string, maxLen int) string {
 	return fmt.Sprintf("%-*s", maxLen, str)
 }
 
-func printTable(runs []*mongo.Run) {
+func printTable(runs []*cleve.Run) {
 	fmt.Printf("|-%s-|-%s-|-%s-|-%s-|\n", strings.Repeat("-", 32), strings.Repeat("-", 20), strings.Repeat("-", 12), strings.Repeat("-", 33))
 	fmt.Printf("| %-32s | %-20s | %-12s | %-33s |\n", "Run ID", "Run Name", "Platform", "Created At")
 	fmt.Printf("|-%s-|-%s-|-%s-|-%s-|\n", strings.Repeat("-", 32), strings.Repeat("-", 20), strings.Repeat("-", 12), strings.Repeat("-", 33))
@@ -62,13 +66,13 @@ func printTable(runs []*mongo.Run) {
 	fmt.Printf("|-%s-|-%s-|-%s-|-%s-|\n", strings.Repeat("-", 32), strings.Repeat("-", 20), strings.Repeat("-", 12), strings.Repeat("-", 33))
 }
 
-func printCSV(runs []*mongo.Run) {
+func printCSV(runs []*cleve.Run) {
 	fmt.Printf("Run ID,Run Name,Created At\n")
 	for _, run := range runs {
 		fmt.Printf("%s,%s,%s\n", run.RunID, run.ExperimentName, run.Created.String())
 	}
 }
 
-func printJSON(runs []*mongo.Run) {
+func printJSON(runs []*cleve.Run) {
 	json.NewEncoder(os.Stdout).Encode(runs)
 }

@@ -39,7 +39,10 @@ var addCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		mongo.Init()
+		db, err := mongo.Connect()
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		runDir, err := filepath.Abs(args[0])
 		if err != nil {
@@ -57,7 +60,7 @@ var addCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		run := mongo.Run{
+		run := cleve.Run{
 			RunID:          runParams.GetRunID(),
 			ExperimentName: runParams.GetExperimentName(),
 			Path:           runDir,
@@ -67,7 +70,7 @@ var addCmd = &cobra.Command{
 			Analysis:       []*cleve.Analysis{},
 		}
 
-		if err = mongo.AddRun(&run); err != nil {
+		if err = db.Runs.Create(&run); err != nil {
 			log.Fatal(err)
 		}
 

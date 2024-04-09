@@ -12,8 +12,11 @@ var (
 		Use:   "list",
 		Short: "List API keys",
 		Run: func(cmd *cobra.Command, args []string) {
-			mongo.Init()
-			keys, err := mongo.GetKeys()
+			db, err := mongo.Connect()
+			if err != nil {
+				log.Fatal(err)
+			}
+			keys, err := db.Keys.All()
 			if err != nil {
 				log.Fatal(err)
 			}

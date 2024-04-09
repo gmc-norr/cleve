@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-func authMiddleware() gin.HandlerFunc {
+func authMiddleware(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestKey := c.Request.Header.Get("Authorization")
 		if requestKey == "" {
@@ -22,7 +22,7 @@ func authMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		_, err := mongo.GetKey(requestKey)
+		_, err := db.Keys.Get(requestKey)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "unauthorized",
@@ -35,7 +35,7 @@ func authMiddleware() gin.HandlerFunc {
 	}
 }
 
-func NewRouter(debug bool) http.Handler {
+func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	gin.DisableConsoleColor()
 	if viper.GetString("logfile") != "" {
 		f, err := os.Create(viper.GetString("logfile"))
@@ -58,17 +58,17 @@ func NewRouter(debug bool) http.Handler {
 		IndexHandler(c, r.Routes())
 	})
 
-	r.GET("/api/runs", RunsHandler)
-	r.GET("/api/runs/:runId", RunHandler)
-	r.GET("/api/runs/:runId/analysis", AnalysesHandler)
-	r.GET("/api/runs/:runId/analysis/:analysisId", AnalysisHandler)
+	r.GET("/api/runs", RunsHandler(db))
+	r.GET("/api/runs/:runId", RunHandler(db))
+	r.GET("/api/runs/:runId/analysis", AnalysesHandler(db))
+	r.GET("/api/runs/:runId/analysis/:analysisId", AnalysisHandler(db))
 
 	authEndpoints := r.Group("/")
-	authEndpoints.Use(authMiddleware())
-	authEndpoints.POST("/api/runs", AddRunHandler)
-	authEndpoints.PATCH("/api/runs/:runId", UpdateRunHandler)
-	authEndpoints.POST("/api/runs/:runId/analysis", AddAnalysisHandler)
-	authEndpoints.PATCH("/api/runs/:runId/analysis/:analysisId", UpdateAnalysisHandler)
+	authEndpoints.Use(authMiddleware(db))
+	authEndpoints.POST("/api/runs", AddRunHandler(db))
+	authEndpoints.PATCH("/api/runs/:runId", UpdateRunHandler(db))
+	authEndpoints.POST("/api/runs/:runId/analysis", AddAnalysisHandler(db))
+	authEndpoints.PATCH("/api/runs/:runId/analysis/:analysisId", UpdateAnalysisHandler(db))
 
 	return r
 }

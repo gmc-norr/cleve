@@ -13,15 +13,18 @@ var indexCmd = &cobra.Command{
 	Use:   "index",
 	Short: "List and set database indexes",
 	Run: func(cmd *cobra.Command, args []string) {
-		mongo.Init()
+		db, err := mongo.Connect()
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		if update {
-			err := mongo.SetIndexes()
+			err := db.SetIndexes()
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			indexes, err := mongo.GetIndexes()
+			indexes, err := db.GetIndexes()
 			if err != nil {
 				log.Fatal(err)
 			}

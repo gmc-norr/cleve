@@ -19,11 +19,14 @@ var (
 		Use:   "serve",
 		Short: "Serve the cleve api",
 		Run: func(cmd *cobra.Command, args []string) {
-			mongo.Init()
+			db, err := mongo.Connect()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
 			host := viper.GetString("host")
 			port := viper.GetInt("port")
 			addr := fmt.Sprintf("%s:%d", host, port)
-			router := gin.NewRouter(debug)
+			router := gin.NewRouter(db, debug)
 			log.Printf("Serving on %s", addr)
 			log.Fatal(http.ListenAndServe(addr, router))
 		},

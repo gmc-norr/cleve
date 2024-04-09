@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"github.com/gmc-norr/cleve"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -12,11 +13,12 @@ import (
 
 var ErrNoDocuments = mongo.ErrNoDocuments
 
-var Client mongo.Client
-var RunCollection *mongo.Collection
-var KeyCollection *mongo.Collection
+type DB struct {
+	Keys cleve.APIKeyService
+	Runs cleve.RunService
+}
 
-func Init() {
+func Connect() (*DB, error) {
 	mongo_db := viper.GetString("database.name")
 	mongo_host := viper.GetString("database.host")
 	mongo_port := viper.GetInt("database.port")
@@ -27,28 +29,33 @@ func Init() {
 	mongoURI := fmt.Sprintf("%s:%d", mongo_host, mongo_port)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	opts := options.Client().SetHosts([]string{mongoURI}).SetAuth(options.Credential{
 		Username: mongo_user,
 		Password: mongo_password,
 	})
-	Client, err := mongo.Connect(ctx, opts)
+	client, err := mongo.Connect(ctx, opts)
 
 	if err != nil {
-		log.Fatalf("mongo.Connect() failed: %s\n", err)
+		return nil, fmt.Errorf("mongo.Connect() failed: %s\n", err)
 	}
 
-	if err := Client.Ping(ctx, nil); err != nil {
+	if err := client.Ping(ctx, nil); err != nil {
 		log.Fatalf("error reaching database: %s\n", err)
 	}
 
-	RunCollection = Client.Database(viper.GetString("database.name")).Collection("runs")
-	KeyCollection = Client.Database(viper.GetString("database.name")).Collection("keys")
+	runCollection := client.Database(viper.GetString("database.name")).Collection("runs")
+	keyCollection := client.Database(viper.GetString("database.name")).Collection("keys")
 
-	defer cancel()
+	return &DB{
+		&APIKeyService{keyCollection},
+		&RunService{runCollection},
+	}, nil
 }
 
-func SetIndexes() error {
-	name, err := SetRunIndex()
+func (db *DB) SetIndexes() error {
+	name, err := db.Runs.SetIndex()
 	if err != nil {
 		return err
 	}
@@ -56,8 +63,8 @@ func SetIndexes() error {
 	return nil
 }
 
-func GetIndexes() (map[string][]map[string]string, error) {
-	runIndex, err := GetRunIndex()
+func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
+	runIndex, err := db.Runs.GetIndex()
 	if err != nil {
 		return nil, err
 	}

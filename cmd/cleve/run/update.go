@@ -22,12 +22,15 @@ var (
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			mongo.Init()
+			db, err := mongo.Connect()
+			if err != nil {
+				log.Fatal(err)
+			}
 			didSomething := false
 
 			if stateArg != "" {
 				log.Printf("Updating state of run %s to '%s'", args[0], stateUpdate.String())
-				err := mongo.UpdateRunState(args[0], stateUpdate)
+				err := db.Runs.SetState(args[0], stateUpdate)
 				if err != nil {
 					log.Fatalf("error: %s", err)
 				}

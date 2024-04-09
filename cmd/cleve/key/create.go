@@ -19,10 +19,13 @@ var (
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			mongo.Init()
+			db, err := mongo.Connect()
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			key := cleve.NewAPIKey(args[0])
-			if err := mongo.AddKey(key); err != nil {
+			if err := db.Keys.Create(key); err != nil {
 				log.Fatalf("error: %s", err)
 			}
 

@@ -17,8 +17,11 @@ var deleteCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		mongo.Init()
-		err := mongo.DeleteRun(args[0])
+		db, err := mongo.Connect()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = db.Runs.Delete(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}

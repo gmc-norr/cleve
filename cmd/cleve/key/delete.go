@@ -18,8 +18,11 @@ var (
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			mongo.Init()
-			if err := mongo.DeleteKey(args[0]); err != nil {
+			db, err := mongo.Connect()
+			if err != nil {
+				log.Fatal(err)
+			}
+			if err := db.Keys.Delete(args[0]); err != nil {
 				if err == mongo.ErrNoDocuments {
 					log.Fatal("error: key not found")
 				}
