@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/gmc-norr/cleve/internal/routes"
+	"github.com/gmc-norr/cleve/gin"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,7 +23,7 @@ var (
 			host := viper.GetString("host")
 			port := viper.GetInt("port")
 			addr := fmt.Sprintf("%s:%d", host, port)
-			router := routes.NewRouter(debug)
+			router := gin.NewRouter(debug)
 			log.Printf("Serving on %s", addr)
 			log.Fatal(http.ListenAndServe(addr, router))
 		},
