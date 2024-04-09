@@ -24,6 +24,7 @@ type Run struct {
 	StateHistory   []runstate.TimedRunState    `bson:"state_history" json:"state_history"`
 	RunParameters  runparameters.RunParameters `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
 	Analysis       []*analysis.Analysis        `bson:"analysis,omitempty" json:"analysis,omitempty"`
+	AnalysisCount  int32                       `bson:"analysis_count" json:"analysis_count"`
 }
 
 func (r *Run) UnmarshalBSON(data []byte) error {
@@ -39,6 +40,10 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 	r.Path = rawData.Lookup("path").StringValue()
 	r.Platform = rawData.Lookup("platform").StringValue()
 	r.Created = rawData.Lookup("created").Time()
+	ac, err := rawData.LookupErr("analysis_count")
+	if err == nil {
+		r.AnalysisCount = ac.Int32()
+	}
 
 	err = rawData.Lookup("state_history").Unmarshal(&r.StateHistory)
 	if err != nil {
@@ -125,13 +130,28 @@ func GetRuns(brief bool, platform string, state string) ([]*Run, error) {
 		})
 	}
 
+	// Count number of analyses
+	aggPipeline = append(aggPipeline, bson.D{
+		{Key: "$set", Value: bson.D{
+			{
+				Key: "analysis_count",
+				Value: bson.D{
+					{Key: "$cond", Value: bson.M{
+						"if": bson.D{
+							{Key: "$isArray", Value: "$analysis"},
+						}, "then": bson.D{
+							{Key: "$size", Value: "$analysis"},
+						}, "else": 0,
+					}},
+				},
+			},
+		}},
+	})
+
 	// Exclude run parameters and analysis
 	if brief {
 		aggPipeline = append(aggPipeline, bson.D{
-			{Key: "$project", Value: bson.D{
-				{Key: "run_parameters", Value: 0},
-				{Key: "analysis", Value: 0},
-			}},
+			{Key: "$unset", Value: bson.A{"run_parameters", "analysis"}},
 		})
 	}
 
@@ -179,15 +199,36 @@ func GetRun(runId string, brief bool) (*Run, error) {
 		},
 	}
 
+	// Count number of analyses
+	setStage := bson.D{
+		{Key: "$set", Value: bson.D{
+			{
+				Key: "analysis_count",
+				Value: bson.D{
+					{Key: "$cond", Value: bson.M{
+						"if": bson.D{
+							{Key: "$isArray", Value: "$analysis"},
+						}, "then": bson.D{
+							{Key: "$size", Value: "$analysis"},
+						}, "else": 0,
+					}},
+				},
+			},
+		}},
+	}
+
 	unsetStage := bson.D{
-		{Key: "$unset", Value: "run_parameters"},
+		{Key: "$unset", Value: bson.A{
+			"run_parameters",
+			"analysis",
+		}},
 	}
 
 	var aggPipeline mongo.Pipeline
 	if brief {
-		aggPipeline = mongo.Pipeline{matchStage, unsetStage, sortStage}
+		aggPipeline = mongo.Pipeline{matchStage, setStage, unsetStage, sortStage}
 	} else {
-		aggPipeline = mongo.Pipeline{matchStage, sortStage}
+		aggPipeline = mongo.Pipeline{matchStage, setStage, sortStage}
 	}
 
 	cursor, err := RunCollection.Aggregate(context.TODO(), aggPipeline)
