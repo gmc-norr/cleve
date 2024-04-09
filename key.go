@@ -1,4 +1,4 @@
-package key
+package cleve
 
 import (
 	"crypto/sha1"
