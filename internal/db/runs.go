@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 	"fmt"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db/runstate"
-	"github.com/gmc-norr/cleve/runparameters"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,16 +15,16 @@ import (
 )
 
 type Run struct {
-	ID             primitive.ObjectID          `bson:"_id" json:"id"`
-	RunID          string                      `bson:"run_id" json:"run_id"`
-	ExperimentName string                      `bson:"experiment_name" json:"experiment_name"`
-	Path           string                      `bson:"path" json:"path"`
-	Platform       string                      `bson:"platform" json:"platform"`
-	Created        time.Time                   `bson:"created" json:"created"`
-	StateHistory   []runstate.TimedRunState    `bson:"state_history" json:"state_history"`
-	RunParameters  runparameters.RunParameters `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
-	Analysis       []*analysis.Analysis        `bson:"analysis,omitempty" json:"analysis,omitempty"`
-	AnalysisCount  int32                       `bson:"analysis_count" json:"analysis_count"`
+	ID             primitive.ObjectID       `bson:"_id" json:"id"`
+	RunID          string                   `bson:"run_id" json:"run_id"`
+	ExperimentName string                   `bson:"experiment_name" json:"experiment_name"`
+	Path           string                   `bson:"path" json:"path"`
+	Platform       string                   `bson:"platform" json:"platform"`
+	Created        time.Time                `bson:"created" json:"created"`
+	StateHistory   []runstate.TimedRunState `bson:"state_history" json:"state_history"`
+	RunParameters  cleve.RunParameters      `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
+	Analysis       []*analysis.Analysis     `bson:"analysis,omitempty" json:"analysis,omitempty"`
+	AnalysisCount  int32                    `bson:"analysis_count" json:"analysis_count"`
 }
 
 func (r *Run) UnmarshalBSON(data []byte) error {
@@ -67,14 +67,14 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 	if len(rp.Value) > 0 {
 		switch r.Platform {
 		case "NextSeq":
-			var nextSeqRP runparameters.NextSeqParameters
+			var nextSeqRP cleve.NextSeqParameters
 			if err = rp.Unmarshal(&nextSeqRP); err != nil {
 				log.Println(err)
 				return err
 			}
 			r.RunParameters = nextSeqRP
 		case "NovaSeq":
-			var novaSeqRP runparameters.NovaSeqParameters
+			var novaSeqRP cleve.NovaSeqParameters
 			if err = rp.Unmarshal(&novaSeqRP); err != nil {
 				log.Println(err)
 				return err

@@ -2,10 +2,10 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db"
 	"github.com/gmc-norr/cleve/internal/db/runstate"
-	"github.com/gmc-norr/cleve/runparameters"
 	"go.mongodb.org/mongo-driver/mongo"
 	"io"
 	"mime/multipart"
@@ -72,8 +72,8 @@ func AddRunHandler(c *gin.Context) {
 		return
 	}
 
-	var runParams runparameters.RunParameters
-	runParams, err = runparameters.ParseRunParameters(paramsData)
+	var runParams cleve.RunParameters
+	runParams, err = cleve.ParseRunParameters(paramsData)
 
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid run parameters"})

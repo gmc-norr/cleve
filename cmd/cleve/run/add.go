@@ -2,10 +2,10 @@ package run
 
 import (
 	"fmt"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db"
 	"github.com/gmc-norr/cleve/internal/db/runstate"
-	"github.com/gmc-norr/cleve/runparameters"
 	"github.com/spf13/cobra"
 	"io"
 	"log"
@@ -16,8 +16,8 @@ import (
 
 var runPath string
 
-func parseRunParameters(runParametersFile string) (runparameters.RunParameters, error) {
-	var runParams runparameters.RunParameters
+func parseRunParameters(runParametersFile string) (cleve.RunParameters, error) {
+	var runParams cleve.RunParameters
 	runParamFile, err := os.Open(runParametersFile)
 	if err != nil {
 		return runParams, err
@@ -28,7 +28,7 @@ func parseRunParameters(runParametersFile string) (runparameters.RunParameters, 
 		return runParams, err
 	}
 
-	return runparameters.ParseRunParameters(runParamData)
+	return cleve.ParseRunParameters(runParamData)
 }
 
 var addCmd = &cobra.Command{
