@@ -1,9 +1,9 @@
-package cmd
+package main
 
 import (
-	"github.com/gmc-norr/cleve/cmd/db"
-	"github.com/gmc-norr/cleve/cmd/key"
-	"github.com/gmc-norr/cleve/cmd/run"
+	"github.com/gmc-norr/cleve/cmd/cleve/db"
+	"github.com/gmc-norr/cleve/cmd/cleve/key"
+	"github.com/gmc-norr/cleve/cmd/cleve/run"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -25,10 +25,6 @@ func init() {
 	rootCmd.AddCommand(run.RunCmd)
 	rootCmd.AddCommand(db.DbCmd)
 	rootCmd.AddCommand(key.KeyCmd)
-}
-
-func Execute() error {
-	return rootCmd.Execute()
 }
 
 func initConfig() {
@@ -72,4 +68,10 @@ func initConfig() {
 	}
 
 	log.Printf("Using config file: %s", viper.ConfigFileUsed())
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }
