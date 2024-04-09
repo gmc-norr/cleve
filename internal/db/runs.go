@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/analysis"
-	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,16 +14,16 @@ import (
 )
 
 type Run struct {
-	ID             primitive.ObjectID       `bson:"_id" json:"id"`
-	RunID          string                   `bson:"run_id" json:"run_id"`
-	ExperimentName string                   `bson:"experiment_name" json:"experiment_name"`
-	Path           string                   `bson:"path" json:"path"`
-	Platform       string                   `bson:"platform" json:"platform"`
-	Created        time.Time                `bson:"created" json:"created"`
-	StateHistory   []runstate.TimedRunState `bson:"state_history" json:"state_history"`
-	RunParameters  cleve.RunParameters      `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
-	Analysis       []*analysis.Analysis     `bson:"analysis,omitempty" json:"analysis,omitempty"`
-	AnalysisCount  int32                    `bson:"analysis_count" json:"analysis_count"`
+	ID             primitive.ObjectID    `bson:"_id" json:"id"`
+	RunID          string                `bson:"run_id" json:"run_id"`
+	ExperimentName string                `bson:"experiment_name" json:"experiment_name"`
+	Path           string                `bson:"path" json:"path"`
+	Platform       string                `bson:"platform" json:"platform"`
+	Created        time.Time             `bson:"created" json:"created"`
+	StateHistory   []cleve.TimedRunState `bson:"state_history" json:"state_history"`
+	RunParameters  cleve.RunParameters   `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
+	Analysis       []*analysis.Analysis  `bson:"analysis,omitempty" json:"analysis,omitempty"`
+	AnalysisCount  int32                 `bson:"analysis_count" json:"analysis_count"`
 }
 
 func (r *Run) UnmarshalBSON(data []byte) error {
@@ -263,8 +262,8 @@ func DeleteRun(runId string) error {
 	return err
 }
 
-func UpdateRunState(runId string, state runstate.RunState) error {
-	runState := runstate.TimedRunState{State: state, Time: time.Now()}
+func UpdateRunState(runId string, state cleve.RunState) error {
+	runState := cleve.TimedRunState{State: state, Time: time.Now()}
 	update := bson.D{{Key: "$push", Value: bson.D{{Key: "state_history", Value: runState}}}}
 	result, err := RunCollection.UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
 	if err == nil && result.MatchedCount == 0 {
@@ -273,11 +272,11 @@ func UpdateRunState(runId string, state runstate.RunState) error {
 	return err
 }
 
-func GetStateHistory(runId string) ([]runstate.TimedRunState, error) {
+func GetStateHistory(runId string) ([]cleve.TimedRunState, error) {
 	opts := options.FindOne().SetProjection(bson.D{{Key: "state_history", Value: 1}})
 	res := RunCollection.FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, opts)
 
-	var stateHistory []runstate.TimedRunState
+	var stateHistory []cleve.TimedRunState
 	err := res.Decode(&stateHistory)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {

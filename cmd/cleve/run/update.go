@@ -2,8 +2,8 @@ package run
 
 import (
 	"fmt"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/internal/db"
-	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"github.com/spf13/cobra"
 	"log"
 	"strings"
@@ -11,7 +11,7 @@ import (
 
 var (
 	stateArg    string
-	stateUpdate runstate.RunState
+	stateUpdate cleve.RunState
 	updateCmd   = &cobra.Command{
 		Use:   "update [flags] run_id",
 		Short: "Update a sequencing run",
@@ -42,8 +42,8 @@ var (
 )
 
 func init() {
-	allowedStates := make([]string, 0, len(runstate.ValidRunStates))
-	for k := range runstate.ValidRunStates {
+	allowedStates := make([]string, 0, len(cleve.ValidRunStates))
+	for k := range cleve.ValidRunStates {
 		allowedStates = append(allowedStates, k)
 	}
 	stateString := strings.Join(allowedStates, ", ")

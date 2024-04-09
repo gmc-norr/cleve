@@ -2,9 +2,9 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db"
-	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"go.mongodb.org/mongo-driver/mongo"
 	"io"
 	"mime/multipart"
@@ -65,7 +65,7 @@ func AddAnalysisHandler(c *gin.Context) {
 		return
 	}
 
-	var state runstate.RunState
+	var state cleve.RunState
 	if err := state.Set(addAnalysisRequest.State); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusBadRequest,
@@ -182,7 +182,7 @@ func UpdateAnalysisHandler(c *gin.Context) {
 	}
 
 	if updateRequest.State != "" {
-		var state runstate.RunState
+		var state cleve.RunState
 		err := state.Set(updateRequest.State)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {

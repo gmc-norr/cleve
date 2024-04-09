@@ -5,7 +5,6 @@ import (
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db"
-	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"go.mongodb.org/mongo-driver/mongo"
 	"io"
 	"mime/multipart"
@@ -80,7 +79,7 @@ func AddRunHandler(c *gin.Context) {
 		return
 	}
 
-	var state runstate.RunState
+	var state cleve.RunState
 	if err = state.Set(addRunRequest.State); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -92,7 +91,7 @@ func AddRunHandler(c *gin.Context) {
 		Path:           addRunRequest.Path,
 		Platform:       runParams.Platform(),
 		RunParameters:  runParams,
-		StateHistory:   []runstate.TimedRunState{{State: state, Time: time.Now()}},
+		StateHistory:   []cleve.TimedRunState{{State: state, Time: time.Now()}},
 		Analysis:       []*analysis.Analysis{},
 	}
 
@@ -116,7 +115,7 @@ func UpdateRunHandler(c *gin.Context) {
 		return
 	}
 
-	var state runstate.RunState
+	var state cleve.RunState
 	err := state.Set(updateRequest.State)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing state"})

@@ -5,7 +5,6 @@ import (
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db"
-	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"github.com/spf13/cobra"
 	"io"
 	"log"
@@ -54,7 +53,7 @@ var addCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		var state runstate.RunState
+		var state cleve.RunState
 		if err = state.Set("new"); err != nil {
 			log.Fatal(err)
 		}
@@ -65,7 +64,7 @@ var addCmd = &cobra.Command{
 			Path:           runDir,
 			Platform:       runParams.Platform(),
 			RunParameters:  runParams,
-			StateHistory:   []runstate.TimedRunState{{State: state, Time: time.Now()}},
+			StateHistory:   []cleve.TimedRunState{{State: state, Time: time.Now()}},
 			Analysis:       []*analysis.Analysis{},
 		}
 

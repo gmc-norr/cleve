@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/analysis"
-	"github.com/gmc-norr/cleve/internal/db/runstate"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -55,7 +55,7 @@ func AddAnalysis(runId string, analysis *analysis.Analysis) error {
 	return nil
 }
 
-func UpdateAnalysisState(runId string, analysisId string, state runstate.RunState) error {
+func UpdateAnalysisState(runId string, analysisId string, state cleve.RunState) error {
 	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
 	update := bson.D{{
 		Key: "$set", Value: bson.D{
