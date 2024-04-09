@@ -1,4 +1,4 @@
-package db
+package mongo
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"log"
 	"time"
 )
+
+var ErrNoDocuments = mongo.ErrNoDocuments
 
 var Client mongo.Client
 var RunCollection *mongo.Collection

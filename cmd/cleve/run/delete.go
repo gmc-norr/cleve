@@ -2,7 +2,7 @@ package run
 
 import (
 	"fmt"
-	"github.com/gmc-norr/cleve/internal/db"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -17,8 +17,8 @@ var deleteCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		db.Init()
-		err := db.DeleteRun(args[0])
+		mongo.Init()
+		err := mongo.DeleteRun(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -2,7 +2,7 @@ package key
 
 import (
 	"fmt"
-	"github.com/gmc-norr/cleve/internal/db"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -12,8 +12,8 @@ var (
 		Use:   "list",
 		Short: "List API keys",
 		Run: func(cmd *cobra.Command, args []string) {
-			db.Init()
-			keys, err := db.GetKeys()
+			mongo.Init()
+			keys, err := mongo.GetKeys()
 			if err != nil {
 				log.Fatal(err)
 			}

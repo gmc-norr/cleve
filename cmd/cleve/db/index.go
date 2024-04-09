@@ -2,7 +2,7 @@ package db
 
 import (
 	"fmt"
-	"github.com/gmc-norr/cleve/internal/db"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -13,15 +13,15 @@ var indexCmd = &cobra.Command{
 	Use:   "index",
 	Short: "List and set database indexes",
 	Run: func(cmd *cobra.Command, args []string) {
-		db.Init()
+		mongo.Init()
 
 		if update {
-			err := db.SetIndexes()
+			err := mongo.SetIndexes()
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			indexes, err := db.GetIndexes()
+			indexes, err := mongo.GetIndexes()
 			if err != nil {
 				log.Fatal(err)
 			}

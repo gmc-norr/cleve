@@ -3,7 +3,7 @@ package run
 import (
 	"fmt"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/internal/db"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 	"io"
 	"log"
@@ -39,7 +39,7 @@ var addCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		db.Init()
+		mongo.Init()
 
 		runDir, err := filepath.Abs(args[0])
 		if err != nil {
@@ -57,7 +57,7 @@ var addCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		run := db.Run{
+		run := mongo.Run{
 			RunID:          runParams.GetRunID(),
 			ExperimentName: runParams.GetExperimentName(),
 			Path:           runDir,
@@ -67,7 +67,7 @@ var addCmd = &cobra.Command{
 			Analysis:       []*cleve.Analysis{},
 		}
 
-		if err = db.AddRun(&run); err != nil {
+		if err = mongo.AddRun(&run); err != nil {
 			log.Fatal(err)
 		}
 

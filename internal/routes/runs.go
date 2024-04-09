@@ -3,8 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/internal/db"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/gmc-norr/cleve/mongo"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -17,7 +16,7 @@ func RunsHandler(c *gin.Context) {
 	platform, _ := c.GetQuery("platform")
 	state, _ := c.GetQuery("state")
 
-	runs, err := db.GetRuns(brief, platform, state)
+	runs, err := mongo.GetRuns(brief, platform, state)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -30,7 +29,7 @@ func RunsHandler(c *gin.Context) {
 func RunHandler(c *gin.Context) {
 	runId := c.Param("runId")
 	_, brief := c.GetQuery("brief")
-	run, err := db.GetRun(runId, brief)
+	run, err := mongo.GetRun(runId, brief)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -84,7 +83,7 @@ func AddRunHandler(c *gin.Context) {
 		return
 	}
 
-	run := db.Run{
+	run := mongo.Run{
 		RunID:          runParams.GetRunID(),
 		ExperimentName: runParams.GetExperimentName(),
 		Path:           addRunRequest.Path,
@@ -94,7 +93,7 @@ func AddRunHandler(c *gin.Context) {
 		Analysis:       []*cleve.Analysis{},
 	}
 
-	if err := db.AddRun(&run); err != nil {
+	if err := mongo.AddRun(&run); err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -121,7 +120,7 @@ func UpdateRunHandler(c *gin.Context) {
 		return
 	}
 
-	if err = db.UpdateRunState(runId, state); err != nil {
+	if err = mongo.UpdateRunState(runId, state); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run state"})
 		return
 	}

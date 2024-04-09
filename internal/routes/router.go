@@ -3,7 +3,7 @@ package routes
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/gmc-norr/cleve/internal/db"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/viper"
 	"io"
 	"log"
@@ -22,7 +22,7 @@ func authMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		_, err := db.GetKey(requestKey)
+		_, err := mongo.GetKey(requestKey)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "unauthorized",

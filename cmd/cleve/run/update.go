@@ -3,7 +3,7 @@ package run
 import (
 	"fmt"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/internal/db"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 	"log"
 	"strings"
@@ -22,12 +22,12 @@ var (
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			db.Init()
+			mongo.Init()
 			didSomething := false
 
 			if stateArg != "" {
 				log.Printf("Updating state of run %s to '%s'", args[0], stateUpdate.String())
-				err := db.UpdateRunState(args[0], stateUpdate)
+				err := mongo.UpdateRunState(args[0], stateUpdate)
 				if err != nil {
 					log.Fatalf("error: %s", err)
 				}

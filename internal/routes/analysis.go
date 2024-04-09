@@ -3,8 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/internal/db"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/gmc-norr/cleve/mongo"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -14,7 +13,7 @@ import (
 
 func AnalysesHandler(c *gin.Context) {
 	runId := c.Param("runId")
-	analyses, err := db.GetAnalyses(runId)
+	analyses, err := mongo.GetAnalyses(runId)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.JSON(http.StatusNotFound, gin.H{"error": "run not found"})
@@ -29,7 +28,7 @@ func AnalysesHandler(c *gin.Context) {
 func AnalysisHandler(c *gin.Context) {
 	runId := c.Param("runId")
 	analysisId := c.Param("analysisId")
-	analysis, err := db.GetAnalysis(runId, analysisId)
+	analysis, err := mongo.GetAnalysis(runId, analysisId)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.AbortWithStatusJSON(
@@ -112,7 +111,7 @@ func AddAnalysisHandler(c *gin.Context) {
 	}
 
 	// Check that the analysis doesn't already exist
-	_, err := db.GetAnalysis(runId, a.AnalysisId)
+	_, err := mongo.GetAnalysis(runId, a.AnalysisId)
 	if err == nil {
 		c.AbortWithStatusJSON(
 			http.StatusConflict,
@@ -151,7 +150,7 @@ func AddAnalysisHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.AddAnalysis(runId, &a); err != nil {
+	if err := mongo.AddAnalysis(runId, &a); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusInternalServerError,
 			gin.H{"error": err.Error(), "when": "adding analysis"},
@@ -199,7 +198,7 @@ func UpdateAnalysisHandler(c *gin.Context) {
 			return
 		}
 
-		err = db.UpdateAnalysisState(runId, analysisId, state)
+		err = mongo.UpdateAnalysisState(runId, analysisId, state)
 		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
@@ -230,7 +229,7 @@ func UpdateAnalysisHandler(c *gin.Context) {
 			return
 		}
 		summary, err := cleve.ParseAnalysisSummary(summaryData)
-		err = db.UpdateAnalysisSummary(runId, analysisId, &summary)
+		err = mongo.UpdateAnalysisSummary(runId, analysisId, &summary)
 		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,

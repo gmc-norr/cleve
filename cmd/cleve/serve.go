@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/gmc-norr/cleve/internal/db"
 	"github.com/gmc-norr/cleve/internal/routes"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	debug	 bool
+	debug    bool
 	host     string
 	port     int
 	logfile  string
@@ -19,7 +19,7 @@ var (
 		Use:   "serve",
 		Short: "Serve the cleve api",
 		Run: func(cmd *cobra.Command, args []string) {
-			db.Init()
+			mongo.Init()
 			host := viper.GetString("host")
 			port := viper.GetInt("port")
 			addr := fmt.Sprintf("%s:%d", host, port)

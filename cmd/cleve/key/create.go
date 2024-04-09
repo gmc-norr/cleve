@@ -3,7 +3,7 @@ package key
 import (
 	"fmt"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/internal/db"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -19,10 +19,10 @@ var (
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			db.Init()
+			mongo.Init()
 
 			key := cleve.NewAPIKey(args[0])
-			if err := db.AddKey(key); err != nil {
+			if err := mongo.AddKey(key); err != nil {
 				log.Fatalf("error: %s", err)
 			}
 

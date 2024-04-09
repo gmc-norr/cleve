@@ -2,9 +2,8 @@ package key
 
 import (
 	"fmt"
-	"github.com/gmc-norr/cleve/internal/db"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
-	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 )
 
@@ -19,8 +18,8 @@ var (
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			db.Init()
-			if err := db.DeleteKey(args[0]); err != nil {
+			mongo.Init()
+			if err := mongo.DeleteKey(args[0]); err != nil {
 				if err == mongo.ErrNoDocuments {
 					log.Fatal("error: key not found")
 				}
