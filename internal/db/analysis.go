@@ -3,12 +3,11 @@ package db
 import (
 	"context"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/analysis"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetAnalyses(runId string) ([]*analysis.Analysis, error) {
+func GetAnalyses(runId string) ([]*cleve.Analysis, error) {
 	run, err := GetRun(runId, false)
 	if err != nil {
 		return nil, err
@@ -16,12 +15,12 @@ func GetAnalyses(runId string) ([]*analysis.Analysis, error) {
 
 	analyses := run.Analysis
 	if analyses == nil {
-		return []*analysis.Analysis{}, nil
+		return []*cleve.Analysis{}, nil
 	}
 	return analyses, nil
 }
 
-func GetAnalysis(runId string, analysisId string) (*analysis.Analysis, error) {
+func GetAnalysis(runId string, analysisId string) (*cleve.Analysis, error) {
 	analyses, err := GetAnalyses(runId)
 	if err != nil {
 		return nil, err
@@ -36,7 +35,7 @@ func GetAnalysis(runId string, analysisId string) (*analysis.Analysis, error) {
 	return nil, mongo.ErrNoDocuments
 }
 
-func AddAnalysis(runId string, analysis *analysis.Analysis) error {
+func AddAnalysis(runId string, analysis *cleve.Analysis) error {
 	update := bson.D{{
 		Key: "$push", Value: bson.D{
 			{Key: "analysis", Value: analysis},
@@ -71,7 +70,7 @@ func UpdateAnalysisState(runId string, analysisId string, state cleve.RunState) 
 	return err
 }
 
-func UpdateAnalysisSummary(runId string, analysisId string, summary *analysis.AnalysisSummary) error {
+func UpdateAnalysisSummary(runId string, analysisId string, summary *cleve.AnalysisSummary) error {
 	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
 	update := bson.D{{
 		Key: "$set", Value: bson.D{

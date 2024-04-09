@@ -3,7 +3,6 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db"
 	"go.mongodb.org/mongo-driver/mongo"
 	"io"
@@ -74,7 +73,7 @@ func AddAnalysisHandler(c *gin.Context) {
 		return
 	}
 
-	var summary *analysis.AnalysisSummary
+	var summary *cleve.AnalysisSummary
 	if addAnalysisRequest.SummaryFile != nil {
 		summaryFile, err := addAnalysisRequest.SummaryFile.Open()
 		if err != nil {
@@ -94,7 +93,7 @@ func AddAnalysisHandler(c *gin.Context) {
 			return
 		}
 
-		s, err := analysis.ParseAnalysisSummary(summaryData)
+		s, err := cleve.ParseAnalysisSummary(summaryData)
 		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusBadRequest,
@@ -105,7 +104,7 @@ func AddAnalysisHandler(c *gin.Context) {
 		summary = &s
 	}
 
-	a := analysis.Analysis{
+	a := cleve.Analysis{
 		AnalysisId: filepath.Base(addAnalysisRequest.Path),
 		Path:       addAnalysisRequest.Path,
 		State:      state,
@@ -230,7 +229,7 @@ func UpdateAnalysisHandler(c *gin.Context) {
 			)
 			return
 		}
-		summary, err := analysis.ParseAnalysisSummary(summaryData)
+		summary, err := cleve.ParseAnalysisSummary(summaryData)
 		err = db.UpdateAnalysisSummary(runId, analysisId, &summary)
 		if err != nil {
 			c.AbortWithStatusJSON(

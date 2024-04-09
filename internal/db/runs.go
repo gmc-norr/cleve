@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/analysis"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -22,7 +21,7 @@ type Run struct {
 	Created        time.Time             `bson:"created" json:"created"`
 	StateHistory   []cleve.TimedRunState `bson:"state_history" json:"state_history"`
 	RunParameters  cleve.RunParameters   `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
-	Analysis       []*analysis.Analysis  `bson:"analysis,omitempty" json:"analysis,omitempty"`
+	Analysis       []*cleve.Analysis     `bson:"analysis,omitempty" json:"analysis,omitempty"`
 	AnalysisCount  int32                 `bson:"analysis_count" json:"analysis_count"`
 }
 
@@ -58,7 +57,7 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 	}
 
 	if r.Analysis == nil {
-		r.Analysis = []*analysis.Analysis{}
+		r.Analysis = []*cleve.Analysis{}
 	}
 
 	rp := rawData.Lookup("run_parameters")

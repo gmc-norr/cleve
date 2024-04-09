@@ -3,7 +3,6 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/analysis"
 	"github.com/gmc-norr/cleve/internal/db"
 	"go.mongodb.org/mongo-driver/mongo"
 	"io"
@@ -92,7 +91,7 @@ func AddRunHandler(c *gin.Context) {
 		Platform:       runParams.Platform(),
 		RunParameters:  runParams,
 		StateHistory:   []cleve.TimedRunState{{State: state, Time: time.Now()}},
-		Analysis:       []*analysis.Analysis{},
+		Analysis:       []*cleve.Analysis{},
 	}
 
 	if err := db.AddRun(&run); err != nil {
