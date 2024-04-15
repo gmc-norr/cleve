@@ -2,6 +2,7 @@ package gin
 
 import (
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -111,6 +112,98 @@ func TestRunsHandler(t *testing.T) {
 
 		if count != len(v.Runs) {
 			t.Fatalf("found %d runs, expected %d", count, len(v.Runs))
+		}
+	}
+}
+
+func TestRunHandler(t *testing.T) {
+	gin.SetMode("test")
+	var ks mock.APIKeyService
+	var rs mock.RunService
+
+	db := mongo.DB{
+		Keys: &ks,
+		Runs: &rs,
+	}
+
+	table := []struct {
+		RunID  string
+		Run    *cleve.Run
+		Params gin.Params
+		Code   int
+		Body   string
+	}{
+		{
+			"nosuchrun",
+			nil,
+			gin.Params{
+				gin.Param{Key: "runId", Value: "nosuchrun"},
+			},
+			http.StatusNotFound,
+			`error`,
+		},
+		{
+			"run1",
+			novaseq1,
+			gin.Params{
+				gin.Param{Key: "runId", Value: "run1"},
+			},
+			http.StatusOK,
+			`"experiment_name":"experiment 1"`,
+		},
+		{
+			"run3",
+			novaseq2,
+			gin.Params{
+				gin.Param{Key: "runId", Value: "run2"},
+				gin.Param{Key: "brief", Value: "false"},
+			},
+			http.StatusOK,
+			`"experiment_name":"experiment 3"`,
+		},
+		{
+			"run3",
+			novaseq2,
+			gin.Params{
+				gin.Param{Key: "runId", Value: "run2"},
+				gin.Param{Key: "brief", Value: "true"},
+			},
+			http.StatusOK,
+			`"experiment_name":"experiment 3"`,
+		},
+	}
+
+	for _, v := range(table) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+
+		rs.GetFn = func(run_id string, brief bool) (*cleve.Run, error) {
+			switch run_id {
+			case "run1":
+				return novaseq1, nil
+			case "run2":
+				return novaseq2, nil
+			case "run3":
+				return nextseq1, nil
+			default:
+				return nil, mongo.ErrNoDocuments
+			}
+		}
+
+		c.Params = v.Params
+		RunHandler(&db)(c)
+
+		if (!rs.GetInvoked) {
+			t.Fatal("`RunService.Get` not invoked")
+		}
+
+		if w.Code != v.Code {
+			t.Fatalf(`Got HTTP %d, expected %d for "%s"`, w.Code, v.Code, v.RunID)
+		}
+
+		b, _ := io.ReadAll(w.Body)
+		if strings.Count(string(b), v.Body) == 0 {
+			t.Fatalf(`Expected %v in body: %v`, v.Body, string(b))
 		}
 	}
 }
