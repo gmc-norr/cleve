@@ -44,6 +44,9 @@ var (
 			}
 
 			if err := db.Platforms.Create(&platform); err != nil {
+				if mongo.IsDuplicateKeyError(err) {
+					log.Fatalf("error: platform %s already exists", name)
+				}
 				log.Fatalf("error: %s", err)
 			}
 

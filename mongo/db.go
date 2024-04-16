@@ -11,7 +11,16 @@ import (
 	"time"
 )
 
+// Some exports that will be useful in route handling and testing
 var ErrNoDocuments = mongo.ErrNoDocuments
+var IsDuplicateKeyError = mongo.IsDuplicateKeyError
+var GenericDuplicateKeyError = mongo.WriteException{
+	WriteErrors: mongo.WriteErrors{
+		mongo.WriteError{
+			Code: 11000,
+		},
+	},
+}
 
 type DB struct {
 	Keys      cleve.APIKeyService

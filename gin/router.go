@@ -62,6 +62,8 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/api/runs/:runId", RunHandler(db))
 	r.GET("/api/runs/:runId/analysis", AnalysesHandler(db))
 	r.GET("/api/runs/:runId/analysis/:analysisId", AnalysisHandler(db))
+	r.GET("/api/platforms", PlatformsHandler(db))
+	r.GET("/api/platforms/:platformName", GetPlatformHandler(db))
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))
@@ -69,6 +71,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	authEndpoints.PATCH("/api/runs/:runId", UpdateRunHandler(db))
 	authEndpoints.POST("/api/runs/:runId/analysis", AddAnalysisHandler(db))
 	authEndpoints.PATCH("/api/runs/:runId/analysis/:analysisId", UpdateAnalysisHandler(db))
+	authEndpoints.POST("/api/platforms", AddPlatformHandler(db))
 
 	return r
 }
