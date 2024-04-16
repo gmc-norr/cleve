@@ -14,8 +14,9 @@ import (
 var ErrNoDocuments = mongo.ErrNoDocuments
 
 type DB struct {
-	Keys cleve.APIKeyService
-	Runs cleve.RunService
+	Keys      cleve.APIKeyService
+	Runs      cleve.RunService
+	Platforms cleve.PlatformService
 }
 
 func Connect() (*DB, error) {
@@ -47,10 +48,12 @@ func Connect() (*DB, error) {
 
 	runCollection := client.Database(viper.GetString("database.name")).Collection("runs")
 	keyCollection := client.Database(viper.GetString("database.name")).Collection("keys")
+	platformCollection := client.Database(viper.GetString("database.name")).Collection("platforms")
 
 	return &DB{
 		&APIKeyService{keyCollection},
 		&RunService{runCollection},
+		&PlatformService{platformCollection},
 	}, nil
 }
 
@@ -60,6 +63,13 @@ func (db *DB) SetIndexes() error {
 		return err
 	}
 	log.Printf("Set index %s on runs", name)
+
+	name, err = db.Platforms.SetIndex()
+	if err != nil {
+		return err
+	}
+	log.Printf("Set index %s on platforms", name)
+
 	return nil
 }
 

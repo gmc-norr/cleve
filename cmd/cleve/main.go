@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gmc-norr/cleve/cmd/cleve/db"
 	"github.com/gmc-norr/cleve/cmd/cleve/key"
+	"github.com/gmc-norr/cleve/cmd/cleve/platform"
 	"github.com/gmc-norr/cleve/cmd/cleve/run"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -25,6 +26,7 @@ func init() {
 	rootCmd.AddCommand(run.RunCmd)
 	rootCmd.AddCommand(db.DbCmd)
 	rootCmd.AddCommand(key.KeyCmd)
+	rootCmd.AddCommand(platform.PlatformCmd)
 }
 
 func initConfig() {
