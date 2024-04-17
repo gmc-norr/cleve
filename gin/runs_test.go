@@ -173,7 +173,7 @@ func TestRunHandler(t *testing.T) {
 		},
 	}
 
-	for _, v := range(table) {
+	for _, v := range table {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
@@ -193,7 +193,7 @@ func TestRunHandler(t *testing.T) {
 		c.Params = v.Params
 		RunHandler(&db)(c)
 
-		if (!rs.GetInvoked) {
+		if !rs.GetInvoked {
 			t.Fatal("`RunService.Get` not invoked")
 		}
 

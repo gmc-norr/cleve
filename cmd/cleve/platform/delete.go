@@ -9,7 +9,7 @@ import (
 
 var (
 	deleteName string
-	deleteCmd    = &cobra.Command{
+	deleteCmd  = &cobra.Command{
 		Use:   "delete [flags] name",
 		Short: "Delete a platform from the database",
 		PreRun: func(cmd *cobra.Command, args []string) {

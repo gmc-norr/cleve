@@ -138,7 +138,7 @@ func TestAddPlatformHandler(t *testing.T) {
 	table := map[string]struct {
 		RequestPlatform *cleve.Platform
 		Code            int
-		InvokesCreate	bool
+		InvokesCreate   bool
 		Error           error
 	}{
 		"novaseq1": {

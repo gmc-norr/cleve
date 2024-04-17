@@ -48,7 +48,7 @@ func GetPlatformHandler(db *mongo.DB) gin.HandlerFunc {
 
 func AddPlatformHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var platform cleve.Platform 
+		var platform cleve.Platform
 
 		if err := c.BindJSON(&platform); err != nil {
 			c.AbortWithStatusJSON(

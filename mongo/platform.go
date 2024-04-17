@@ -10,7 +10,7 @@ import (
 	"log"
 )
 
-type PlatformService struct{
+type PlatformService struct {
 	coll *mongo.Collection
 }
 

@@ -26,7 +26,7 @@ var (
 				log.Fatalf("error: %s", err)
 			}
 
-			if (jsonOutput) {
+			if jsonOutput {
 				jsonString, err := json.Marshal(&platforms)
 				if err != nil {
 					log.Fatalf("error: %s", err)

@@ -5,7 +5,7 @@ import (
 )
 
 var PlatformCmd = &cobra.Command{
-	Use: "platform [command]",
+	Use:   "platform [command]",
 	Short: "Manage sequencing platforms",
 }
 
