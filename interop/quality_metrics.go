@@ -147,6 +147,34 @@ func (m *QMetrics) ParseBins(r io.Reader) error {
 	return nil
 }
 
+func (m QMetrics) TotalPercentOverQ(threshold uint8) float32 {
+	maxCycles := m.MaxCyclePerLane()
+	all := 0
+	passed := 0
+	for _, r := range m.Records {
+		if r.Cycle >= maxCycles[r.Lane] {
+			continue
+		}
+		for i, b := range m.Bins {
+			if b.Low >= threshold {
+				passed += int(r.Histogram[i])
+			}
+			all += int(r.Histogram[i])
+		}
+	}
+	return 100 * float32(passed) / float32(all)
+}
+
+func (m QMetrics) MaxCyclePerLane() map[uint16]uint16 {
+	maxCycles := make(map[uint16]uint16)
+	for _, r := range m.Records {
+		if r.Cycle > maxCycles[r.Lane] {
+			maxCycles[r.Lane] = r.Cycle
+		}
+	}
+	return maxCycles
+}
+
 func ParseQMetrics(filename string) (*QMetrics, error) {
 	f, err := os.Open(filename)
 	if err != nil {
