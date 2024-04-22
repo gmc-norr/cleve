@@ -36,6 +36,10 @@ type QMetrics struct {
 	Records QRecords
 }
 
+func (m *QMetrics) IsSupported() bool {
+	return m.Version == 5 || m.Version == 6 || m.Version == 7
+}
+
 func (m *QMetrics) ParseBinnedRecord(r io.Reader) error {
 	record := QRecord{}
 	if err := binary.Read(r, binary.LittleEndian, &record.Lane); err != nil {

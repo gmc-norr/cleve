@@ -9,10 +9,6 @@ type InteropFile struct {
 	Version uint8
 }
 
-func (f *InteropFile) IsSupported() bool {
-	return f.Version == 5 || f.Version == 6 || f.Version == 7
-}
-
 type Tile interface {
 	Parse(io.Reader) error
 }
