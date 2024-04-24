@@ -32,7 +32,7 @@ func TestParseTileMetricRecord2(t *testing.T) {
 }
 
 func TestParseTileMetrics2(t *testing.T) {
-	b := []byte{0x2, 0xf, 0x1, 0x0, 0x7e, 0x4, 0xc8, 0x0, 0x9a, 0x99, 0xcd, 0x41}
+	b := []byte{0x2, 0xa, 0x1, 0x0, 0x7e, 0x4, 0xc8, 0x0, 0x9a, 0x99, 0xcd, 0x41}
 	r := bytes.NewReader(b)
 	m := &TileMetrics2{}
 	if err := m.Parse(r); err != nil {
@@ -43,8 +43,8 @@ func TestParseTileMetrics2(t *testing.T) {
 		t.Errorf("expected version 2, found %d", m.Version)
 	}
 
-	if m.RecordSize != 15 {
-		t.Errorf("expected record size 15, found %d", m.RecordSize)
+	if m.RecordSize != 10 {
+		t.Errorf("expected record size 10, found %d", m.RecordSize)
 	}
 
 	records := m.Records()
@@ -138,7 +138,7 @@ func TestParseTileMetrics3(t *testing.T) {
 		PercentAligned float32
 	}{
 		"first": {
-			[]byte{0x3, 0x14, 0x14, 0xae, 0x47, 0xf3,
+			[]byte{0x3, 0xf, 0x14, 0xae, 0x47, 0xf3,
 				0x2, 0x0,
 				0x7e, 0x4, 0x0, 0x0,
 				0x74,
@@ -147,7 +147,7 @@ func TestParseTileMetrics3(t *testing.T) {
 			},
 			1,
 			3,
-			20,
+			15,
 			2,
 			1150,
 			't',
@@ -157,7 +157,7 @@ func TestParseTileMetrics3(t *testing.T) {
 			0,
 		},
 		"second": {
-			[]byte{0x3, 0x14, 0x14, 0xae, 0x47, 0xf3, // version, record size, density
+			[]byte{0x3, 0xf, 0x14, 0xae, 0x47, 0xf3, // version, record size, density
 				// record 1
 				0x2, 0x0,
 				0x7e, 0x4, 0x0, 0x0,
@@ -173,7 +173,7 @@ func TestParseTileMetrics3(t *testing.T) {
 			},
 			2,
 			3,
-			20,
+			15,
 			2,
 			1150,
 			't',

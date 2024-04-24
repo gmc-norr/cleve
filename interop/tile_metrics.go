@@ -62,6 +62,14 @@ func (m *TileMetrics2) Parse(r io.Reader) error {
 		return err
 	}
 
+	if m.Version != 2 {
+		return fmt.Errorf("expected v3, got v%d", m.Version)
+	}
+
+	if m.RecordSize != 10 {
+		return fmt.Errorf("expected a record size of 10 bytes, got %d bytes", m.RecordSize)
+	}
+
 	for {
 		record := &TileMetricRecord2{}
 		if err := record.Parse(r); err != nil {
@@ -138,6 +146,14 @@ func (m *TileMetrics3) Parse(r io.Reader) error {
 		return err
 	}
 
+	if m.Version != 3 {
+		return fmt.Errorf("expected v3, got v%d", m.Version)
+	}
+
+	if m.RecordSize != 15 {
+		return fmt.Errorf("expected a record size of 15 bytes, got %d bytes", m.RecordSize)
+	}
+
 	if err := binary.Read(r, binary.LittleEndian, &m.Density); err != nil {
 		return fmt.Errorf("%s when parsing v3 tile metric density", err.Error())
 	}
@@ -197,5 +213,5 @@ func ParseTileMetrics(filename string) (TileMetrics, error) {
 		return m2, nil
 	}
 
-	return nil, fmt.Errorf("failed to parse tile metrics file: %s, %s", filename, err.Error())
+	return nil, fmt.Errorf("file is not tile metrics v2 or v3: %s", filename)
 }
