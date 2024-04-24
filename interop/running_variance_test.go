@@ -38,4 +38,3 @@ func TestRunningVariance(t *testing.T) {
 		t.Fatalf("expected sd %f, got %f", sd, v.SD())
 	}
 }
-

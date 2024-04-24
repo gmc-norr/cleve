@@ -19,9 +19,9 @@ type TileMetricsRecord interface {
 }
 
 type TileMetricRecord2 struct {
-	Lane uint16
-	Tile uint16
-	Code uint16
+	Lane  uint16
+	Tile  uint16
+	Code  uint16
 	Value float32
 }
 
@@ -75,12 +75,12 @@ func (m *TileMetrics2) Parse(r io.Reader) error {
 }
 
 type TileRecord3 struct {
-	ClusterCount float32
+	ClusterCount   float32
 	PFClusterCount float32
 }
 
 type ReadRecord3 struct {
-	ReadNumber uint32
+	ReadNumber     uint32
 	PercentAligned float32
 }
 
@@ -129,7 +129,7 @@ func (m TileMetricRecord3) Type() string {
 
 type TileMetrics3 struct {
 	InteropHeader
-	Density float32
+	Density           float32
 	TileMetricRecords []InteropRecord
 }
 

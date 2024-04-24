@@ -30,7 +30,7 @@ type QRecord struct {
 
 type QMetrics struct {
 	InteropHeader
-	HasBins    bool
+	HasBins bool
 	QBinConfig
 	Records QRecords
 }

@@ -7,8 +7,8 @@ import (
 
 type RunningVariance[T uint32 | uint64 | float32 | float64] struct {
 	weighted bool
-	wSum        float64
-	w2Sum       float64
+	wSum     float64
+	w2Sum    float64
 	Mean     float64
 	s        float64
 }
@@ -39,15 +39,15 @@ func (v *RunningVariance[T]) Push(x T, weight ...T) error {
 		v.s = 0
 	} else {
 		oldMean := v.Mean
-		v.Mean = oldMean + (w / v.wSum) * (float64(x)-oldMean)
-		v.s = v.s + w * (float64(x)-oldMean)*(float64(x)-v.Mean)
+		v.Mean = oldMean + (w/v.wSum)*(float64(x)-oldMean)
+		v.s = v.s + w*(float64(x)-oldMean)*(float64(x)-v.Mean)
 	}
 	return nil
 }
 
 func (v RunningVariance[T]) Var() float64 {
 	if v.wSum > 1 {
-		return v.s / (v.wSum-v.w2Sum/v.wSum)
+		return v.s / (v.wSum - v.w2Sum/v.wSum)
 	}
 	return 0
 }

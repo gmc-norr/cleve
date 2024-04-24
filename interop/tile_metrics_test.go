@@ -126,7 +126,7 @@ func TestParseTileMetricRecord3(t *testing.T) {
 func TestParseTileMetrics3(t *testing.T) {
 	cases := map[string]struct {
 		Bytes          []byte
-		RecordCount int
+		RecordCount    int
 		Version        uint8
 		RecordSize     uint8
 		Lane           uint16
@@ -198,12 +198,12 @@ func TestParseTileMetrics3(t *testing.T) {
 }
 
 func TestParseTileMetrics(t *testing.T) {
-	cases := map[string]struct{
-		Filename string
-		ShouldFail bool
+	cases := map[string]struct {
+		Filename    string
+		ShouldFail  bool
 		RecordCount int
-		Version uint8
-	} {
+		Version     uint8
+	}{
 		"novaseq": {
 			"../test_data/novaseq/TileMetricsOut.bin",
 			false,
