@@ -96,8 +96,7 @@ func TestParseQMetrics(t *testing.T) {
 func TestMaxCyclesPerLane(t *testing.T) {
 	var tile = Tile32(1)
 	m := QMetrics{
-		InteropFile{Version: 7},
-		20,
+		InteropHeader{Version: 7, RecordSize: 20},
 		true,
 		QBinConfig{
 			3,
@@ -139,8 +138,7 @@ func TestMaxCyclesPerLane(t *testing.T) {
 func TestPercentOverQ(t *testing.T) {
 	var tile = Tile32(1)
 	m := QMetrics{
-		InteropFile{Version: 7},
-		20,
+		InteropHeader{Version: 7, RecordSize: 20},
 		true,
 		QBinConfig{
 			3,

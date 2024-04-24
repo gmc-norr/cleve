@@ -2,11 +2,33 @@ package interop
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
-type InteropFile struct {
-	Version uint8
+type InteropHeader struct {
+	Version    uint8
+	RecordSize uint8
+}
+
+func (h *InteropHeader) Parse(r io.Reader) error {
+	if err := binary.Read(r, binary.LittleEndian, h); err != nil {
+		return fmt.Errorf("%s when parsing interop header", err.Error())
+	}
+	return nil
+}
+
+type InteropFile interface {
+	GetVersion() uint8
+	GetRecordSize() uint8
+}
+
+type InteropRecord interface {
+	Type() string
+}
+
+type InteropRecordHolder interface {
+	Records() []InteropRecord
 }
 
 type Tile interface {

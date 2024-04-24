@@ -29,8 +29,7 @@ type QRecord struct {
 }
 
 type QMetrics struct {
-	InteropFile
-	RecordSize uint8
+	InteropHeader
 	HasBins    bool
 	QBinConfig
 	Records QRecords
@@ -45,7 +44,7 @@ func (m *QMetrics) ParseBinnedRecord(r io.Reader) error {
 	if err := binary.Read(r, binary.LittleEndian, &record.Lane); err != nil {
 		return err
 	}
-	switch m.Version {
+	switch m.InteropHeader.Version {
 	case 5, 6:
 		record.Tile = new(Tile16)
 	case 7:

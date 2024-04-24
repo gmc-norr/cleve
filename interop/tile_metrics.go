@@ -8,60 +8,165 @@ import (
 	"os"
 )
 
-type TileMetric struct {
-	ClusterCount   float32
-	PFClusterCount float32
-}
-
-type ReadMetric struct {
-	ReadNumber     uint32
-	PercentAligned float32
-}
-
-type LTC struct {
-	Lane uint16
-	Tile uint32
-	Code uint8
-}
-
-type TileRecord struct {
-	LTC
-	TileMetric
-	ReadMetric
-}
-
-type TileMetrics struct {
+type TileMetrics interface {
 	InteropFile
-	RecordSize uint8
-	Density    float32
-	TileRecords []TileRecord
+	InteropRecordHolder
+	Parse(io.Reader) error
 }
 
-func (m *TileMetrics) ParseRecords(r io.Reader) error {
-	for {
-		record := TileRecord{}
-		if err := binary.Read(r, binary.LittleEndian, &record.LTC); err != nil {
-			if err == io.EOF {
-				break
-			}
-			return err
+type TileMetricsRecord interface {
+	InteropRecord
+}
+
+type TileMetricRecord2 struct {
+	Lane uint16
+	Tile uint16
+	Code uint16
+	Value float32
+}
+
+func (m *TileMetricRecord2) Parse(r io.Reader) error {
+	if err := binary.Read(r, binary.LittleEndian, m); err != nil {
+		// Expecting EOF here
+		if err != io.EOF {
+			return fmt.Errorf("%s when parsing tile metric v2 record", err.Error())
 		}
-		switch rune(record.Code) {
-		case 't':
-			binary.Read(r, binary.LittleEndian, &record.TileMetric)
-		case 'r':
-			binary.Read(r, binary.LittleEndian, &record.ReadMetric)
-		default:
-			return fmt.Errorf("unknown code %q", record.Code)
-		}
-		m.TileRecords = append(m.TileRecords, record)
+		return err
 	}
 	return nil
 }
 
-// Parse tile metrics from `InterOp/TileMetricsOut.bin` or
-// `InterOp/TileMetrics.bin` files.
-func ParseTileMetrics(filename string) (*TileMetrics, error) {
+func (m *TileMetricRecord2) Type() string {
+	return "record"
+}
+
+type TileMetrics2 struct {
+	InteropHeader
+	TileMetricRecords []InteropRecord
+}
+
+func (m TileMetrics2) Records() []InteropRecord {
+	return m.TileMetricRecords
+}
+
+func (m TileMetrics2) GetRecordSize() uint8 {
+	return m.RecordSize
+}
+
+func (m TileMetrics2) GetVersion() uint8 {
+	return m.Version
+}
+
+func (m *TileMetrics2) Parse(r io.Reader) error {
+	if err := m.InteropHeader.Parse(r); err != nil {
+		return err
+	}
+
+	for {
+		record := &TileMetricRecord2{}
+		if err := record.Parse(r); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		m.TileMetricRecords = append(m.TileMetricRecords, record)
+	}
+}
+
+type TileRecord3 struct {
+	ClusterCount float32
+	PFClusterCount float32
+}
+
+type ReadRecord3 struct {
+	ReadNumber uint32
+	PercentAligned float32
+}
+
+type TileMetricRecord3 struct {
+	Lane uint16
+	Tile uint32
+	Code byte
+	TileRecord3
+	ReadRecord3
+}
+
+func (m *TileMetricRecord3) Parse(r io.Reader) error {
+	if err := binary.Read(r, binary.LittleEndian, &m.Lane); err != nil {
+		// Expecting EOF here
+		if err != io.EOF {
+			return fmt.Errorf("%s when parsing tile metric v3 lane", err.Error())
+		}
+		return err
+	}
+	if err := binary.Read(r, binary.LittleEndian, &m.Tile); err != nil {
+		return fmt.Errorf("%s when parsing tile metric v3 tile", err.Error())
+	}
+	if err := binary.Read(r, binary.LittleEndian, &m.Code); err != nil {
+		return fmt.Errorf("%s when parsing tile metric v3 code", err.Error())
+	}
+
+	switch rune(m.Code) {
+	case 'r':
+		if err := binary.Read(r, binary.LittleEndian, &m.ReadRecord3); err != nil {
+			return fmt.Errorf("%s when parsing tile metric v3 read record", err.Error())
+		}
+	case 't':
+		if err := binary.Read(r, binary.LittleEndian, &m.TileRecord3); err != nil {
+			return fmt.Errorf("%s when parsing tile metric v3 tile record", err.Error())
+		}
+	default:
+		return fmt.Errorf("invalid record code for version 3: %c", m.Code)
+	}
+
+	return nil
+}
+
+func (m TileMetricRecord3) Type() string {
+	return string(m.Code)
+}
+
+type TileMetrics3 struct {
+	InteropHeader
+	Density float32
+	TileMetricRecords []InteropRecord
+}
+
+func (m *TileMetrics3) Parse(r io.Reader) error {
+	if err := m.InteropHeader.Parse(r); err != nil {
+		return err
+	}
+
+	if err := binary.Read(r, binary.LittleEndian, &m.Density); err != nil {
+		return fmt.Errorf("%s when parsing v3 tile metric density", err.Error())
+	}
+
+	for {
+		record := &TileMetricRecord3{}
+		if err := record.Parse(r); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return fmt.Errorf("%s when parsing v3 tile metric record", err.Error())
+		}
+		m.TileMetricRecords = append(m.TileMetricRecords, record)
+	}
+}
+
+func (m TileMetrics3) Records() []InteropRecord {
+	return m.TileMetricRecords
+}
+
+func (m TileMetrics3) GetRecordSize() uint8 {
+	return m.RecordSize
+}
+
+func (m TileMetrics3) GetVersion() uint8 {
+	return m.Version
+}
+
+func ParseTileMetrics(filename string) (TileMetrics, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -70,70 +175,27 @@ func ParseTileMetrics(filename string) (*TileMetrics, error) {
 
 	r := bufio.NewReader(f)
 
-	m := &TileMetrics{}
-	binary.Read(r, binary.LittleEndian, &m.Version)
-	binary.Read(r, binary.LittleEndian, &m.RecordSize)
-	binary.Read(r, binary.LittleEndian, &m.Density)
-	
-	m.ParseRecords(r)
+	// Try version 3 first
+	// var m TileMetrics
+	m3 := &TileMetrics3{}
+	err = m3.Parse(r)
 
-	return m, nil
-}
-
-// Calculate the percentage of all clusters passing filters on the
-// flowcell, returning the mean percentage passing filters and the
-// standard deviation across all tiles.
-func (m TileMetrics) PercentPF() (float64, float64) {
-	v := NewRunningVariance[float64](true)
-	for _, r := range m.TileRecords {
-		if rune(r.Code) != 't' {
-			continue
-		}
-		weight := float64(r.TileMetric.ClusterCount)
-		v.Push(100 * float64(r.TileMetric.PFClusterCount) / float64(r.TileMetric.ClusterCount), weight)
-	}
-	return v.Mean, v.SD()
-}
-
-// Calculate the percentage of all clusters passing filters per lane.
-// Two maps are returned with the keys representing the lane and the
-// values represent the percentage passing filters and the standard
-// deviation, respectively.
-func (m TileMetrics) PercentPFLane() (map[uint16]float64, map[uint16]float64) {
-	vars := make(map[uint16]*RunningVariance[float64])
-
-	for _, r := range m.TileRecords {
-		if rune(r.Code) != 't' {
-			continue
-		}
-		if _, ok := vars[r.Lane]; !ok {
-			vars[r.Lane] = NewRunningVariance[float64](true)
-		}
-		weight := float64(r.TileMetric.ClusterCount)
-		vars[r.Lane].Push(100 * float64(r.TileMetric.PFClusterCount) / float64(r.TileMetric.ClusterCount), weight)
-	}
-	
-	lanePercent := make(map[uint16]float64)
-	laneSD := make(map[uint16]float64)
-	for k, v := range vars {
-		lanePercent[k] = v.Mean
-		laneSD[k] = v.SD()
-	}
-	return lanePercent, laneSD
-}
-
-// Calculate percentage aligned against PhiX across all tiles on the
-// flowcell, returning the mean percentage aligned and the standard
-// deviation.
-func (m *TileMetrics) PercentAligned() (float64, float64) {
-	v := NewRunningVariance[float32](false)
-	for _, r := range m.TileRecords {
-		if rune(r.Code) != 'r' {
-			continue
-		}
-
-		v.Push(r.ReadMetric.PercentAligned)
+	if err == nil {
+		return m3, nil
 	}
 
-	return v.Mean, v.SD()
+	_, err = f.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil, fmt.Errorf("failed to rewind tile metrics file: %s, %s", filename, err.Error())
+	}
+	r = bufio.NewReader(f)
+
+	m2 := &TileMetrics2{}
+	err = m2.Parse(r)
+
+	if err == nil {
+		return m2, nil
+	}
+
+	return nil, fmt.Errorf("failed to parse tile metrics file: %s, %s", filename, err.Error())
 }
