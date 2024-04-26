@@ -7,6 +7,7 @@ import (
 
 type RunningVariance[T uint32 | uint64 | float32 | float64] struct {
 	weighted bool
+	Sum      T
 	wSum     float64
 	w2Sum    float64
 	Mean     float64
@@ -42,6 +43,7 @@ func (v *RunningVariance[T]) Push(x T, weight ...T) error {
 		v.Mean = oldMean + (w/v.wSum)*(float64(x)-oldMean)
 		v.s = v.s + w*(float64(x)-oldMean)*(float64(x)-v.Mean)
 	}
+	v.Sum += x
 	return nil
 }
 

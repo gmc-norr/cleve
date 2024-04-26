@@ -7,7 +7,7 @@ import (
 )
 
 func almostEqual[T float32 | float64](a, b T) bool {
-	return (a - b) < T(math.Pow(10, -6))
+	return math.Abs(float64(a-b)) < math.Pow(10, -6)
 }
 
 func roundFloat(val float64, precision uint) float64 {
@@ -26,8 +26,49 @@ func TestParseTileMetricRecord2(t *testing.T) {
 	if record.Code != 200 {
 		t.Errorf("expected code 200, got %d", record.Code)
 	}
+	if record.Type() != "phasing" {
+		t.Errorf(`expected type "phasing", got %s`, record.Type())
+	}
+	if record.GetRead() != 1 {
+		t.Errorf(`expected record to be associated with read 1, got read %d`, record.GetRead())
+	}
 	if record.Value != 25.7 {
 		t.Errorf("expected value 25.7, got %.2f", record.Value)
+	}
+}
+
+func TestReadMetrics2(t *testing.T) {
+	cases := map[uint16]struct {
+		Type string
+		Read int
+	}{
+		100: {"cluster_density", -1},
+		101: {"pf_cluster_density", -1},
+		102: {"cluster_count", -1},
+		103: {"pf_cluster_count", -1},
+		200: {"phasing", 1},
+		201: {"prephasing", 1},
+		202: {"phasing", 2},
+		203: {"prephasing", 2},
+		204: {"phasing", 3},
+		205: {"prephasing", 3},
+		206: {"phasing", 4},
+		207: {"prephasing", 4},
+		300: {"percent_aligned", 1},
+		301: {"percent_aligned", 2},
+		302: {"percent_aligned", 3},
+		303: {"percent_aligned", 4},
+	}
+
+	for code, v := range cases {
+		m := TileMetricRecord2{}
+		m.Code = code
+		if m.Type() != v.Type {
+			t.Errorf(`expected type "%s" for code %d, got "%s"`, v.Type, code, m.Type())
+		}
+		if m.GetRead() != v.Read {
+			t.Errorf(`expected read %d for code %d, got %d`, v.Read, code, m.GetRead())
+		}
 	}
 }
 
@@ -199,28 +240,46 @@ func TestParseTileMetrics3(t *testing.T) {
 
 func TestParseTileMetrics(t *testing.T) {
 	cases := map[string]struct {
-		Filename    string
-		ShouldFail  bool
-		RecordCount int
-		Version     uint8
+		Filename               string
+		ShouldFail             bool
+		RecordCount            int
+		Version                uint8
+		MegaClusterCount       float64
+		MegaPFClusterCount     float64
+		PercentAligned         float64
+		LaneReadPercentAligned map[int]map[int][2]float64
 	}{
 		"novaseq": {
 			"../test_data/novaseq/TileMetricsOut.bin",
 			false,
 			1680,
 			3,
+			2 * 1_393_250_000 * 1e-6,
+			(1_101_380_000 + 1_067_940_000) * 1e-6,
+			0.73,
+			map[int]map[int][2]float64{
+				1: {1: {0.85, 0.03}, 4: {0.80, 0.05}},
+				2: {1: {0.64, 0.01}, 4: {0.63, 0.01}},
+			},
 		},
 		"nextseq": {
 			"../test_data/nextseq1/TileMetricsOut.bin",
 			false,
 			2880,
 			2,
+			(39_720_000 + 38_320_000 + 36_870_000 + 36_150_000) * 1e-6,
+			(35_110_000 + 33_940_000 + 34_330_000 + 33_760_000) * 1e-6,
+			45.15,
+			map[int]map[int][2]float64{
+				1: {1: {45.07, 0.75}, 4: {44.31, 0.76}},
+				2: {1: {45.64, 0.97}, 4: {44.75, 0.97}},
+				3: {1: {45.59, 0.36}, 4: {44.86, 0.33}},
+				4: {1: {45.90, 0.60}, 4: {45.08, 0.61}},
+			},
 		},
 		"invalid": {
-			"../test_data/novaseq/QMetricsOut.bin",
-			true,
-			0,
-			0,
+			Filename:   "../test_data/novaseq/QMetricsOut.bin",
+			ShouldFail: true,
 		},
 	}
 
@@ -239,6 +298,34 @@ func TestParseTileMetrics(t *testing.T) {
 
 		if len(m.Records()) != v.RecordCount {
 			t.Errorf(`case "%s": expected %d records, got %d`, k, v.RecordCount, len(m.Records()))
+		}
+
+		megaClusters := m.ClusterCount() * math.Pow(10, -6)
+		if !almostEqual(roundFloat(megaClusters, 2), v.MegaClusterCount) {
+			t.Errorf(`case "%s": expected %.02f million clusters, got %.02f`, k, v.MegaClusterCount, megaClusters)
+		}
+
+		megaPFClusters := m.PFClusterCount() * math.Pow(10, -6)
+		if !almostEqual(roundFloat(megaPFClusters, 2), v.MegaPFClusterCount) {
+			t.Errorf(`case "%s": expected %.02f million clusters, got %.02f`, k, v.MegaPFClusterCount, megaPFClusters)
+		}
+
+		if !almostEqual(roundFloat(m.PercentAligned(), 2), v.PercentAligned) {
+			t.Errorf(`case "%s": expected %.02f%% percent aligned, got %.02f%%`, k, v.PercentAligned, m.PercentAligned())
+		}
+
+		a := m.LaneReadPercentAligned()
+		for lane, readmap := range v.LaneReadPercentAligned {
+			for read, stats := range readmap {
+				if !almostEqual(stats[0], roundFloat(a[lane][read][0], 2)) {
+					t.Errorf(`case "%s": expected %.02f%% aligned for lane %d, read %d, got %.02f%%`,
+						k, stats[0], lane, read, a[lane][read][0])
+				}
+				if !almostEqual(stats[1], roundFloat(a[lane][read][1], 2)) {
+					t.Errorf(`case "%s": expected ± %.02f%% aligned for lane %d, read %d, got ± %.02f%%`,
+						k, stats[1], lane, read, a[lane][read][1])
+				}
+			}
 		}
 	}
 }
