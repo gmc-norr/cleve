@@ -21,7 +21,7 @@ func TestRunningVariance(t *testing.T) {
 	variance := 1.460834
 	sd := 1.208649
 
-	v := RunningVariance[float32]{}
+	v := RunningSummary[float32]{}
 	for _, x := range numbers {
 		v.Push(x)
 	}

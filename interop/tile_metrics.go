@@ -122,7 +122,7 @@ func (m *TileMetrics2) Parse(r io.Reader) error {
 }
 
 func (m TileMetrics2) LaneClusterCount() map[int][2]float64 {
-	laneSummaries := make(map[int]*RunningVariance[float64])
+	laneSummaries := make(map[int]*RunningSummary[float64])
 
 	for _, r := range m.TileMetricRecords {
 		if r.Type() != "cluster_count" {
@@ -131,7 +131,7 @@ func (m TileMetrics2) LaneClusterCount() map[int][2]float64 {
 		record := r.(*TileMetricRecord2)
 		lane := int(record.Lane)
 		if _, ok := laneSummaries[lane]; !ok {
-			laneSummaries[lane] = &RunningVariance[float64]{}
+			laneSummaries[lane] = &RunningSummary[float64]{}
 		}
 		laneSummaries[lane].Push(float64(record.Value))
 	}
@@ -173,7 +173,7 @@ func (m TileMetrics2) PFClusterCount() float64 {
 }
 
 func (m TileMetrics2) LaneReadPercentAligned() map[int]map[int][2]float64 {
-	laneSummaries := make(map[int]map[int]*RunningVariance[float64])
+	laneSummaries := make(map[int]map[int]*RunningSummary[float64])
 	for _, r := range m.TileMetricRecords {
 		if r.Type() != "percent_aligned" {
 			continue
@@ -182,10 +182,10 @@ func (m TileMetrics2) LaneReadPercentAligned() map[int]map[int][2]float64 {
 		lane := int(record.Lane)
 		read := record.GetRead()
 		if _, ok := laneSummaries[lane]; !ok {
-			laneSummaries[lane] = make(map[int]*RunningVariance[float64])
+			laneSummaries[lane] = make(map[int]*RunningSummary[float64])
 		}
 		if _, ok := laneSummaries[lane][read]; !ok {
-			laneSummaries[lane][read] = &RunningVariance[float64]{}
+			laneSummaries[lane][read] = &RunningSummary[float64]{}
 		}
 		laneSummaries[lane][read].Push(float64(record.Value))
 	}
@@ -365,7 +365,7 @@ func (m TileMetrics3) PercentPF() float64 {
 }
 
 func (m TileMetrics3) LaneReadPercentAligned() map[int]map[int][2]float64 {
-	var laneSummaries = make(map[int]map[int]*RunningVariance[float64])
+	var laneSummaries = make(map[int]map[int]*RunningSummary[float64])
 	for _, v := range m.TileMetricRecords {
 		if v.Type() != "r" {
 			continue
@@ -375,10 +375,10 @@ func (m TileMetrics3) LaneReadPercentAligned() map[int]map[int][2]float64 {
 			continue
 		}
 		if _, ok := laneSummaries[int(record.Lane)]; !ok {
-			laneSummaries[int(record.Lane)] = make(map[int]*RunningVariance[float64])
+			laneSummaries[int(record.Lane)] = make(map[int]*RunningSummary[float64])
 		}
 		if _, ok := laneSummaries[int(record.Lane)][int(record.ReadNumber)]; !ok {
-			laneSummaries[int(record.Lane)][int(record.ReadNumber)] = &RunningVariance[float64]{}
+			laneSummaries[int(record.Lane)][int(record.ReadNumber)] = &RunningSummary[float64]{}
 		}
 		laneSummaries[int(record.Lane)][int(record.ReadNumber)].Push(float64(record.PercentAligned))
 	}

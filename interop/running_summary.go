@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-type RunningVariance[T uint32 | uint64 | float32 | float64] struct {
+type RunningSummary[T uint32 | uint64 | float32 | float64] struct {
 	weighted bool
 	Sum      T
 	wSum     float64
@@ -14,11 +14,11 @@ type RunningVariance[T uint32 | uint64 | float32 | float64] struct {
 	s        float64
 }
 
-func NewRunningVariance[T uint32 | uint64 | float32 | float64](weighted bool) *RunningVariance[T] {
-	return &RunningVariance[T]{weighted: weighted}
+func NewRunningSummary[T uint32 | uint64 | float32 | float64](weighted bool) *RunningSummary[T] {
+	return &RunningSummary[T]{weighted: weighted}
 }
 
-func (v *RunningVariance[T]) Push(x T, weight ...T) error {
+func (v *RunningSummary[T]) Push(x T, weight ...T) error {
 	if math.IsNaN(float64(x)) {
 		return nil
 	}
@@ -47,13 +47,13 @@ func (v *RunningVariance[T]) Push(x T, weight ...T) error {
 	return nil
 }
 
-func (v RunningVariance[T]) Var() float64 {
+func (v RunningSummary[T]) Var() float64 {
 	if v.wSum > 1 {
 		return v.s / (v.wSum - v.w2Sum/v.wSum)
 	}
 	return 0
 }
 
-func (v RunningVariance[T]) SD() float64 {
+func (v RunningSummary[T]) SD() float64 {
 	return math.Sqrt(v.Var())
 }
