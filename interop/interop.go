@@ -18,6 +18,14 @@ func (h *InteropHeader) Parse(r io.Reader) error {
 	return nil
 }
 
+func (h InteropHeader) GetVersion() uint8 {
+	return h.Version
+}
+
+func (h InteropHeader) GetRecordSize() uint8 {
+	return h.RecordSize
+}
+
 type InteropFile interface {
 	GetVersion() uint8
 	GetRecordSize() uint8

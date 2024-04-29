@@ -88,14 +88,6 @@ func (m TileMetrics2) Records() []InteropRecord {
 	return m.TileMetricRecords
 }
 
-func (m TileMetrics2) GetRecordSize() uint8 {
-	return m.RecordSize
-}
-
-func (m TileMetrics2) GetVersion() uint8 {
-	return m.Version
-}
-
 func (m *TileMetrics2) Parse(r io.Reader) error {
 	if err := m.InteropHeader.Parse(r); err != nil {
 		return err
@@ -411,14 +403,6 @@ func (m TileMetrics3) PercentAligned() float64 {
 
 func (m TileMetrics3) Records() []InteropRecord {
 	return m.TileMetricRecords
-}
-
-func (m TileMetrics3) GetRecordSize() uint8 {
-	return m.RecordSize
-}
-
-func (m TileMetrics3) GetVersion() uint8 {
-	return m.Version
 }
 
 func ParseTileMetrics(filename string) (TileMetrics, error) {
