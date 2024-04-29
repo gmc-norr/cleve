@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"sort"
 )
 
 type InteropHeader struct {
@@ -52,3 +53,29 @@ func (t *Tile16) Parse(r io.Reader) error {
 func (t *Tile32) Parse(r io.Reader) error {
 	return binary.Read(r, binary.LittleEndian, t)
 }
+
+type ReadConfig struct {
+	ReadLengths map[int]int
+}
+
+func (r ReadConfig) CycleToRead(cycle int) int {
+	reads := make([]int, 0)
+	for key := range r.ReadLengths {
+		reads = append(reads, key)
+	}
+	sort.Ints(reads)
+
+	currentStart := 0
+	for _, read := range reads {
+		if cycle > currentStart && cycle <= currentStart + r.ReadLengths[read] {
+			return read
+		}
+		currentStart += r.ReadLengths[read]
+	}
+	return -1
+}
+
+type LaneStats = map[int]*RunningSummary[float64]
+type TileStats = map[int]map[int]*RunningSummary[float64]
+type ReadStats = map[int]map[int]*RunningSummary[float64]
+type CycleStats = map[int]map[int]map[int]*RunningSummary[float64]
