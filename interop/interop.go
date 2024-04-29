@@ -75,7 +75,6 @@ func (r ReadConfig) CycleToRead(cycle int) int {
 	return -1
 }
 
-type LaneStats = map[int]*RunningSummary[float64]
-type TileStats = map[int]map[int]*RunningSummary[float64]
-type ReadStats = map[int]map[int]*RunningSummary[float64]
-type CycleStats = map[int]map[int]map[int]*RunningSummary[float64]
+type StatsMap1 = map[int]*RunningSummary[float64]
+type StatsMap2 = map[int]map[int]*RunningSummary[float64]
+type StatsMap3 = map[int]map[int]map[int]*RunningSummary[float64]

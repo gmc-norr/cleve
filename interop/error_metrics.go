@@ -12,10 +12,10 @@ import (
 type ErrorMetrics interface {
 	InteropFile
 	InteropRecordHolder
-	LaneErrorRate() LaneStats
-	TileErrorRate() TileStats
-	CycleErrorRate() CycleStats
-	ReadErrorRate(ReadConfig) ReadStats
+	LaneErrorRate() StatsMap1
+	TileErrorRate() StatsMap2
+	CycleErrorRate() StatsMap3
+	ReadErrorRate(ReadConfig) StatsMap2
 }
 
 type ErrorMetricRecord6 struct {
@@ -74,18 +74,18 @@ func (m ErrorMetrics6) Records() []InteropRecord {
 	return m.ErrorMetricRecords
 }
 
-func (m ErrorMetrics6) CycleErrorRate() CycleStats {
-	summaries := make(CycleStats)
+func (m ErrorMetrics6) CycleErrorRate() StatsMap3 {
+	summaries := make(StatsMap3)
 	for _, r := range m.ErrorMetricRecords {
 		record := r.(ErrorMetricRecord6)
 		lane := int(record.Lane)
 		tile := int(record.Tile)
 		cycle := int(record.Cycle)
 		if _, ok := summaries[lane]; !ok {
-			summaries[lane] = make(TileStats)
+			summaries[lane] = make(StatsMap2)
 		}
 		if _, ok := summaries[lane][tile]; !ok {
-			summaries[lane][tile] = make(LaneStats)
+			summaries[lane][tile] = make(StatsMap1)
 		}
 		if _, ok := summaries[lane][tile][cycle]; !ok {
 			summaries[lane][tile][cycle] = &RunningSummary[float64]{}
@@ -96,14 +96,14 @@ func (m ErrorMetrics6) CycleErrorRate() CycleStats {
 	return summaries
 }
 
-func (m ErrorMetrics6) TileErrorRate() TileStats {
-	summaries := make(TileStats)
+func (m ErrorMetrics6) TileErrorRate() StatsMap2 {
+	summaries := make(StatsMap2)
 	for _, r := range m.ErrorMetricRecords {
 		record := r.(ErrorMetricRecord6)
 		lane := int(record.Lane)
 		tile := int(record.Tile)
 		if _, ok := summaries[lane]; !ok {
-			summaries[lane] = make(LaneStats)
+			summaries[lane] = make(StatsMap1)
 		}
 		if _, ok := summaries[lane][tile]; !ok {
 			summaries[lane][tile] = &RunningSummary[float64]{}
@@ -114,14 +114,14 @@ func (m ErrorMetrics6) TileErrorRate() TileStats {
 	return summaries
 }
 
-func (m ErrorMetrics6) LaneErrorRate() LaneStats {
-	summaries := make(LaneStats)
+func (m ErrorMetrics6) LaneErrorRate() StatsMap1 {
+	summaries := make(StatsMap1)
 	return summaries
 }
 
-func (m ErrorMetrics6) ReadErrorRate(readConfig ReadConfig) ReadStats {
+func (m ErrorMetrics6) ReadErrorRate(readConfig ReadConfig) StatsMap2 {
 	// Summarise the error rate for each lane/tile/read combination
-	tileSummaries := make(CycleStats)
+	tileSummaries := make(StatsMap3)
 	for _, r := range m.ErrorMetricRecords {
 		record := r.(ErrorMetricRecord6)
 		if math.IsNaN(float64(record.ErrorRate)) {
@@ -132,10 +132,10 @@ func (m ErrorMetrics6) ReadErrorRate(readConfig ReadConfig) ReadStats {
 		tile := int(record.Tile)
 		read := readConfig.CycleToRead(cycle)
 		if _, ok := tileSummaries[lane]; !ok {
-			tileSummaries[lane] = make(TileStats)
+			tileSummaries[lane] = make(StatsMap2)
 		}
 		if _, ok := tileSummaries[lane][tile]; !ok {
-			tileSummaries[lane][tile] = make(LaneStats)
+			tileSummaries[lane][tile] = make(StatsMap1)
 		}
 		if _, ok := tileSummaries[lane][tile][read]; !ok {
 			tileSummaries[lane][tile][read] = &RunningSummary[float64]{}
@@ -144,10 +144,10 @@ func (m ErrorMetrics6) ReadErrorRate(readConfig ReadConfig) ReadStats {
 	}
 
 	// Summarise the stats for each lane/read
-	readSummaries := make(ReadStats)
+	readSummaries := make(StatsMap2)
 	for lane, lanestats := range tileSummaries {
 		if _, ok := readSummaries[lane]; !ok {
-			readSummaries[lane] = make(LaneStats)
+			readSummaries[lane] = make(StatsMap1)
 		}
 		for _, tilestats := range lanestats {
 			for read, readstats := range tilestats {
