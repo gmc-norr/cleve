@@ -4,276 +4,157 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 )
 
-var InteropSummaryColumns = map[string]FieldValue {
-	"Level": &StringValue{},
-	"Yield": &FloatValue{},
-	"Projected Yield": &FloatValue{},
-	"Aligned": &FloatValue{},
-	"Error Rate": &FloatValue{},
-	"Intensity C1": &FloatValue{},
-	"%>=Q30": &FloatValue{},
-	"% Occupied": &FloatValue{},
-}
-
-var InteropReadColumns = map[string]FieldValue {
-	"Lane": &IntValue{},
-	"Surface": &IntValue{},
-	"Tiles": &IntValue{},
-	"Density": &MeanSdValue{},
-	"Cluster PF": &MeanSdValue{},
-	"Legacy Phasing/Prephasing Rate": &DoubleValue{},
-	"Phasing  slope/offset": &DoubleValue{},
-	"Prephasing slope/offset": &DoubleValue{},
-	"Reads": &FloatValue{},
-	"Reads PF": &FloatValue{},
-	"%>=Q30": &FloatValue{},
-	"Yield": &FloatValue{},
-	"Cycles Error": &RangeValue{},
-	"Aligned": &MeanSdValue{},
-	"Error": &MeanSdValue{},
-	"Error (35)": &MeanSdValue{},
-	"Error (75)": &MeanSdValue{},
-	"Error (100)": &MeanSdValue{},
-	"% Occupied": &MeanSdValue{},
-	"Intensity C1": &MeanSdValue{},
-}
-
 type InteropSummary struct {
-	Version      string
-	RunDirectory string
-	RunSummary
-	ReadSummaries []ReadSummary
+	Version       string
+	RunId         string `bson:"run_id"`
+	RunDirectory  string
+	RunSummary    map[string][]RunSummary
+	ReadSummaries map[string][]ReadSummary
 }
 
 type RunSummary struct {
-	Header []string
-	Fields map[string]FieldValue
+	Level           string
+	Yield           int
+	ProjectedYield  int
+	PercentAligned  JsonFloat
+	ErrorRate       JsonFloat
+	IntensityC1     JsonFloat
+	PercentQ30      JsonFloat
+	PercentOccupied JsonFloat
+}
+
+type JsonFloat float64
+
+func (x JsonFloat) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	if math.IsNaN(float64(x)) {
+		buf.WriteString(`null`)
+		return buf.Bytes(), nil
+	}
+	return json.Marshal(float64(x))
+}
+
+type MeanSd struct {
+	Mean JsonFloat
+	SD   JsonFloat
 }
 
 type ReadSummary struct {
-	ReadName   string
-	Header     []string
-	EntryCount int
-	Fields     map[string][]FieldValue
+	Lane             int
+	Tiles            int
+	Density          MeanSd
+	ClusterPF        MeanSd
+	PhasingRate      JsonFloat
+	PrephasingRate   JsonFloat
+	PhasingSlope     JsonFloat
+	PhasingOffset    JsonFloat
+	PrephasingSlope  JsonFloat
+	PrephasingOffset JsonFloat
+	Reads            int
+	ReadsPF          int
+	PercentQ30       JsonFloat
+	Yield            int
+	CyclesError      int
+	PercentAligned   MeanSd
+	Error            MeanSd
+	Error35          MeanSd
+	Error75          MeanSd
+	Error100         MeanSd
+	PercentOccupied  MeanSd
+	IntensityC1      MeanSd
 }
 
-type FieldValue interface {
-	Parse(string) error
-	String() string
-}
-
-type IntValue struct {
-	Value int
-}
-
-func (v IntValue) String() string {
-	return fmt.Sprintf("%d", v.Value)
-}
-
-func (v *IntValue) Parse(s string) error {
-	if s == "-" {
-		v.Value = -1
-		return nil
-	}
-	x, err := strconv.Atoi(s)
-	if err != nil {
-		return err
-	}
-	v.Value = x
-	return nil
-}
-
-func NewIntValue(s string) *IntValue {
-	i := IntValue{}
-	if err := i.Parse(s); err != nil {
-		panic(err)
-	}
-	return &i
-}
-
-type FloatValue struct {
-	Value float64
-}
-
-func (v FloatValue) String() string {
-	return fmt.Sprintf("%.02f", v.Value)
-}
-
-func (v *FloatValue) Parse(s string) error {
-	x, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return(err)
-	}
-	v.Value = x
-	return nil
-}
-
-func NewFloatValue(s string) *FloatValue {
-	f := FloatValue{}
-	err := f.Parse(s)
-	if err != nil {
-		panic(err)
-	}
-	return &f
-}
-
-type StringValue struct {
-	Value string
-}
-
-func (v StringValue) String() string {
-	return v.Value
-}
-
-func (v *StringValue) Parse(s string) error {
-	v.Value = s
-	return nil
-}
-
-func NewStringValue(s string) *StringValue {
-	return &StringValue{s}
-}
-
-type DoubleValue struct {
-	First  float64
-	Second float64
-}
-
-func (v DoubleValue) String() string {
-	return fmt.Sprintf("%.02f / %.02f", v.First, v.Second)
-}
-
-func (v *DoubleValue) Parse(s string) error {
-	splitString := strings.Split(s, "/")
-	if len(splitString) != 2 {
-		panic("illegal DoubleValue")
-	}
-	first, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
-	if err != nil {
-		panic(err)
-	}
-	second, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
-	if err != nil {
-		panic(err)
-	}
-
-	v.First = first
-	v.Second = second
-	return nil
-}
-
-func NewDoubleValue(s string) *DoubleValue {
-	d := DoubleValue{}
-	if err := d.Parse(s); err != nil {
-		panic(err)
-	}
-	return &d
-}
-
-type RangeValue struct {
-	Start float64
-	End   float64
-}
-
-func (v RangeValue) String() string {
-	return fmt.Sprintf("%.02f - %.02f", v.Start, v.End)
-}
-
-func (v *RangeValue) Parse(s string) error {
-	splitString := strings.Split(s, "-")
-	if len(splitString) == 1 {
-		start, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
-		if err != nil {
-			return err
-		}
-		v.Start = start
-		v.End = start
-		return nil
-	}
-	if len(splitString) != 2 {
-		return fmt.Errorf("illegal RangeValue: %s", s)
-	}
-	start, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
-	if err != nil {
-		return err
-	}
-	end, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
-	if err != nil {
-		return err
-	}
-	v.Start = start
-	v.End = end
-	return nil
-}
-
-func NewRangeValue(s string) *RangeValue {
-	r := RangeValue{}
-	if err := r.Parse(s); err != nil {
-		panic(err)
-	}
-	return &r
-}
-
-type MissingValue struct{}
-
-func (v MissingValue) String() string {
-	return "-"
-}
-
-func (v MissingValue) Parse(s string) error {
-	return nil
-}
-
-func NewMissingValue() *MissingValue {
-	return &MissingValue{}
-}
-
-type MeanSdValue struct {
-	Mean float64
-	SD   float64
-}
-
-func (v MeanSdValue) String() string {
-	return fmt.Sprintf("%.02f +/- %.02f", v.Mean, v.SD)
-}
-
-func (v *MeanSdValue) Parse(s string) error {
+func parseMeanSd(s string) (MeanSd, error) {
+	res := MeanSd{}
 	splitString := strings.Split(s, "+/-")
 	if len(splitString) != 2 {
-		return fmt.Errorf("illegal MeanSdValue: %s", s)
+		return res, fmt.Errorf("illegal MeanSdValue: %s", s)
 	}
 	mean, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
 	if err != nil {
-		return err
+		return res, err
 	}
 
 	sd, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
 	if err != nil {
-		return err
+		return res, err
 	}
 
-	v.Mean = mean
-	v.SD = sd
-	return nil
+	res.Mean = JsonFloat(mean)
+	res.SD = JsonFloat(sd)
+	return res, nil
 }
 
-func NewMeanSdValue(s string) *MeanSdValue {
-	msd := MeanSdValue{}
-	if err := msd.Parse(s); err != nil {
-		panic(err)
+func parseInt(s string) (int, error) {
+	if s == "-" {
+		return -1, nil
 	}
-	return &msd
+	x, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
+	}
+	return x, nil
 }
 
-func GenerateSummary(runDirectory string) (*InteropSummary, error) {
+func parseFloat(s string) (JsonFloat, error) {
+	x, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, err
+	}
+	return JsonFloat(x), nil
+}
+
+func parsePair(s string) (JsonFloat, JsonFloat, error) {
+	splitString := strings.Split(s, "/")
+	if len(splitString) != 2 {
+		return 0, 0, fmt.Errorf("illegal DoubleValue")
+	}
+	first, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+	if err != nil {
+		return 0, 0, err
+	}
+	second, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return JsonFloat(first), JsonFloat(second), nil
+}
+
+func parseRange(s string) (JsonFloat, JsonFloat, error) {
+	splitString := strings.Split(s, "-")
+	if len(splitString) == 1 {
+		start, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+		if err != nil {
+			return 0, 0, err
+		}
+		return JsonFloat(start), JsonFloat(start), nil
+	}
+	if len(splitString) != 2 {
+		return 0, 0, fmt.Errorf("illegal RangeValue: %s", s)
+	}
+	start, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+	if err != nil {
+		return 0, 0, err
+	}
+	end, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+	if err != nil {
+		return 0, 0, err
+	}
+	return JsonFloat(start), JsonFloat(end), nil
+}
+
+func GenerateSummary(runId string, runDirectory string) (*InteropSummary, error) {
 	interopBin, ok := os.LookupEnv("INTEROP_BIN")
 	if !ok {
 		return nil, fmt.Errorf("INTEROP_BIN env var not found")
@@ -287,35 +168,34 @@ func GenerateSummary(runDirectory string) (*InteropSummary, error) {
 	buf := bytes.NewReader(res)
 	r := bufio.NewReader(buf)
 
-	return ParseInteropSummary(r)
+	summary, err := ParseInteropSummary(r)
+	if err != nil {
+		return nil, err
+	}
+	summary.RunId = runId
+	return summary, nil
 }
 
-func ParseReadSummary(r *bufio.Reader) (*ReadSummary, error) {
+func ParseReadSummary(r *bufio.Reader) (string, []ReadSummary, error) {
 	csvReader := csv.NewReader(r)
 	csvReader.FieldsPerRecord = 20
 
 	peek, err := r.Peek(6)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	if !strings.HasPrefix(strings.TrimSpace(string(peek)), "Read") {
-		return nil, fmt.Errorf("this is not a read section")
+		return "", nil, fmt.Errorf("this is not a read section")
 	}
 
-	summary := &ReadSummary{}
-
+	reads := make([]ReadSummary, 0)
 	sectionHeader, _ := csvReader.Read()
-
-	summary.ReadName = sectionHeader[0]
 
 	header, err := csvReader.Read()
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-
-	summary.Header = header
-	summary.Fields = make(map[string][]FieldValue)
 
 	for {
 		peek, _ = r.Peek(4)
@@ -329,35 +209,67 @@ func ParseReadSummary(r *bufio.Reader) (*ReadSummary, error) {
 			if err == io.EOF {
 				break
 			}
-			return nil, err
+			return "", nil, err
 		}
+
+		readSummary := ReadSummary{}
 
 		for i, val := range rec {
-			var f FieldValue
-			switch InteropReadColumns[summary.Header[i]].(type) {
-			case *IntValue:
-				f = NewIntValue(val)
-			case *FloatValue:
-				f = NewFloatValue(val)
-			case *DoubleValue:
-				f = NewDoubleValue(val)
-			case *MeanSdValue:
-				f = NewMeanSdValue(val)
-			case *RangeValue:
-				f = NewRangeValue(val)
-			case *MissingValue:
-				f = NewMissingValue()
-			case *StringValue:
-				f = NewStringValue(val)
-			default:
-				return nil, fmt.Errorf("invalid type for read summary column %s: %s", summary.Header[i], val)
+			switch header[i] {
+			case "Lane":
+				readSummary.Lane, _ = parseInt(val)
+			case "Tiles":
+				readSummary.Tiles, _ = parseInt(val)
+			case "Density":
+				readSummary.Density, _ = parseMeanSd(val)
+			case "Cluster PF":
+				readSummary.ClusterPF, _ = parseMeanSd(val)
+			case "Legacy Phasing/Prephasing Rate":
+				first, second, _ := parsePair(val)
+				readSummary.PhasingRate = first
+				readSummary.PrephasingRate = second
+			case "Phasing slope/offset":
+				first, second, _ := parsePair(val)
+				readSummary.PhasingSlope = first
+				readSummary.PhasingOffset = second
+			case "Prephasing slope/offset":
+				first, second, _ := parsePair(val)
+				readSummary.PrephasingSlope = first
+				readSummary.PrephasingOffset = second
+			case "Reads":
+				readCount, _ := parseFloat(val)
+				readSummary.Reads = int(readCount * 1e6)
+			case "Reads PF":
+				readCount, _ := parseFloat(val)
+				readSummary.ReadsPF = int(readCount * 1e6)
+			case "%>=Q30":
+				readSummary.PercentQ30, _ = parseFloat(val)
+			case "Yield":
+				gigaBases, _ := parseFloat(val)
+				readSummary.Yield = int(gigaBases * 1e9)
+			case "Cycles Error":
+				_, end, _ := parseRange(val)
+				readSummary.CyclesError = int(end)
+			case "Aligned":
+				readSummary.PercentAligned, _ = parseMeanSd(val)
+			case "Error":
+				readSummary.Error, _ = parseMeanSd(val)
+			case "Error (35)":
+				readSummary.Error35, _ = parseMeanSd(val)
+			case "Error (75)":
+				readSummary.Error75, _ = parseMeanSd(val)
+			case "Error (100)":
+				readSummary.Error100, _ = parseMeanSd(val)
+			case "% Occupied":
+				readSummary.PercentOccupied, _ = parseMeanSd(val)
+			case "Intensity C1":
+				readSummary.IntensityC1, _ = parseMeanSd(val)
 			}
-			summary.Fields[summary.Header[i]] = append(summary.Fields[summary.Header[i]], f)
 		}
-		summary.EntryCount++
+		reads = append(reads, readSummary)
 	}
 
-	return summary, nil
+	return sectionHeader[0], reads, nil
 }
 
 func ParseInteropSummary(r *bufio.Reader) (*InteropSummary, error) {
@@ -384,9 +296,7 @@ func ParseInteropSummary(r *bufio.Reader) (*InteropSummary, error) {
 	summary.Version = versionString
 	summary.RunDirectory = runDirectory
 
-	runSummary := &RunSummary{}
-	runSummary.Header = header
-	runSummary.Fields = make(map[string]FieldValue)
+	summary.RunSummary = make(map[string][]RunSummary, 0)
 
 	for {
 		peek, err := r.Peek(2)
@@ -405,33 +315,47 @@ func ParseInteropSummary(r *bufio.Reader) (*InteropSummary, error) {
 			return nil, fmt.Errorf("%s when reading total summary", err.Error())
 		}
 
+		runSummary := RunSummary{}
+
 		for i, val := range rec {
-			var f FieldValue
-			switch InteropSummaryColumns[runSummary.Header[i]].(type) {
-			case *StringValue:
-				f = NewStringValue(val)
-			case *IntValue:
-				f = NewIntValue(val)
-			case *FloatValue:
-				f = NewFloatValue(val)
-			default:
-				return nil, fmt.Errorf("invalid type in summary for column %s: %s", runSummary.Header[i], val)
+			switch header[i] {
+			case "Level":
+				runSummary.Level = val
+			case "Yield":
+				gigaBases, _ := parseFloat(val)
+				runSummary.Yield = int(gigaBases * 1e9)
+			case "Projected Yield":
+				gigaBases, _ := parseFloat(val)
+				runSummary.ProjectedYield = int(gigaBases * 1e9)
+			case "Aligned":
+				runSummary.PercentAligned, _ = parseFloat(val)
+			case "Error Rate":
+				runSummary.ErrorRate, _ = parseFloat(val)
+			case "Intensity C1":
+				runSummary.IntensityC1, _ = parseFloat(val)
+			case "%>=Q30":
+				runSummary.PercentQ30, _ = parseFloat(val)
+			case "% Occupied":
+				runSummary.PercentOccupied, _ = parseFloat(val)
 			}
-			runSummary.Fields[runSummary.Header[i]] = f
 		}
+		if _, ok := summary.RunSummary[runSummary.Level]; !ok {
+			summary.RunSummary[runSummary.Level] = make([]RunSummary, 0)
+		}
+		summary.RunSummary[runSummary.Level] = append(summary.RunSummary[runSummary.Level], runSummary)
 	}
 
-	summary.RunSummary = *runSummary
+	summary.ReadSummaries = make(map[string][]ReadSummary)
 
 	for {
-		readSummary, err := ParseReadSummary(r)
+		readName, readSummary, err := ParseReadSummary(r)
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
 			return nil, err
 		}
-		summary.ReadSummaries = append(summary.ReadSummaries, *readSummary)
+		summary.ReadSummaries[readName] = readSummary
 	}
 
 	return summary, nil

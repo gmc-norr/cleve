@@ -6,22 +6,23 @@ import (
 
 func TestGenerateInteropSummary(t *testing.T) {
 	rundirectory := "../test_data/novaseq_full"
-	summary, err := GenerateSummary(rundirectory)
+	runId := "20240403_LH00352_0006_A222H73LT1"
+	summary, err := GenerateSummary(runId, rundirectory)
 	if err != nil {
 		t.Fatalf("%s when generating summary", err.Error())
 	}
 
-	t.Log(summary)
+	t.Logf("%#v\n", summary)
 
 	if summary.Version == "" {
 		t.Fail()
 	}
 
-	if summary.RunDirectory == "" {
+	if summary.RunId != runId {
 		t.Fail()
 	}
 
-	if summary.RunSummary.Header == nil || len(summary.RunSummary.Header) == 0 {
+	if summary.RunDirectory == "" {
 		t.Fail()
 	}
 
