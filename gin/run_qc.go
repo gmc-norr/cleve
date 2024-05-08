@@ -59,6 +59,14 @@ func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
+		if _, err := db.RunQC.Get(runId); err != mongo.ErrNoDocuments {
+			ctx.AbortWithStatusJSON(
+				http.StatusConflict,
+				gin.H{"error": fmt.Sprintf("qc data already exists for run %s", runId)},
+			)
+			return
+		}
+
 		interopPath := fmt.Sprintf("%s/InterOp", run.Path)
 		if _, err := os.Stat(interopPath); os.IsNotExist(err) {
 			ctx.AbortWithStatusJSON(
