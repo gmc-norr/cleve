@@ -49,6 +49,11 @@ type MeanSd struct {
 	SD   JsonFloat `bson:"sd" json:"sd"`
 }
 
+type Range struct {
+	Start int `bson:"start" json:"start"`
+	End   int `bson:"end" json:"end"`
+}
+
 type ReadSummary struct {
 	Lane             int       `bson:"lane" json:"lane"`
 	Tiles            int       `bson:"tiles" json:"tiles"`
@@ -64,7 +69,7 @@ type ReadSummary struct {
 	ReadsPF          int       `bson:"reads_pf" json:"reads_pf"`
 	PercentQ30       JsonFloat `bson:"percent_q30" json:"percent_q30"`
 	Yield            int       `bson:"yield" json:"yield"`
-	CyclesError      int       `bson:"cycles_error" json:"cycles_error"`
+	CyclesError      Range     `bson:"cycles_error" json:"cycles_error"`
 	PercentAligned   MeanSd    `bson:"percent_aligned" json:"percent_aligned"`
 	Error            MeanSd    `bson:"error" json:"error"`
 	Error35          MeanSd    `bson:"error35" json:"error35"`
@@ -85,7 +90,7 @@ func parseMeanSd(s string) (MeanSd, error) {
 		return res, err
 	}
 
-	sd, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+	sd, err := strconv.ParseFloat(strings.TrimSpace(splitString[1]), 64)
 	if err != nil {
 		return res, err
 	}
@@ -123,7 +128,7 @@ func parsePair(s string) (JsonFloat, JsonFloat, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	second, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+	second, err := strconv.ParseFloat(strings.TrimSpace(splitString[1]), 64)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -131,27 +136,27 @@ func parsePair(s string) (JsonFloat, JsonFloat, error) {
 	return JsonFloat(first), JsonFloat(second), nil
 }
 
-func parseRange(s string) (JsonFloat, JsonFloat, error) {
+func parseRange(s string) (Range, error) {
 	splitString := strings.Split(s, "-")
 	if len(splitString) == 1 {
-		start, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+		start, err := strconv.Atoi(strings.TrimSpace(splitString[0]))
 		if err != nil {
-			return 0, 0, err
+			return Range{0, 0}, err
 		}
-		return JsonFloat(start), JsonFloat(start), nil
+		return Range{start, start}, nil
 	}
 	if len(splitString) != 2 {
-		return 0, 0, fmt.Errorf("illegal RangeValue: %s", s)
+		return Range{}, fmt.Errorf("illegal RangeValue: %s", s)
 	}
-	start, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+	start, err := strconv.Atoi(strings.TrimSpace(splitString[0]))
 	if err != nil {
-		return 0, 0, err
+		return Range{}, err
 	}
-	end, err := strconv.ParseFloat(strings.TrimSpace(splitString[0]), 64)
+	end, err := strconv.Atoi(strings.TrimSpace(splitString[1]))
 	if err != nil {
-		return 0, 0, err
+		return Range{}, err
 	}
-	return JsonFloat(start), JsonFloat(end), nil
+	return Range{start, end}, nil
 }
 
 func GenerateSummary(runId string, runDirectory string) (*InteropSummary, error) {
@@ -248,8 +253,7 @@ func ParseReadSummary(r *bufio.Reader) (string, []ReadSummary, error) {
 				gigaBases, _ := parseFloat(val)
 				readSummary.Yield = int(gigaBases * 1e9)
 			case "Cycles Error":
-				_, end, _ := parseRange(val)
-				readSummary.CyclesError = int(end)
+				readSummary.CyclesError, _ = parseRange(val)
 			case "Aligned":
 				readSummary.PercentAligned, _ = parseMeanSd(val)
 			case "Error":
