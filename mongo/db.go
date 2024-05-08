@@ -26,6 +26,7 @@ type DB struct {
 	Keys      cleve.APIKeyService
 	Runs      cleve.RunService
 	Platforms cleve.PlatformService
+	RunQC     cleve.RunQcService
 }
 
 func Connect() (*DB, error) {
@@ -58,11 +59,13 @@ func Connect() (*DB, error) {
 	runCollection := client.Database(viper.GetString("database.name")).Collection("runs")
 	keyCollection := client.Database(viper.GetString("database.name")).Collection("keys")
 	platformCollection := client.Database(viper.GetString("database.name")).Collection("platforms")
+	RunQCCollection := client.Database(viper.GetString("database.name")).Collection("run_qc")
 
 	return &DB{
 		&APIKeyService{keyCollection},
 		&RunService{runCollection},
 		&PlatformService{platformCollection},
+		&RunQcService{RunQCCollection},
 	}, nil
 }
 
@@ -79,6 +82,12 @@ func (db *DB) SetIndexes() error {
 	}
 	log.Printf("Set index %s on platforms", name)
 
+	name, err = db.RunQC.SetIndex()
+	if err != nil {
+		return err
+	}
+	log.Printf("Set index %s on run qc", name)
+
 	return nil
 }
 
@@ -88,8 +97,14 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 		return nil, err
 	}
 
+	runQcIndex, err := db.RunQC.GetIndex()
+	if err != nil {
+		return nil, err
+	}
+
 	var indexes = make(map[string][]map[string]string)
 	indexes["runs"] = runIndex
+	indexes["run_qc"] = runQcIndex
 
 	return indexes, nil
 }
