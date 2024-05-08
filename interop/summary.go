@@ -15,22 +15,22 @@ import (
 )
 
 type InteropSummary struct {
-	Version       string
-	RunId         string `bson:"run_id"`
-	RunDirectory  string
-	RunSummary    map[string][]RunSummary
-	ReadSummaries map[string][]ReadSummary
+	Version       string                   `bson:"version" json:"version"`
+	RunId         string                   `bson:"run_id" json:"run_id"`
+	RunDirectory  string                   `bson:"run_directory" json:"run_directory"`
+	RunSummary    map[string][]RunSummary  `bson:"run_summmary" json:"run_summary"`
+	ReadSummaries map[string][]ReadSummary `bson:"read_summary" json:"read_summary"`
 }
 
 type RunSummary struct {
-	Level           string
-	Yield           int
-	ProjectedYield  int
-	PercentAligned  JsonFloat
-	ErrorRate       JsonFloat
-	IntensityC1     JsonFloat
-	PercentQ30      JsonFloat
-	PercentOccupied JsonFloat
+	Level           string    `bson:"level" json:"level"`
+	Yield           int       `bson:"yield" json:"yield"`
+	ProjectedYield  int       `bson:"projected_yield" json:"projected_yield"`
+	PercentAligned  JsonFloat `bson:"percent_aligned" json:"percent_aligned"`
+	ErrorRate       JsonFloat `bson:"error_rate" json:"error_rate"`
+	IntensityC1     JsonFloat `bson:"intensity_c1" json:"intensity_c1"`
+	PercentQ30      JsonFloat `bson:"percent_q30" json:"percent_q30"`
+	PercentOccupied JsonFloat `bson:"percent_occupied" json:"percent_occupied"`
 }
 
 type JsonFloat float64
@@ -45,33 +45,33 @@ func (x JsonFloat) MarshalJSON() ([]byte, error) {
 }
 
 type MeanSd struct {
-	Mean JsonFloat
-	SD   JsonFloat
+	Mean JsonFloat `bson:"mean" json:"mean"`
+	SD   JsonFloat `bson:"sd" json:"sd"`
 }
 
 type ReadSummary struct {
-	Lane             int
-	Tiles            int
-	Density          MeanSd
-	ClusterPF        MeanSd
-	PhasingRate      JsonFloat
-	PrephasingRate   JsonFloat
-	PhasingSlope     JsonFloat
-	PhasingOffset    JsonFloat
-	PrephasingSlope  JsonFloat
-	PrephasingOffset JsonFloat
-	Reads            int
-	ReadsPF          int
-	PercentQ30       JsonFloat
-	Yield            int
-	CyclesError      int
-	PercentAligned   MeanSd
-	Error            MeanSd
-	Error35          MeanSd
-	Error75          MeanSd
-	Error100         MeanSd
-	PercentOccupied  MeanSd
-	IntensityC1      MeanSd
+	Lane             int       `bson:"lane" json:"lane"`
+	Tiles            int       `bson:"tiles" json:"tiles"`
+	Density          MeanSd    `bson:"density" json:"density"`
+	ClusterPF        MeanSd    `bson:"cluster_pf" json:"cluster_pf"`
+	PhasingRate      JsonFloat `bson:"phasing_rate" json:"phasing_rate"`
+	PrephasingRate   JsonFloat `bson:"prephasing_rate" json:"prephasing_rate"`
+	PhasingSlope     JsonFloat `bson:"phasing_slope" json:"phasing_slope"`
+	PhasingOffset    JsonFloat `bson:"phasing_offset" json:"phasing_offset"`
+	PrephasingSlope  JsonFloat `bson:"prephasing_slope" json:"prephasing_slope"`
+	PrephasingOffset JsonFloat `bson:"prephasing_offset" json:"prephasing_offset"`
+	Reads            int       `bson:"reads" json:"reads"`
+	ReadsPF          int       `bson:"reads_pf" json:"reads_pf"`
+	PercentQ30       JsonFloat `bson:"percent_q30" json:"percent_q30"`
+	Yield            int       `bson:"yield" json:"yield"`
+	CyclesError      int       `bson:"cycles_error" json:"cycles_error"`
+	PercentAligned   MeanSd    `bson:"percent_aligned" json:"percent_aligned"`
+	Error            MeanSd    `bson:"error" json:"error"`
+	Error35          MeanSd    `bson:"error35" json:"error35"`
+	Error75          MeanSd    `bson:"error75" json:"error75"`
+	Error100         MeanSd    `bson:"error100" json:"error100"`
+	PercentOccupied  MeanSd    `bson:"percent_occupied" json:"percent_occupied"`
+	IntensityC1      MeanSd    `bson:"intensity_c1" json:"intensity_c1"`
 }
 
 func parseMeanSd(s string) (MeanSd, error) {
