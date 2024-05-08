@@ -2,6 +2,7 @@ package gin
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -27,6 +28,35 @@ func RunQcHandler(db *mongo.DB) gin.HandlerFunc {
 				gin.H{"error": err.Error()},
 			)
 			return
+		}
+		ctx.JSON(http.StatusOK, qc)
+	}
+}
+
+func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		platform := ctx.Param("platformName")
+		runs, err := db.Runs.All(true, platform, cleve.Ready.String())
+		if err != nil {
+			ctx.AbortWithStatusJSON(
+				http.StatusInternalServerError,
+				gin.H{"error": err.Error()},
+			)
+		}
+
+		runIds := make([]string, 0)
+		for _, r := range runs {
+			runIds = append(runIds, r.RunID)
+		}
+
+		qc := make([]*interop.InteropSummary, 0)
+
+		for _, r := range runIds {
+			qcSummary, err := db.RunQC.Get(r)
+			if err != nil {
+				log.Printf("warning: qc for run %s could not be fetched: %s", r, err.Error())
+			}
+			qc = append(qc, qcSummary)
 		}
 		ctx.JSON(http.StatusOK, qc)
 	}

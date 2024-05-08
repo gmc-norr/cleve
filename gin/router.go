@@ -65,6 +65,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/api/runs/:runId/qc", RunQcHandler(db))
 	r.GET("/api/platforms", PlatformsHandler(db))
 	r.GET("/api/platforms/:platformName", GetPlatformHandler(db))
+	r.GET("/api/qc/:platformName", AllQcHandler(db))
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))
