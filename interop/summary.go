@@ -18,7 +18,7 @@ type InteropSummary struct {
 	Version       string                   `bson:"version" json:"version"`
 	RunID         string                   `bson:"run_id" json:"run_id"`
 	RunDirectory  string                   `bson:"run_directory" json:"run_directory"`
-	RunSummary    map[string][]RunSummary  `bson:"run_summmary" json:"run_summary"`
+	RunSummary    map[string]RunSummary    `bson:"run_summmary" json:"run_summary"`
 	ReadSummaries map[string][]ReadSummary `bson:"read_summary" json:"read_summary"`
 }
 
@@ -300,7 +300,7 @@ func ParseInteropSummary(r *bufio.Reader) (*InteropSummary, error) {
 	summary.Version = versionString
 	summary.RunDirectory = runDirectory
 
-	summary.RunSummary = make(map[string][]RunSummary, 0)
+	summary.RunSummary = make(map[string]RunSummary)
 
 	for {
 		peek, err := r.Peek(2)
@@ -343,10 +343,7 @@ func ParseInteropSummary(r *bufio.Reader) (*InteropSummary, error) {
 				runSummary.PercentOccupied, _ = parseFloat(val)
 			}
 		}
-		if _, ok := summary.RunSummary[runSummary.Level]; !ok {
-			summary.RunSummary[runSummary.Level] = make([]RunSummary, 0)
-		}
-		summary.RunSummary[runSummary.Level] = append(summary.RunSummary[runSummary.Level], runSummary)
+		summary.RunSummary[runSummary.Level] = runSummary
 	}
 
 	summary.ReadSummaries = make(map[string][]ReadSummary)
