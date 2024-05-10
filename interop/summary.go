@@ -16,7 +16,7 @@ import (
 
 type InteropSummary struct {
 	Version       string                   `bson:"version" json:"version"`
-	RunId         string                   `bson:"run_id" json:"run_id"`
+	RunID         string                   `bson:"run_id" json:"run_id"`
 	RunDirectory  string                   `bson:"run_directory" json:"run_directory"`
 	RunSummary    map[string][]RunSummary  `bson:"run_summmary" json:"run_summary"`
 	ReadSummaries map[string][]ReadSummary `bson:"read_summary" json:"read_summary"`
@@ -177,7 +177,7 @@ func GenerateSummary(runId string, runDirectory string) (*InteropSummary, error)
 	if err != nil {
 		return nil, err
 	}
-	summary.RunId = runId
+	summary.RunID = runId
 	return summary, nil
 }
 

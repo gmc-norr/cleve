@@ -18,7 +18,7 @@ func TestGenerateInteropSummary(t *testing.T) {
 		t.Fail()
 	}
 
-	if summary.RunId != runId {
+	if summary.RunID != runId {
 		t.Fail()
 	}
 
