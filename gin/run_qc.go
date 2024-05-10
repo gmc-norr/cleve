@@ -54,6 +54,9 @@ func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
 		for _, r := range runIds {
 			qcSummary, err := db.RunQC.Get(r)
 			if err != nil {
+				if err == mongo.ErrNoDocuments {
+					continue
+				}
 				log.Printf("warning: qc for run %s could not be fetched: %s", r, err.Error())
 			}
 			qc = append(qc, qcSummary)
