@@ -32,6 +32,7 @@ type Run struct {
 	Created        time.Time          `bson:"created" json:"created"`
 	StateHistory   []TimedRunState    `bson:"state_history" json:"state_history"`
 	RunParameters  RunParameters      `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
+	RunInfo        RunInfo            `bson:"run_info,omitempty" json:"run_info,omitempty"`
 	Analysis       []*Analysis        `bson:"analysis,omitempty" json:"analysis,omitempty"`
 	AnalysisCount  int32              `bson:"analysis_count" json:"analysis_count"`
 }
@@ -94,6 +95,15 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 		}
 	} else {
 		r.RunParameters = nil
+	}
+
+	ri := rawData.Lookup("run_info")
+	if len(ri.Value) > 0 {
+		var runInfo RunInfo
+		if err = ri.Unmarshal(&runInfo); err != nil {
+			return err
+		}
+		r.RunInfo = runInfo
 	}
 
 	return nil

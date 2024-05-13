@@ -29,6 +29,21 @@ func parseRunParameters(runParametersFile string) (cleve.RunParameters, error) {
 	return cleve.ParseRunParameters(runParamData)
 }
 
+func parseRunInfo(runInfoFilename string) (cleve.RunInfo, error) {
+	var runInfo cleve.RunInfo
+	runInfoFile, err := os.Open(runInfoFilename)
+	if err != nil {
+		return runInfo, err
+	}
+	defer runInfoFile.Close()
+	runInfoData, err := io.ReadAll(runInfoFile)
+	if err != nil {
+		return runInfo, err
+	}
+
+	return cleve.ParseRunInfo(runInfoData)
+}
+
 var addCmd = &cobra.Command{
 	Use:   "add [flags] run_directory",
 	Short: "Add a sequencing run",
@@ -49,8 +64,14 @@ var addCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		runParametersFile := filepath.Join(runDir, "RunParameters.xml")
+		runInfoFile := filepath.Join(runDir, "RunInfo.xml")
 
 		runParams, err := parseRunParameters(runParametersFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		runInfo, err := parseRunInfo(runInfoFile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -66,6 +87,7 @@ var addCmd = &cobra.Command{
 			Path:           runDir,
 			Platform:       runParams.Platform(),
 			RunParameters:  runParams,
+			RunInfo:		runInfo,
 			StateHistory:   []cleve.TimedRunState{{State: state, Time: time.Now()}},
 			Analysis:       []*cleve.Analysis{},
 		}
