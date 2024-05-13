@@ -8,9 +8,9 @@ import (
 )
 
 func TestParseRunInfo(t *testing.T) {
-	cases := map[string]struct{
+	cases := map[string]struct {
 		runinfo string
-	} {
+	}{
 		"novaseq": {
 			runinfo: "test_data/novaseq_full/RunInfo.xml",
 		},
@@ -21,7 +21,7 @@ func TestParseRunInfo(t *testing.T) {
 			runinfo: "test_data/nextseq2_full/RunInfo.xml",
 		},
 	}
-	
+
 	for k, v := range cases {
 		f, err := os.Open(v.runinfo)
 		if err != nil {
