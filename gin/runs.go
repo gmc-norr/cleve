@@ -53,6 +53,7 @@ func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 			Path             string                `form:"path" binding:"required"`
 			State            string                `form:"state" binding:"required"`
 			RunParameterFile *multipart.FileHeader `form:"runparameters" binding:"required"`
+			RunInfoFile      *multipart.FileHeader `form:"runinfo" binding:"required"`
 		}
 
 		if err := c.Bind(&addRunRequest); err != nil {
@@ -81,6 +82,26 @@ func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
+		infoFile, err := addRunRequest.RunInfoFile.Open()
+		defer infoFile.Close()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "opening run info file"})
+			return
+		}
+
+		infoData, err := io.ReadAll(infoFile)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading run info file"})
+			return
+		}
+
+		var runInfo cleve.RunInfo
+		runInfo, err = cleve.ParseRunInfo(infoData)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid run info"})
+			return
+		}
+
 		var state cleve.RunState
 		if err = state.Set(addRunRequest.State); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -93,6 +114,7 @@ func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 			Path:           addRunRequest.Path,
 			Platform:       runParams.Platform(),
 			RunParameters:  runParams,
+			RunInfo:        runInfo,
 			StateHistory:   []cleve.TimedRunState{{State: state, Time: time.Now()}},
 			Analysis:       []*cleve.Analysis{},
 		}
