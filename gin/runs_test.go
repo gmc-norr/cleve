@@ -108,7 +108,7 @@ func TestRunsHandler(t *testing.T) {
 		}
 
 		b, _ := io.ReadAll(w.Body)
-		count := strings.Count(string(b), "run_id")
+		count := strings.Count(string(b), "experiment_name")
 
 		if count != len(v.Runs) {
 			t.Fatalf("found %d runs, expected %d", count, len(v.Runs))
