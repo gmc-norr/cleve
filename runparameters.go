@@ -13,11 +13,15 @@ type CustomTime struct {
 
 func (c *CustomTime) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	const customLayout = "2006-01-02T15:04:05"
+	const customLayout2 = "060102"
 	var v string
 	d.DecodeElement(&v, &start)
 	t, err := time.Parse(time.RFC3339, v)
 	if err != nil {
 		t, err = time.Parse(customLayout, v)
+	}
+	if err != nil {
+		t, err = time.Parse(customLayout2, v)
 	}
 	if err != nil {
 		return err
