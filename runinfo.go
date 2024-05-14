@@ -1,7 +1,6 @@
 package cleve
 
 import (
-	"bytes"
 	"encoding/xml"
 )
 
@@ -43,10 +42,6 @@ type RunInfo struct {
 
 func ParseRunInfo(data []byte) (RunInfo, error) {
 	var runInfo RunInfo
-	b := bytes.NewBuffer(data)
-	decoder := xml.NewDecoder(b)
-	if err := decoder.Decode(&runInfo); err != nil {
-		return runInfo, err
-	}
-	return runInfo, nil
+	err := xml.Unmarshal(data, &runInfo)
+	return runInfo, err
 }
