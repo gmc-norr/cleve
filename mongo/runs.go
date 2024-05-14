@@ -74,6 +74,13 @@ func (s *RunService) All(brief bool, platform string, state string) ([]*cleve.Ru
 		}},
 	})
 
+	// Sort by sequencing date
+	aggPipeline = append(aggPipeline, bson.D{
+		{Key: "$sort", Value: bson.D{
+			{Key: "run_info.run.date", Value: -1},
+		}},
+	})
+
 	// Exclude run parameters and analysis
 	if brief {
 		aggPipeline = append(aggPipeline, bson.D{
