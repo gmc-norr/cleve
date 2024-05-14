@@ -5,29 +5,69 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
-type CustomTime struct {
-	time.Time
-}
+type CustomTime time.Time
 
 func (c *CustomTime) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	const customLayout = "2006-01-02T15:04:05"
-	const customLayout2 = "060102"
+	const customLayout1 = "2006-01-02T15:04:05"
+	const customLayout2 = "2006-01-02T15:04:05-07:00"
+	const customLayout3 = "2006-01-02"
+	const customLayout4 = "060102"
 	var v string
 	d.DecodeElement(&v, &start)
 	t, err := time.Parse(time.RFC3339, v)
 	if err != nil {
-		t, err = time.Parse(customLayout, v)
+		t, err = time.Parse(customLayout1, v)
 	}
 	if err != nil {
 		t, err = time.Parse(customLayout2, v)
 	}
 	if err != nil {
+		t, err = time.Parse(customLayout3, v)
+	}
+	if err != nil {
+		t, err = time.Parse(customLayout4, v)
+	}
+	if err != nil {
 		return err
 	}
-	c.Time = t
+	*c = CustomTime(t)
 	return nil
+}
+
+func (c CustomTime) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bson.MarshalValue(time.Time(c))
+}
+
+func (c *CustomTime) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
+	raw := bson.RawValue{
+		Type: t,
+		Value: b,
+	}
+
+	var res time.Time
+	if err := raw.Unmarshal(&res); err != nil {
+		return err
+	}
+
+	*c = CustomTime(res)
+	return nil
+}
+
+func (c CustomTime) MarshalJSON() ([]byte, error) {
+	return []byte(c.String()), nil
+}
+
+func (c *CustomTime) String() string {
+	return time.Time(*c).Format(time.RFC3339)
+}
+
+func (c *CustomTime) Format(layout string) string {
+	return time.Time(*c).Format(layout)
 }
 
 type RunParameters interface {
