@@ -87,7 +87,7 @@ var addCmd = &cobra.Command{
 			Path:           runDir,
 			Platform:       runParams.Platform(),
 			RunParameters:  runParams,
-			RunInfo:		runInfo,
+			RunInfo:        runInfo,
 			StateHistory:   []cleve.TimedRunState{{State: state, Time: time.Now()}},
 			Analysis:       []*cleve.Analysis{},
 		}

@@ -67,7 +67,7 @@ func (r ReadConfig) CycleToRead(cycle int) int {
 
 	currentStart := 0
 	for _, read := range reads {
-		if cycle > currentStart && cycle <= currentStart + r.ReadLengths[read] {
+		if cycle > currentStart && cycle <= currentStart+r.ReadLengths[read] {
 			return read
 		}
 		currentStart += r.ReadLengths[read]

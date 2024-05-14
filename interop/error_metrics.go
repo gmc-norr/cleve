@@ -202,7 +202,7 @@ func ParseErrorMetrics(filename string) (ErrorMetrics, error) {
 		return nil, err
 	}
 	r := bufio.NewReader(f)
-	
+
 	m := ErrorMetrics6{}
 	if err := m.Parse(r); err != nil {
 		return m, err
