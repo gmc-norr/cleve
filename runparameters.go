@@ -1,6 +1,7 @@
 package cleve
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -59,7 +60,7 @@ func (c *CustomTime) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
 }
 
 func (c CustomTime) MarshalJSON() ([]byte, error) {
-	return []byte(c.String()), nil
+	return json.Marshal(c.String())
 }
 
 func (c *CustomTime) String() string {
