@@ -1,0 +1,68 @@
+{{ define "run" }}
+{{ template "header" }}
+{{ $state := (index .run.StateHistory 0).State.String }}
+<h2>Sequencing run: {{ .run.RunID }}</h2>
+
+<div>
+    <div><span>{{ title $state }}</span></div>
+    <table>
+        <tr>
+            <th>Sequencing date</th>
+            <td>{{ .run.RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
+        </tr>
+        <tr>
+            <th>Platform</th>
+            <td>{{ .run.Platform }}</td>
+        </tr>
+        <tr>
+            <th>Flowcell</th>
+            <td>{{ .run.RunParameters.Flowcell }}</td>
+        </tr>
+        <tr>
+            <th>Path</th>
+            <td><code>{{ .run.Path }}</code></td>
+        </tr>
+    </table>
+</div>
+
+<h3>Sequencing QC</h3>
+
+{{ if .hasQc }}
+<table>
+    <thead>
+        <tr>
+            <th>Read</th>
+            <th>Lane</th>
+            <th>Tiles</th>
+            <th>Density</th>
+            <th>% PF Clusters</th>
+            <th>Reads (M)</th>
+            <th>PF Reads (M)</th>
+            <th>Yield (Gbp)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range $read, $v := .qc.ReadSummaries }}
+            {{ range $v }}
+                <tr>
+                    <td>{{ $read }}</td>
+                    <td>{{ .Lane }}</td>
+                    <td>{{ .Tiles }}</td>
+                    <td>{{ .Density.Mean | printf "%.2f" }} &pm; {{ .Density.SD | printf "%.2f" }}</td>
+                    <td>{{ .ClusterPF.Mean | printf "%.2f" }} &pm; {{ .ClusterPF.SD | printf "%.2f" }}</td>
+                    <td>{{ multiply (toFloat .Reads) 1e-6 | printf "%.2f" }}</td>
+                    <td>{{ multiply (toFloat .ReadsPF) 1e-6 | printf "%.2f" }}</td>
+                    <td>{{ multiply (toFloat .Yield) 1e-9 | printf "%.2f" }}</td>
+                </tr>
+            {{ end }}
+        {{ end }}
+    </tbody>
+</table>
+{{ else if eq $state "ready" }}
+<p>QC data has yet to be imported for this run.</p>
+{{ else }}
+<p>QC data is not available until the run is ready.</p>
+{{ end }}
+
+{{ template "footer" }}
+{{ end }}
