@@ -79,6 +79,7 @@ type RunParameters interface {
 	GetExperimentName() string
 	GetRunID() string
 	Platform() string
+	Flowcell() string
 }
 
 func ParseRunParameters(paramsData []byte) (RunParameters, error) {

@@ -2,9 +2,49 @@ package cleve
 
 import (
 	"encoding/xml"
+	"io"
+	"os"
 	"testing"
 	"time"
 )
+
+func TestRunparameters(t *testing.T) {
+	cases := []struct {
+		name     string
+		filename string
+		flowcell string
+	}{
+		{
+			"novaseq",
+			"test_data/novaseq_full/RunParameters.xml",
+			"1.5B",
+		},
+		{
+			"nextseq",
+			"test_data/nextseq1_full/RunParameters.xml",
+			"NextSeq Mid",
+		},
+	}
+
+	for _, c := range cases {
+		f, err := os.Open(c.filename)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := io.ReadAll(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rp, err := ParseRunParameters([]byte(b))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if rp.Flowcell() != c.flowcell {
+			t.Errorf("expected flowcell %q, got %q", c.flowcell, rp.Flowcell())
+		}
+	}
+}
 
 func TestCustomTime(t *testing.T) {
 	cases := []struct {

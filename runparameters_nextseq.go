@@ -2,6 +2,7 @@ package cleve
 
 import (
 	"encoding/xml"
+	"fmt"
 	"log"
 )
 
@@ -121,6 +122,10 @@ func (p NextSeqParameters) GetRunID() string {
 
 func (p NextSeqParameters) Platform() string {
 	return "NextSeq"
+}
+
+func (p NextSeqParameters) Flowcell() string {
+	return fmt.Sprintf("%s", p.Chemistry)
 }
 
 func ParseNextSeqRunParameters(d []byte) NextSeqParameters {

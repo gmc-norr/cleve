@@ -2,6 +2,7 @@ package cleve
 
 import (
 	"encoding/xml"
+	"fmt"
 	"log"
 )
 
@@ -62,6 +63,19 @@ func (p NovaSeqParameters) GetRunID() string {
 
 func (p NovaSeqParameters) Platform() string {
 	return "NovaSeq"
+}
+
+func (p NovaSeqParameters) Flowcell() string {
+	for _, ci := range p.ConsumableInfo {
+		if ci.Type == "FlowCell" {
+			if ci.Name == "" {
+				return fmt.Sprintf("%s", ci.Mode)
+			} else {
+				return fmt.Sprintf("%s", ci.Name)
+			}
+		}
+	}
+	return "NA"
 }
 
 func ParseNovaSeqRunParameters(d []byte) NovaSeqParameters {
