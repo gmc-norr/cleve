@@ -8,14 +8,14 @@ import (
 
 func TestCustomTime(t *testing.T) {
 	cases := []struct {
-		input string
-		year int
-		month int
-		day int
-		hour int
+		input  string
+		year   int
+		month  int
+		day    int
+		hour   int
 		minute int
 		second int
-	} {
+	}{
 		{
 			"<Doc><Time>240313</Time></Doc>",
 			2024,

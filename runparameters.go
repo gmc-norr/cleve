@@ -45,7 +45,7 @@ func (c CustomTime) MarshalBSONValue() (bsontype.Type, []byte, error) {
 
 func (c *CustomTime) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
 	raw := bson.RawValue{
-		Type: t,
+		Type:  t,
 		Value: b,
 	}
 
