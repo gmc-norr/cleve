@@ -25,6 +25,22 @@ func (s *RunQcService) Get(runId string) (*interop.InteropSummary, error) {
 	return &qc, err
 }
 
+func (s *RunQcService) GetTotalQ30(runId string) (float64, error) {
+	qc, err := s.Get(runId)
+	if err != nil {
+		return 0, err
+	}
+	return float64(qc.RunSummary["Total"].PercentQ30), nil
+}
+
+func (s *RunQcService) GetTotalErrorRate(runId string) (float64, error) {
+	e, err := s.Get(runId)
+	if err != nil {
+		return 0, err
+	}
+	return float64(e.RunSummary["Total"].ErrorRate), nil
+}
+
 func (s *RunQcService) GetIndex() ([]map[string]string, error) {
 	cursor, err := s.coll.Indexes().List(context.TODO())
 	defer cursor.Close(context.TODO())
