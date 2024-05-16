@@ -70,6 +70,10 @@ func (c *CustomTime) Format(layout string) string {
 	return time.Time(*c).Format(layout)
 }
 
+func (c CustomTime) Local() time.Time {
+	return time.Time(c).Local()
+}
+
 type RunParameters interface {
 	IsValid() bool
 	GetExperimentName() string
