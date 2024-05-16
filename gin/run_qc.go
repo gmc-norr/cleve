@@ -104,7 +104,7 @@ func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
 		if _, err := os.Stat(interopPath); os.IsNotExist(err) {
 			ctx.AbortWithStatusJSON(
 				http.StatusInternalServerError,
-				gin.H{"error": fmt.Sprintf("interop directory not found for run %s", runId)},
+				gin.H{"error": fmt.Sprintf("interop directory not found for run %s: %s", runId, interopPath)},
 			)
 			return
 		}
