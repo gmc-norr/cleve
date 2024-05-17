@@ -1,34 +1,8 @@
 {{ define "dashboard" }}
 {{ template "header" }}
 <h2>Sequencing runs</h2>
-{{ block "run_table" . }}
-<table>
-    <thead>
-        <tr>
-            <th>Run</th>
-            <th>Platform</th>
-            <th>Flowcell</th>
-            <th>Sequencing date</th>
-            <th>Status</th>
-            <th>Last updated</th>
-            <th>Path</th>
-        </tr>
-    </thead>
 
-    <tbody>
-        {{ range .runs }}
-        <tr>
-            <td><a href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
-            <td>{{ .Platform }}</td>
-            <td>{{ .RunParameters.Flowcell }}</td>
-            <td>{{ .RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
-            <td>{{ (index .StateHistory 0).State }}</td>
-            <td>{{ (index .StateHistory 0).Time.Local.Format "2006-01-02 15:04:05 MST" }}</td>
-            <td><code>{{ .Path }}</code></td>
-        </tr>
-        {{ end }}
-    </tbody>
-</table>
-{{ end }}
+<div hx-get="/runtable{{ .run_filter.UrlParams }}" hx-trigger="load">
+</div>
 {{ template "footer" }}
 {{ end }}

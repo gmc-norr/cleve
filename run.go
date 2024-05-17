@@ -1,14 +1,44 @@
 package cleve
 
 import (
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log"
 	"time"
 )
 
+type RunFilter struct {
+	RunID	 string
+	Brief    bool
+	Platform string
+	State    string
+	From     time.Time
+	To       time.Time
+	Limit    int
+	Offset   int
+}
+
+func (f RunFilter) UrlParams() string {
+	p := "?"
+	sep := ""
+	if f.RunID != "" {
+		p += fmt.Sprintf("%srun_id=%s", sep, f.RunID)
+		sep = "&"
+	}
+	if f.Platform != "" {
+		p += fmt.Sprintf("%splatform=%s", sep, f.Platform)
+		sep = "&"
+	}
+	if f.State != "" {
+		p += fmt.Sprintf("%sstate=%s", sep, f.State)
+		sep = "&"
+	}
+	return p
+}
+
 type RunService interface {
-	All(bool, string, string) ([]*Run, error)
+	All(RunFilter) ([]*Run, error)
 	Create(*Run) error
 	Delete(string) error
 	Get(string, bool) (*Run, error)

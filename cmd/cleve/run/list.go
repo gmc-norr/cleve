@@ -26,7 +26,12 @@ var listCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		runs, err := db.Runs.All(brief, platform, state)
+		filter := cleve.RunFilter{
+			Brief:    brief,
+			Platform: platform,
+			State:    state,
+		}
+		runs, err := db.Runs.All(filter)
 		if err != nil {
 			log.Fatal(err)
 		}

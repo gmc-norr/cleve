@@ -25,7 +25,12 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 			platform = ""
 		}
 
-		runs, err := db.Runs.All(true, platform, cleve.Ready.String())
+		filter := cleve.RunFilter{
+			Brief: true,
+			Platform: platform,
+			State: cleve.Ready.String(),
+		}
+		runs, err := db.Runs.All(filter)
 		if err != nil {
 			panic(err)
 		}

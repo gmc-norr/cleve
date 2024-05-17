@@ -35,8 +35,12 @@ func RunQcHandler(db *mongo.DB) gin.HandlerFunc {
 
 func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		platform := ctx.Param("platformName")
-		runs, err := db.Runs.All(true, platform, cleve.Ready.String())
+		filter := cleve.RunFilter{
+			Brief: true,
+			Platform: ctx.Param("platformName"),
+			State: cleve.Ready.String(),
+		}
+		runs, err := db.Runs.All(filter)
 		if err != nil {
 			ctx.AbortWithStatusJSON(
 				http.StatusInternalServerError,

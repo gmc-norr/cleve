@@ -16,16 +16,31 @@ type RunService struct {
 	coll *mongo.Collection
 }
 
-func (s *RunService) All(brief bool, platform string, state string) ([]*cleve.Run, error) {
+func (s *RunService) All(filter cleve.RunFilter) ([]*cleve.Run, error) {
 	var runs []*cleve.Run
 
 	var aggPipeline mongo.Pipeline
 
-	// Filter on platform
-	if platform != "" {
+	// Filter on run id
+	if filter.RunID != "" {
 		aggPipeline = append(aggPipeline, bson.D{
 			{Key: "$match", Value: bson.D{
-				{Key: "platform", Value: platform},
+				{Key: "$expr", Value: bson.D{
+					{Key: "$regexMatch", Value: bson.M{
+						"input": "$run_id",
+						"regex": filter.RunID,
+						"options": "i",
+					}},
+				}},
+			}},
+		})
+	}
+
+	// Filter on platform
+	if filter.Platform != "" {
+		aggPipeline = append(aggPipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "platform", Value: filter.Platform},
 			}},
 		})
 	}
@@ -43,13 +58,13 @@ func (s *RunService) All(brief bool, platform string, state string) ([]*cleve.Ru
 	})
 
 	// Filter on most recent state
-	if state != "" {
+	if filter.State != "" {
 		aggPipeline = append(aggPipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "$expr", Value: bson.D{
 					{Key: "$eq", Value: bson.A{
 						bson.D{{Key: "$arrayElemAt", Value: bson.A{"$state_history.state", 0}}},
-						state,
+						filter.State,
 					}},
 				}},
 			}},
@@ -82,7 +97,7 @@ func (s *RunService) All(brief bool, platform string, state string) ([]*cleve.Ru
 	})
 
 	// Exclude run parameters and analysis
-	if brief {
+	if filter.Brief {
 		aggPipeline = append(aggPipeline, bson.D{
 			{Key: "$unset", Value: bson.A{"run_parameters", "analysis"}},
 		})

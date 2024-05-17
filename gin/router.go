@@ -39,6 +39,16 @@ func authMiddleware(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
+func hxMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		hx := c.GetHeader("HX-Request")
+		if hx != "true" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "not an HX request"})
+		}
+		c.Next()
+	}
+}
+
 func multiply(x, y float64) float64 {
 	return x * y
 }
@@ -87,6 +97,10 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/runs/:runId", DashboardRunHandler(db))
 	r.GET("/qc", DashboardQCHandler(db))
 	r.GET("/qc/charts/global", GlobalChartsHandler(db))
+
+	hxEndpoints := r.Group("/")
+	hxEndpoints.Use(hxMiddleware())
+	hxEndpoints.GET("/runtable", DashBoardRunTable(db))
 
 	// API endpoints
 	r.GET("/api", func(c *gin.Context) {

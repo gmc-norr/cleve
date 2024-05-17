@@ -12,12 +12,18 @@ import (
 
 func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		runs, err := db.Runs.All(false, "", "")
+		filter := cleve.RunFilter{
+			Brief: false,
+			RunID: c.Query("run_id"),
+			Platform: c.Query("platform"),
+			State: c.Query("state"),
+		}
+		runs, err := db.Runs.All(filter)
 		if err != nil {
 			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err.Error()})
 			return
 		}
-		c.HTML(http.StatusOK, "dashboard", gin.H{"runs": runs})
+		c.HTML(http.StatusOK, "dashboard", gin.H{"runs": runs, "run_filter": filter})
 	}
 }
 
@@ -51,9 +57,41 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
+func DashBoardRunTable(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		filter := cleve.RunFilter{
+			Brief: false,
+			RunID: c.Query("run_id"),
+			Platform: c.Query("platform"),
+			State: c.Query("state"),
+		}
+		runs, err := db.Runs.All(filter)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		platforms, err := db.Platforms.All()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		platformStrings := make([]string, 0)
+		for _, p := range platforms {
+			platformStrings = append(platformStrings, p.Name)
+		}
+
+		c.Header("Hx-Push-Url", filter.UrlParams())
+		c.HTML(http.StatusOK, "run_table", gin.H{"runs": runs, "platforms":	platformStrings, "run_filter": filter})
+	}
+}
+
 func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		runs, err := db.Runs.All(true, "", "")
+		filter := cleve.RunFilter{
+			Brief: true,
+		}
+		runs, err := db.Runs.All(filter)
 		if err != nil {
 			c.HTML(http.StatusInternalServerError, "error500", nil)
 		}

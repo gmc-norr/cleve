@@ -16,7 +16,12 @@ func RunsHandler(db *mongo.DB) gin.HandlerFunc {
 		platform, _ := c.GetQuery("platform")
 		state, _ := c.GetQuery("state")
 
-		runs, err := db.Runs.All(brief, platform, state)
+		filter := cleve.RunFilter{
+			Brief: brief,
+			Platform: platform,
+			State: state,
+		}
+		runs, err := db.Runs.All(filter)
 
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
