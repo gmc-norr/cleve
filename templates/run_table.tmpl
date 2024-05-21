@@ -1,0 +1,100 @@
+{{ define "run_table" }}
+{{ $run_filter := .run_filter }}
+{{ $current_page := .runs.RunMetadata.Page }}
+{{ $total_pages := .runs.RunMetadata.TotalPages }}
+<p id="table-counts">
+    Showing {{ .runs.RunMetadata.Count}} out of {{ .runs.RunMetadata.TotalCount }} runs
+    Page {{ .runs.RunMetadata.Page }} / {{ .runs.RunMetadata.TotalPages }}
+</p>
+
+<div id="table-nav">
+    {{ if eq $current_page 1 }}
+    <button type="button" class="table-nav-item" disabled>Previous</button>
+    {{ else }}
+    <button type="button" class="table-nav-item"
+        hx-get="/runtable?page={{ subtractInt $current_page 1 }}"
+        hx-include="form"
+        hx-select="#runtable-body"
+        hx-target="#runtable-body"
+        hx-select-oob="#table-counts,#table-nav"
+        hx-swap="outerHTML">Previous</button>
+    {{ end }}
+
+    {{ range N 1 (addInt .runs.RunMetadata.TotalPages 1) }}
+    {{ if eq . $current_page }}
+    <button type="button" class="table-nav-item" disabled>{{ . }}</button>
+    {{ else }}
+    <button type="button" class="table-nav-item"
+        hx-get="/runtable?page={{ . }}"
+        hx-include="form"
+        hx-select="#runtable-body"
+        hx-target="#runtable-body"
+        hx-select-oob="#table-counts,#table-nav"
+        hx-swap="outerHTML">{{ . }}</button>
+    {{ end }}
+    {{ end }}
+
+    {{ if eq $current_page $total_pages }}
+    <button type="button" class="table-nav-item" disabled>Next</button>
+    {{ else }}
+    <button type="button" class="table-nav-item"
+        hx-get="/runtable?page={{ addInt $current_page 1 }}"
+        hx-include="form"
+        hx-select="#runtable-body"
+        hx-target="#runtable-body"
+        hx-select-oob="#table-counts,#table-nav"
+        hx-swap="outerHTML">Next</button>
+    {{ end }}
+</div>
+
+<form hx-get="/runtable" hx-target="#runtable-body" hx-select="#runtable-body" hx-swap="outerHTML" hx-trigger="keyup delay:300ms from:input[name=run_id], change from:select[name=platform], change from:select[name=state]" hx-select-oob="#table-counts,#table-nav">
+    <table>
+        <thead>
+            <tr>
+                <th>Run</th>
+                <th>Platform</th>
+                <th>Flowcell</th>
+                <th>Sequencing date</th>
+                <th>Status</th>
+                <th>Last updated</th>
+                <th>Path</th>
+            </tr>
+            <tr>
+                <th><input type="text" name="run_id" placeholder="Filter by run ID" value="{{ .run_filter.RunID }}" /></th>
+                <th>
+                    <select name="platform">
+                        <option value="" {{ if eq $run_filter.Platform "" }}selected{{ end }}>All</option>
+                        {{ range .platforms }}
+                        <option value="{{ . }}" {{ if eq $run_filter.Platform . }}selected{{ end }}>{{ . }}</option>
+                        {{ end }}
+                    </select>
+                <th/>
+                <th/>
+                <th>
+                    <select name="state">
+                        <option value="" {{ if eq $run_filter.State "" }}selected{{ end }}>All</option>
+                        <option value="ready" {{ if eq $run_filter.State "ready" }}selected{{ end }}>Ready</option>
+                        <option value="pending" {{ if eq $run_filter.State "pending" }}selected{{ end }}>Pending</option>
+                        <option value="error" {{ if eq $run_filter.State "error" }}selected{{ end }}>Error</option>
+                    </select>
+                </th>
+                </th>
+            </tr>
+        </thead>
+
+        <tbody id="runtable-body">
+            {{ range .runs.Runs }}
+            <tr>
+                <td><a href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
+                <td>{{ .Platform }}</td>
+                <td>{{ .RunParameters.Flowcell }}</td>
+                <td>{{ .RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
+                <td>{{ (index .StateHistory 0).State.String | title }}</td>
+                <td>{{ (index .StateHistory 0).Time.Local.Format "2006-01-02 15:04:05 MST" }}</td>
+                <td><code>{{ .Path }}</code></td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</form>
+{{ end }}

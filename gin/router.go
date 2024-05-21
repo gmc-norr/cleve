@@ -49,12 +49,39 @@ func hxMiddleware() gin.HandlerFunc {
 	}
 }
 
+func add(x, y float64) float64 {
+	return x + y
+}
+
+func addInt(x, y int) int {
+	return x + y
+}
+
+func subtract(x, y float64) float64 {
+	return x - y
+}
+
+func subtractInt(x, y int) int {
+	return x - y
+}
+
 func multiply(x, y float64) float64 {
 	return x * y
 }
 
 func title(s string) string {
 	return cases.Title(language.English).String(s)
+}
+
+func N(start, end int) chan int {
+	stream := make(chan int)
+	go func() {
+		for i := start; i < end; i++ {
+			stream <- i
+		}
+		close(stream)
+	}()
+	return stream
 }
 
 func toFloat(x interface{}) float64 {
@@ -85,9 +112,14 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 
 	r := gin.Default()
 	r.SetFuncMap(template.FuncMap{
-		"multiply": multiply,
-		"title":    title,
-		"toFloat":  toFloat,
+		"add":         add,
+		"addInt":      addInt,
+		"subtract":    subtract,
+		"subtractInt": subtractInt,
+		"multiply":    multiply,
+		"title":       title,
+		"toFloat":     toFloat,
+		"N":           N,
 	})
 	r.LoadHTMLGlob(fmt.Sprintf("%s/templates/*", viper.GetString("assets")))
 
@@ -100,7 +132,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 
 	hxEndpoints := r.Group("/")
 	hxEndpoints.Use(hxMiddleware())
-	hxEndpoints.GET("/runtable", DashBoardRunTable(db))
+	hxEndpoints.GET("/runtable", DashboardRunTable(db))
 
 	// API endpoints
 	r.GET("/api", func(c *gin.Context) {

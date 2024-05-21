@@ -9,14 +9,14 @@ import (
 )
 
 type RunFilter struct {
-	RunID	 string
+	RunID    string
 	Brief    bool
 	Platform string
 	State    string
 	From     time.Time
 	To       time.Time
-	Limit    int
-	Offset   int
+	Page     int
+	PageSize int
 }
 
 func (f RunFilter) UrlParams() string {
@@ -34,11 +34,28 @@ func (f RunFilter) UrlParams() string {
 		p += fmt.Sprintf("%sstate=%s", sep, f.State)
 		sep = "&"
 	}
+	if f.Page != 0 {
+		p += fmt.Sprintf("%spage=%d", sep, f.Page)
+		sep = "&"
+	}
 	return p
 }
 
+type RunMetadata struct {
+	TotalCount int `bson:"total_count" json:"total_count"`
+	Count      int `bson:"count" json:"count"`
+	Page       int `bson:"page" json:"page"`
+	PageSize   int `bson:"page_size" json:"page_size"`
+	TotalPages int `bson:"total_pages" json:"total_pages"`
+}
+
+type RunResult struct {
+	RunMetadata `bson:"metadata" json:"metadata"`
+	Runs        []*Run `bson:"runs" json:"runs"`
+}
+
 type RunService interface {
-	All(RunFilter) ([]*Run, error)
+	All(RunFilter) (RunResult, error)
 	Create(*Run) error
 	Delete(string) error
 	Get(string, bool) (*Run, error)

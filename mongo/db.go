@@ -3,12 +3,13 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/gmc-norr/cleve"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
-	"time"
 )
 
 // Some exports that will be useful in route handling and testing

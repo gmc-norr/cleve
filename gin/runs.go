@@ -13,14 +13,12 @@ import (
 func RunsHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		_, brief := c.GetQuery("brief")
-		platform, _ := c.GetQuery("platform")
-		state, _ := c.GetQuery("state")
-
-		filter := cleve.RunFilter{
-			Brief: brief,
-			Platform: platform,
-			State: state,
+		filter, err := getRunFilter(c, brief)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
+
 		runs, err := db.Runs.All(filter)
 
 		if err != nil {

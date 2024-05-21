@@ -2,7 +2,6 @@
 {{ template "header" }}
 <h2>Sequencing runs</h2>
 
-<div hx-get="/runtable{{ .run_filter.UrlParams }}" hx-trigger="load">
-</div>
+{{ template "run_table" . }}
 {{ template "footer" }}
 {{ end }}

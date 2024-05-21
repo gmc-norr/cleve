@@ -26,9 +26,9 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		filter := cleve.RunFilter{
-			Brief: true,
+			Brief:    true,
 			Platform: platform,
-			State: cleve.Ready.String(),
+			State:    cleve.Ready.String(),
 		}
 		runs, err := db.Runs.All(filter)
 		if err != nil {
@@ -42,7 +42,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Label: "%>=Q30",
 				Type:  chartType,
 			}
-			for _, r := range runs {
+			for _, r := range runs.Runs {
 				q30, err := db.RunQC.GetTotalQ30(r.RunID)
 				if err != nil {
 					if err == mongo.ErrNoDocuments {
@@ -70,7 +70,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Label: "Error rate",
 				Type:  chartType,
 			}
-			for _, r := range runs {
+			for _, r := range runs.Runs {
 				errorRate, err := db.RunQC.GetTotalErrorRate(r.RunID)
 				if err != nil {
 					if err == mongo.ErrNoDocuments {

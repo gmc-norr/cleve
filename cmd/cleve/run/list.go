@@ -36,11 +36,11 @@ var listCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if csvOutput {
-			printCSV(runs)
+			printCSV(runs.Runs)
 		} else if jsonOutput {
-			printJSON(runs)
+			printJSON(runs.Runs)
 		} else {
-			printTable(runs)
+			printTable(runs.Runs)
 		}
 	},
 }

@@ -36,9 +36,9 @@ func RunQcHandler(db *mongo.DB) gin.HandlerFunc {
 func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		filter := cleve.RunFilter{
-			Brief: true,
+			Brief:    true,
 			Platform: ctx.Param("platformName"),
-			State: cleve.Ready.String(),
+			State:    cleve.Ready.String(),
 		}
 		runs, err := db.Runs.All(filter)
 		if err != nil {
@@ -49,7 +49,7 @@ func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		runIds := make([]string, 0)
-		for _, r := range runs {
+		for _, r := range runs.Runs {
 			runIds = append(runIds, r.RunID)
 		}
 
