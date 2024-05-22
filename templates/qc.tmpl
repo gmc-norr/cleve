@@ -4,50 +4,11 @@
 
 <p>Here are QC data from the sequencing for runs that have completed.</p>
 
-{{ block "qc_table" . }}
-<table>
-    <thead>
-        <tr>
-            <th>Run</th>
-            <th>Sequencing date</th>
-            <th>Platform</th>
-            <th>Yield (Gbp)</th>
-            <th>%&ge;Q30</th>
-            <th>% Aligned to PhiX</th>
-            <th>Error rate</th>
-            <th>% Occupied</th>
-            <th>Cycle 1 intensity</th>
-        </tr>
-    </thead>
+{{ template "qc_table" . }}
 
-    <tbody>
-        {{ range $key, $value := .run_details }}
-        <tr>
-            <td><a href="/runs/{{ $key }}">{{ $key }}</a></td>
-            <td>{{ $value.Run.RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
-            <td>{{ $value.Run.Platform }}</td>
-            <td>{{ multiply (toFloat $value.QC.RunSummary.Total.Yield) 1e-9 | printf "%.2f" }}</td>
-            <td>{{ $value.QC.RunSummary.Total.PercentQ30 }}</td>
-            <td>{{ $value.QC.RunSummary.Total.PercentAligned | printf "%.2f" }}</td>
-            <td>{{ $value.QC.RunSummary.Total.ErrorRate | printf "%.2f" }}</td>
-            <td>{{ $value.QC.RunSummary.Total.PercentOccupied }}</td>
-            <td>{{ $value.QC.RunSummary.Total.IntensityC1 }}</td>
-        </tr>
-        {{ end }}
-    </tbody>
-</table>
-{{ end }}
-{{ block "qc_charts" . }}
 <div>
     <h2>Charts</h2>
-    <form hx-get="/qc/charts/global" hx-target="#chart-container" hx-trigger="change" hx-swap="innerHtml ignoreTitle:true">
-        <label for="platform-select">Platform:</label>
-        <select id="platform-select" name="platform">
-            <option value="all" selected>All</option>
-            {{ range .platforms }}
-            <option value="{{ . }}">{{ . }}</option>
-            {{ end }}
-        </select>
+    <form hx-get="/qc/charts/global" hx-target="#chart-container" hx-trigger="change, keyup delay:300ms from:input[name=run_id], change from:select[name=platform]" hx-swap="innerHtml ignoreTitle:true" hx-include="#qc-table-form">
         <label for="chart-data-select">Chart type:</label>
         <select id="chart-data-select" name="chart-data">
             <option value="q30" selected>%&ge;Q30</option>
@@ -59,11 +20,10 @@
             <option value="line">Line chart</option>
         </select>
     </form>
-    <div id="chart-container" hx-get="/qc/charts/global?platform=all&chart-data=q30&chart-type=bar" hx-trigger="load" hx-swap="innerHTML ignoreTitle:true">script">
+    <div id="chart-container" hx-get="/qc/charts/global?&chart-data=q30&chart-type=bar" hx-trigger="load" hx-swap="innerHTML ignoreTitle:true">script">
         <p>Loading chart...</p>
     </div>
 </div>
 <script src="https://go-echarts.github.io/go-echarts-assets/assets/echarts.min.js"></script>
-{{ end }}
 {{ template "footer" }}
 {{ end }}

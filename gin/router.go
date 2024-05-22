@@ -69,6 +69,10 @@ func multiply(x, y float64) float64 {
 	return x * y
 }
 
+func multiplyInt(x, y int) int {
+	return x * y
+}
+
 func title(s string) string {
 	return cases.Title(language.English).String(s)
 }
@@ -117,6 +121,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 		"subtract":    subtract,
 		"subtractInt": subtractInt,
 		"multiply":    multiply,
+		"multiplyInt": multiplyInt,
 		"title":       title,
 		"toFloat":     toFloat,
 		"N":           N,

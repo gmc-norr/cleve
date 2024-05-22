@@ -1,12 +1,10 @@
 package gin
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 )
 
@@ -97,40 +95,28 @@ func DashboardRunTable(db *mongo.DB) gin.HandlerFunc {
 
 func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		filter, err := getRunFilter(c, true)
+		filter, err := getQcFilter(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		dashboardData, err := getDashboardData(db, filter)
+		qc, err := db.RunQC.All(filter)
 		if err != nil {
-			c.HTML(http.StatusInternalServerError, "error500", dashboardData)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		type RunDetails struct {
-			Run *cleve.Run
-			QC  *interop.InteropSummary
+		platforms, err := db.Platforms.All()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
-
-		runDetails := make(map[string]RunDetails)
-
-		for _, r := range dashboardData["runs"].(cleve.RunResult).Runs {
-			qcSummary, err := db.RunQC.Get(r.RunID)
-			if err != nil {
-				if err == mongo.ErrNoDocuments {
-					continue
-				}
-				log.Println(err)
-				log.Printf("warning: qc for run %s could not be fetched: %s", r.RunID, err.Error())
-			}
-			runDetails[r.RunID] = RunDetails{
-				Run: r,
-				QC:  qcSummary,
-			}
+		platformStrings := make([]string, 0)
+		for _, p := range platforms {
+			platformStrings = append(platformStrings, p.Name)
 		}
-
-		c.HTML(http.StatusOK, "qc", gin.H{"run_details": runDetails, "platforms": dashboardData["platforms"]})
+		
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.RunMetadata, "platforms": platformStrings})
 	}
 }

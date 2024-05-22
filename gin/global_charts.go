@@ -5,14 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/charts"
 	"github.com/gmc-norr/cleve/mongo"
 )
 
 func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		platform := c.Query("platform")
 		chartData := c.Query("chart-data")
 		chartType := c.Query("chart-type")
 		if chartType == "" {
@@ -21,16 +19,16 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 		if chartData == "" {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "chart data not set"})
 		}
-		if platform == "all" {
-			platform = ""
+
+		filter, err := getQcFilter(c)
+		if err != nil {
+			panic(err)
 		}
 
-		filter := cleve.RunFilter{
-			Brief:    true,
-			Platform: platform,
-			State:    cleve.Ready.String(),
-		}
-		runs, err := db.Runs.All(filter)
+		// Get all results
+		filter.PageSize = 0
+
+		qc, err := db.RunQC.All(filter)
 		if err != nil {
 			panic(err)
 		}
@@ -42,16 +40,10 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Label: "%>=Q30",
 				Type:  chartType,
 			}
-			for _, r := range runs.Runs {
-				q30, err := db.RunQC.GetTotalQ30(r.RunID)
-				if err != nil {
-					if err == mongo.ErrNoDocuments {
-						continue
-					}
-				}
-
+			for _, q := range qc.Qc {
+				q30 := float64(q.RunSummary["Total"].PercentQ30)
 				datapoint := charts.RunStat[float64]{
-					RunID: r.RunID,
+					RunID: q.RunID,
 				}
 				if !math.IsNaN(q30) {
 					datapoint.Value = &q30
@@ -70,15 +62,15 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Label: "Error rate",
 				Type:  chartType,
 			}
-			for _, r := range runs.Runs {
-				errorRate, err := db.RunQC.GetTotalErrorRate(r.RunID)
+			for _, q := range qc.Qc {
+				errorRate := float64(q.RunSummary["Total"].ErrorRate)
 				if err != nil {
 					if err == mongo.ErrNoDocuments {
 						continue
 					}
 				}
 				datapoint := charts.RunStat[float64]{
-					RunID: r.RunID,
+					RunID: q.RunID,
 				}
 				if !math.IsNaN(errorRate) {
 					datapoint.Value = &errorRate

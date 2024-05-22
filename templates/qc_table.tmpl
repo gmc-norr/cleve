@@ -1,0 +1,99 @@
+{{ define "qc_table" }}
+{{ $run_filter := .run_filter }}
+{{ $current_page := .metadata.Page }}
+{{ $total_pages := .metadata.TotalPages }}
+{{ $start_sample := addInt (multiplyInt (subtractInt .metadata.Page 1) .metadata.PageSize) 1 }}
+
+<p id="table-counts">
+    Showing runs {{ $start_sample }} &ndash; {{ subtractInt (addInt $start_sample .metadata.Count) 1 }} out of {{ .metadata.TotalCount }} runs
+    Page {{ .metadata.Page }} / {{ .metadata.TotalPages }}
+</p>
+
+<div id="table-nav">
+    <button type="button" class="table-nav-item"
+        hx-get="/qc?page={{ subtractInt $current_page 1 }}"
+        hx-include="#qc-table-form"
+        hx-select="#qc-table-body"
+        hx-target="#qc-table-body"
+        hx-select-oob="#table-counts,#table-nav"
+        hx-swap="outerHTML"
+        {{ if eq $current_page 1 }}disabled{{ end }}>Previous</button>
+    {{ range N 1 (addInt .metadata.TotalPages 1) }}
+    <button type="button" class="table-nav-item"
+        hx-get="/qc?page={{ . }}"
+        hx-include="#qc-table-form"
+        hx-select="#qc-table-body"
+        hx-target="#qc-table-body"
+        hx-select-oob="#table-counts,#table-nav"
+        hx-swap="outerHTML"
+        {{ if eq $current_page . }}disabled{{ end }}>{{ . }}</button>
+    {{ end }}
+    <button type="button" class="table-nav-item"
+        hx-get="/qc?page={{ addInt $current_page 1 }}"
+        hx-include="#qc-table-form"
+        hx-select="#qc-table-body"
+        hx-target="#qc-table-body"
+        hx-select-oob="#table-counts,#table-nav"
+        hx-swap="outerHTML"
+        {{ if eq $current_page $total_pages }}disabled{{ end }}>Next</button>
+</div>
+
+<form id="qc-table-form"
+    hx-get="/qc"
+    hx-trigger="keyup delay:300ms from:input[name=run_id], change from:select[name=platform]"
+    hx-select="#qc-table-body"
+    hx-target="#qc-table-body"
+    hx-select-oob="#table-counts,#table-nav"
+    hx-swap="outerHTML">
+    <input type="hidden" name="state" value="ready">
+    <table>
+        <thead>
+            <tr>
+                <th>Run</th>
+                <th>Sequencing date</th>
+                <th>Platform</th>
+                <th>Yield (Gbp)</th>
+                <th>%&ge;Q30</th>
+                <th>% Aligned to PhiX</th>
+                <th>Error rate</th>
+                <th>% Occupied</th>
+                <th>Cycle 1 intensity</th>
+            </tr>
+            <tr>
+                <th><input type="text" name="run_id" placeholder="Run ID filter"></input></th>
+                <th></th>
+                <th>
+                    <select name="platform">
+                        <option value=""{{ if eq $run_filter.Platform "" }} selected{{ end }}>All</option>
+                        {{ range .platforms }}
+                        <option value="{{ . }}"{{ if eq $run_filter.Platform . }} selected{{ end }}>{{ . }}</option>
+                        {{ end }}
+                    </select>
+                </th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody id="qc-table-body">
+            {{ range .qc }}
+            <tr>
+                <td><a href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
+                <td>{{ .Run.RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
+                <td>{{ .Run.Platform }}</td>
+                <td>{{ multiply (toFloat .RunSummary.Total.Yield) 1e-9 | printf "%.2f" }}</td>
+                <td>{{ .RunSummary.Total.PercentQ30 }}</td>
+                <td>{{ .RunSummary.Total.PercentAligned | printf "%.2f" }}</td>
+                <td>{{ .RunSummary.Total.ErrorRate | printf "%.2f" }}</td>
+                <td>{{ .RunSummary.Total.PercentOccupied }}</td>
+                <td>{{ .RunSummary.Total.IntensityC1 }}</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</form>
+{{ end }}
