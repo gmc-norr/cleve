@@ -95,6 +95,7 @@ func DashboardRunTable(db *mongo.DB) gin.HandlerFunc {
 
 func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		chartConfig := GetChartConfig(c)
 		filter, err := getQcFilter(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -117,6 +118,7 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 			platformStrings = append(platformStrings, p.Name)
 		}
 		
-		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.RunMetadata, "platforms": platformStrings})
+		c.Header("Hx-Push-Url", filter.UrlParams())
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.RunMetadata, "platforms": platformStrings, "filter": filter, "chart-config": chartConfig})
 	}
 }

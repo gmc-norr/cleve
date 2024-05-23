@@ -11,15 +11,7 @@ import (
 
 func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		chartData := c.Query("chart-data")
-		chartType := c.Query("chart-type")
-		if chartType == "" {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "chart type not set"})
-		}
-		if chartData == "" {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "chart data not set"})
-		}
-
+		config := GetChartConfig(c)
 		filter, err := getQcFilter(c)
 		if err != nil {
 			panic(err)
@@ -33,12 +25,12 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 			panic(err)
 		}
 
-		switch chartData {
+		switch config.ChartData {
 		case "q30":
 			plotData := charts.RunStats[float64]{
 				Data:  make([]charts.RunStat[float64], 0),
 				Label: "%>=Q30",
-				Type:  chartType,
+				Type:  config.ChartType,
 			}
 			for _, q := range qc.Qc {
 				q30 := float64(q.RunSummary["Total"].PercentQ30)
@@ -60,7 +52,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 			plotData := charts.RunStats[float64]{
 				Data:  make([]charts.RunStat[float64], 0),
 				Label: "Error rate",
-				Type:  chartType,
+				Type:  config.ChartType,
 			}
 			for _, q := range qc.Qc {
 				errorRate := float64(q.RunSummary["Total"].ErrorRate)

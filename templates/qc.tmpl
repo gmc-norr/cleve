@@ -8,19 +8,29 @@
 
 <div>
     <h2>Charts</h2>
-    <form hx-get="/qc/charts/global" hx-target="#chart-container" hx-trigger="change, keyup delay:300ms from:input[name=run_id], change from:select[name=platform]" hx-swap="innerHtml ignoreTitle:true" hx-include="#qc-table-form">
+    <form id="chart-form"
+        autocomplete="off"
+        hx-get="/qc/charts/global"
+        hx-target="#chart-container"
+        hx-trigger="change, keyup delay:300ms from:input[name=run_id], change from:select[name=platform]"
+        hx-swap="innerHtml ignoreTitle:true"
+        hx-include="#qc-table-form">
         <label for="chart-data-select">Chart type:</label>
         <select id="chart-data-select" name="chart-data">
-            <option value="q30" selected>%&ge;Q30</option>
-            <option value="error_rate">Error rate</option>
+            <option value="q30"{{ if eq .chart_config.chart_data "q30" }} selected{{ end }}>%&ge;Q30</option>
+            <option value="error_rate"{{ if eq .chart_config.chart_data "error_rate" }} selected{{ end }}>Error rate</option>
         </select>
         <label for="chart-type-select">Chart type:</label>
         <select id="chart-type-select" name="chart-type">
-            <option value="bar" selected>Bar chart</option>
-            <option value="line">Line chart</option>
+            <option value="bar"{{ if eq .chart_config.chart_type "bar" }} selected{{ end }}>Bar chart</option>
+            <option value="line"{{ if eq .chart_config.chart_type "line" }} selected{{ end }}>Line chart</option>
         </select>
     </form>
-    <div id="chart-container" hx-get="/qc/charts/global?&chart-data=q30&chart-type=bar" hx-trigger="load" hx-swap="innerHTML ignoreTitle:true">script">
+    <div id="chart-container"
+        hx-get="/qc/charts/global"
+        hx-include="#chart-form,#qc-table-form"
+        hx-trigger="load"
+        hx-swap="innerHTML ignoreTitle:true">
         <p>Loading chart...</p>
     </div>
 </div>
