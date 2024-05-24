@@ -202,6 +202,17 @@ func (p *sampleSheetParser) ParseSectionRow() ([]string, error) {
 			}
 			currentValue = strings.TrimSpace(currentValue)
 			values = append(values, currentValue)
+			allEmpty := true
+			for _, v := range values {
+				if v != "" {
+					allEmpty = false
+					break
+				}
+			}
+			if allEmpty {
+				// only commas, ignore
+				return nil, nil
+			}
 			return values, nil
 		case ',':
 			currentValue = strings.TrimSpace(currentValue)
