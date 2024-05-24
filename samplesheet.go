@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -268,4 +269,13 @@ func ParseSampleSheet(r *bufio.Reader) (SampleSheet, error) {
 	}
 
 	return sheet, nil
+}
+
+func ReadSampleSheet(filename string) (SampleSheet, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return SampleSheet{}, err
+	}
+	r := bufio.NewReader(f)
+	return ParseSampleSheet(r)
 }

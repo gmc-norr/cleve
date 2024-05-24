@@ -385,3 +385,28 @@ key2,val2
 		t.Errorf("expected empty string, got %s", v)
 	}
 }
+
+func TestReadSampleSheet(t *testing.T) {
+	cases := []struct {
+		Name     string
+		Filename string
+	}{
+		{
+			"novaseq",
+			"test_data/novaseq_full/SampleSheet.csv",
+		},
+		{
+			"nextseq",
+			"test_data/nextseq1_full/SampleSheet.csv",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			s, err := ReadSampleSheet(c.Filename)
+			if err != nil {
+				t.Errorf("unexpected error: %s", err)
+			}
+			t.Logf("%+v\n", s)
+		})
+	}
+}
