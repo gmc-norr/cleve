@@ -149,6 +149,9 @@ func (p *sampleSheetParser) ParseHeader() (string, int, error) {
 		}
 		name += string(r)
 	}
+
+	name = strings.TrimSpace(name)
+
 	var sectionType int
 	switch {
 	case name == "Header", name == "Reads":
@@ -179,6 +182,7 @@ func (p *sampleSheetParser) ParseSectionRow() ([]string, error) {
 		if err != nil {
 			if err.Error() == "EOF" {
 				if currentValue != "" {
+					currentValue = strings.TrimSpace(currentValue)
 					values = append(values, currentValue)
 				}
 				if len(values) > 0 {
@@ -196,9 +200,11 @@ func (p *sampleSheetParser) ParseSectionRow() ([]string, error) {
 				// Empty line
 				return nil, nil
 			}
+			currentValue = strings.TrimSpace(currentValue)
 			values = append(values, currentValue)
 			return values, nil
 		case ',':
+			currentValue = strings.TrimSpace(currentValue)
 			values = append(values, currentValue)
 			currentValue = ""
 			continue
@@ -231,7 +237,7 @@ func ParseSampleSheet(r *bufio.Reader) (SampleSheet, error) {
 				}
 				return sheet, err
 			}
-			
+
 			if values == nil {
 				break
 			}
