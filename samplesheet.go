@@ -41,7 +41,7 @@ func (s SampleSheet) IsValid() bool {
 
 type Section struct {
 	Name string
-	Type int
+	Type SectionType
 	Rows [][]string
 }
 
@@ -110,7 +110,7 @@ func (p *sampleSheetParser) Peek() (rune, error) {
 	return r, err
 }
 
-func (p *sampleSheetParser) ParseHeader() (string, int, error) {
+func (p *sampleSheetParser) ParseHeader() (string, SectionType, error) {
 	r, _, _ := p.reader.ReadRune()
 	if r == '\x00' {
 		return "", UnknownSection, io.EOF
@@ -152,7 +152,7 @@ func (p *sampleSheetParser) ParseHeader() (string, int, error) {
 
 	name = strings.TrimSpace(name)
 
-	var sectionType int
+	var sectionType SectionType
 	switch {
 	case name == "Header", name == "Reads":
 		sectionType = SettingsSection
