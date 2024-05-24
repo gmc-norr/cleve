@@ -349,7 +349,7 @@ key2
 			[]byte(`[Header]
 key1,val1,val2
 `),
-			`parsing error: expected 2 items per row in section "Header"`,
+			`parsing error: expected at most 2 items per row in section "Header"`,
 		},
 	}
 

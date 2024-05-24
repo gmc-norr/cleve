@@ -273,8 +273,8 @@ func ParseSampleSheet(r *bufio.Reader) (SampleSheet, error) {
 		}
 
 		rowItemCount := len(s.Rows[0])
-		if s.Type == SettingsSection && rowItemCount != 2 {
-			return sheet, fmt.Errorf("parsing error: expected 2 items per row in section %q", s.Name)
+		if s.Type == SettingsSection && rowItemCount > 2 {
+			return sheet, fmt.Errorf("parsing error: expected at most 2 items per row in section %q", s.Name)
 		}
 		for _, row := range s.Rows {
 			if len(row) != rowItemCount {
