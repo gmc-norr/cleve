@@ -2,6 +2,7 @@ package cleve
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -30,21 +31,35 @@ const (
 	DataSection
 )
 
-func (s SectionType) MarshalBSONValue() (bsontype.Type, []byte, error) {
+func (s SectionType) String() string {
 	switch s {
 	case SettingsSection:
-		return bson.MarshalValue("settings")
+		return "settings"
 	case DataSection:
-		return bson.MarshalValue("data")
+		return "data"
 	case UnknownSection:
-		return bson.MarshalValue("unknown")
+		return "unknown"
 	default:
-		return bson.MarshalValue("unknown")
+		return "unknown"
 	}
 }
 
+func (s SectionType) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bson.MarshalValue(s.String())
+}
+
 func (s *SectionType) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
-	switch string(b) {
+	var typeString string
+	raw := bson.RawValue{
+		Type:  t,
+		Value: b,
+	}
+	err := raw.Unmarshal(&typeString)
+	if err != nil {
+		return err
+	}
+
+	switch typeString {
 	case "settings":
 		*s = SettingsSection
 	case "data":
@@ -55,6 +70,10 @@ func (s *SectionType) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
 		*s = UnknownSection
 	}
 	return nil
+}
+
+func (s SectionType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
 }
 
 type SampleSheet struct {

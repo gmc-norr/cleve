@@ -3,6 +3,8 @@ package cleve
 import (
 	"bufio"
 	"bytes"
+	"fmt"
+	"os"
 	"testing"
 )
 
@@ -407,6 +409,55 @@ func TestReadSampleSheet(t *testing.T) {
 				t.Errorf("unexpected error: %s", err)
 			}
 			t.Logf("%+v\n", s)
+
+			foundHeader := false
+			for _, section := range s.Sections {
+				if section.Name == "Header" {
+					foundHeader = true
+					if section.Type != SettingsSection {
+						t.Errorf("expected settings section, got %s", section.Type)	
+					}
+				}
+			}
+
+			if !foundHeader {
+				t.Error(`did not find a "Header" section`)
+			}
+		})
+	}
+}
+
+func TestSectionType(t *testing.T) {
+	cases := []struct {
+		String string
+		Type SectionType
+	}{
+		{
+			"settings",
+			SettingsSection,
+		},
+		{
+			"data",
+			DataSection,
+		},
+		{
+			"unknown",
+			UnknownSection,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.String, func(t *testing.T) {
+			if c.Type.String() != c.String {
+				t.Errorf(`expected %q, got %q`, c.String, c.Type)
+			}
+			b, err := c.Type.MarshalJSON()
+			if err != nil {
+				t.Fatalf("failed to marshal into JSON: %s", err.Error())
+			}
+			if string(b) != fmt.Sprintf(`%q`, c.String) {
+				t.Errorf(`expected %q, got %q`, c.String, string(b))
+			}
 		})
 	}
 }
