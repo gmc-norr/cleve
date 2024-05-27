@@ -18,7 +18,7 @@ import (
 type SampleSheetService interface {
 	Create(string, SampleSheet) (*mongo.UpdateResult, error)
 	All() ([]SampleSheet, error)
-	Get(string) ([]SampleSheet, error)
+	Get(string) (SampleSheet, error)
 	GetIndex() ([]map[string]string, error)
 	SetIndex() (string, error)
 }

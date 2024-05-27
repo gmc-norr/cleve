@@ -148,6 +148,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/api/runs/:runId", RunHandler(db))
 	r.GET("/api/runs/:runId/analysis", AnalysesHandler(db))
 	r.GET("/api/runs/:runId/analysis/:analysisId", AnalysisHandler(db))
+	r.GET("/api/runs/:runId/samplesheet", SampleSheetHandler(db))
 	r.GET("/api/runs/:runId/qc", RunQcHandler(db))
 	r.GET("/api/platforms", PlatformsHandler(db))
 	r.GET("/api/platforms/:platformName", GetPlatformHandler(db))
@@ -159,6 +160,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	authEndpoints.PATCH("/api/runs/:runId", UpdateRunHandler(db))
 	authEndpoints.POST("/api/runs/:runId/analysis", AddAnalysisHandler(db))
 	authEndpoints.PATCH("/api/runs/:runId/analysis/:analysisId", UpdateAnalysisHandler(db))
+	authEndpoints.POST("/api/runs/:runId/samplesheet", AddSampleSheetHandler(db))
 	authEndpoints.POST("/api/runs/:runId/qc", AddRunQcHandler(db))
 	authEndpoints.POST("/api/platforms", AddPlatformHandler(db))
 

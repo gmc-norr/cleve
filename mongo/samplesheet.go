@@ -70,21 +70,10 @@ func (s *SampleSheetService) All() ([]cleve.SampleSheet, error) {
 	return sampleSheets, nil
 }
 
-func (s *SampleSheetService) Get(runID string) ([]cleve.SampleSheet, error) {
-	var sampleSheets []cleve.SampleSheet
-	cursor, err := s.coll.Find(context.TODO(), bson.D{{Key: "run_id", Value: runID}})
-	if err != nil {
-		return nil, err
-	}
-	for cursor.Next(context.TODO()) {
-		var sampleSheet cleve.SampleSheet
-		err = cursor.Decode(&sampleSheet)
-		if err != nil {
-			return nil, err
-		}
-		sampleSheets = append(sampleSheets, sampleSheet)
-	}
-	return sampleSheets, err
+func (s *SampleSheetService) Get(runID string) (cleve.SampleSheet, error) {
+	var sampleSheet cleve.SampleSheet
+	err := s.coll.FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runID}}).Decode(&sampleSheet)
+	return sampleSheet, err
 }
 
 func (s *SampleSheetService) GetIndex() ([]map[string]string, error) {
