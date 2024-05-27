@@ -19,7 +19,7 @@ type QcFilter struct {
 func (f QcFilter) UrlParams() string {
 	s := "?"
 	sep := ""
-	
+
 	if f.RunID != "" {
 		s = fmt.Sprintf("%s%srun_id=%s", s, sep, f.RunID)
 		sep = "&"
@@ -45,7 +45,7 @@ func (f QcFilter) UrlParams() string {
 
 type QcResultItem struct {
 	interop.InteropSummary `bson:",inline" json:",inline"`
-	Run Run `bson:"run" json:"run"`
+	Run                    Run `bson:"run" json:"run"`
 }
 
 type QcResult struct {

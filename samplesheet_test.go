@@ -415,7 +415,7 @@ func TestReadSampleSheet(t *testing.T) {
 				if section.Name == "Header" {
 					foundHeader = true
 					if section.Type != SettingsSection {
-						t.Errorf("expected settings section, got %s", section.Type)	
+						t.Errorf("expected settings section, got %s", section.Type)
 					}
 				}
 			}
@@ -430,7 +430,7 @@ func TestReadSampleSheet(t *testing.T) {
 func TestSectionType(t *testing.T) {
 	cases := []struct {
 		String string
-		Type SectionType
+		Type   SectionType
 	}{
 		{
 			"settings",

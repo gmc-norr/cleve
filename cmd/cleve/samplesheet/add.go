@@ -36,7 +36,7 @@ var (
 			if err != nil {
 				log.Fatal(err)
 			}
-			
+
 			sampleSheet, err := cleve.ReadSampleSheet(sheetPath)
 			if err != nil {
 				log.Fatal(err)

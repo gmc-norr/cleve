@@ -2,8 +2,8 @@ package mongo
 
 import (
 	"context"
-	"log"
 	"fmt"
+	"log"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
@@ -86,7 +86,6 @@ func (s *SampleSheetService) Get(runID string) ([]cleve.SampleSheet, error) {
 	}
 	return sampleSheets, err
 }
-
 
 func (s *SampleSheetService) GetIndex() ([]map[string]string, error) {
 	cursor, err := s.coll.Indexes().List(context.TODO())

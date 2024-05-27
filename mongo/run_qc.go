@@ -27,16 +27,16 @@ func (s *RunQcService) All(filter cleve.QcFilter) (cleve.QcResult, error) {
 
 	aggPipeline = append(aggPipeline, bson.D{
 		{Key: "$lookup", Value: bson.M{
-			"from": "runs",
-			"localField": "run_id",
+			"from":         "runs",
+			"localField":   "run_id",
 			"foreignField": "run_id",
-			"as": "run",
+			"as":           "run",
 		}},
 	})
 
 	// We expect only one run, so unwind the array
 	qcPipeline = append(qcPipeline, bson.D{
-		{Key: "$unwind", Value: "$run"},	
+		{Key: "$unwind", Value: "$run"},
 	})
 
 	// Platform filter

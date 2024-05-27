@@ -117,7 +117,7 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		for _, p := range platforms {
 			platformStrings = append(platformStrings, p.Name)
 		}
-		
+
 		c.Header("Hx-Push-Url", filter.UrlParams())
 		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.RunMetadata, "platforms": platformStrings, "filter": filter, "chart-config": chartConfig})
 	}
