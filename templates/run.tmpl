@@ -64,5 +64,50 @@
 <p>QC data is not available until the run is ready.</p>
 {{ end }}
 
+<h3>Samplesheet</h3>
+
+{{ if eq .samplesheet.RunID "" }}
+<p>No samplesheet has been imported for this run.</p>
+{{ else }}
+<div>
+    {{ range .samplesheet.Sections }}
+    {{ $sectionType := .Type }}
+    <section>
+        <h4>{{ .Name }}</h4>
+        <table>
+            {{ if eq $sectionType 2 }}
+            <thead>
+                <tr>
+                {{ range (index .Rows 0) }}
+                    <th>{{ . }}</th>
+                {{ end }}
+                </tr>
+            <thead>
+            {{ end }}
+            <tbody>
+                {{ range $i, $row := .Rows }}
+                <tr>
+                {{ if eq $sectionType 1 }}
+                    <th>{{ index $row 0 }}</th>
+                    {{ range N 1 (len $row) }}
+                    <td>{{ index $row . }}<td>
+                    {{ end }}
+                {{ else if eq $sectionType 2 }}
+                    {{ if eq $i 0 }}
+                    {{ continue }}
+                    {{ end }}
+                    {{ range $row }}
+                        <td>{{ . }}</td>
+                    {{ end }}
+                {{ end }}
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </section>
+    {{ end }}
+</div>
+{{ end }}
+
 {{ template "footer" }}
 {{ end }}
