@@ -24,10 +24,11 @@ var GenericDuplicateKeyError = mongo.WriteException{
 }
 
 type DB struct {
-	Keys      cleve.APIKeyService
-	Runs      cleve.RunService
-	Platforms cleve.PlatformService
-	RunQC     cleve.RunQcService
+	Keys         cleve.APIKeyService
+	Runs         cleve.RunService
+	Platforms    cleve.PlatformService
+	RunQC        cleve.RunQcService
+	SampleSheets cleve.SampleSheetService
 }
 
 func Connect() (*DB, error) {
@@ -61,12 +62,14 @@ func Connect() (*DB, error) {
 	keyCollection := client.Database(viper.GetString("database.name")).Collection("keys")
 	platformCollection := client.Database(viper.GetString("database.name")).Collection("platforms")
 	RunQCCollection := client.Database(viper.GetString("database.name")).Collection("run_qc")
+	sampleSheetCollection := client.Database(viper.GetString("database.name")).Collection("samplesheets")
 
 	return &DB{
 		&APIKeyService{keyCollection},
 		&RunService{runCollection},
 		&PlatformService{platformCollection},
 		&RunQcService{RunQCCollection},
+		&SampleSheetService{sampleSheetCollection},
 	}, nil
 }
 
@@ -89,6 +92,12 @@ func (db *DB) SetIndexes() error {
 	}
 	log.Printf("Set index %s on run qc", name)
 
+	name, err = db.SampleSheets.SetIndex()
+	if err != nil {
+		return err
+	}
+	log.Printf("Set index %s on samplesheets", name)
+
 	return nil
 }
 
@@ -103,9 +112,15 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 		return nil, err
 	}
 
+	sampleSheetIndex, err := db.SampleSheets.GetIndex()
+	if err != nil {
+		return nil, err
+	}
+
 	var indexes = make(map[string][]map[string]string)
 	indexes["runs"] = runIndex
 	indexes["run_qc"] = runQcIndex
+	indexes["samplesheets"] = sampleSheetIndex
 
 	return indexes, nil
 }

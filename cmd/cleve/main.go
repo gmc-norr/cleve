@@ -5,6 +5,7 @@ import (
 	"github.com/gmc-norr/cleve/cmd/cleve/key"
 	"github.com/gmc-norr/cleve/cmd/cleve/platform"
 	"github.com/gmc-norr/cleve/cmd/cleve/run"
+	"github.com/gmc-norr/cleve/cmd/cleve/samplesheet"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"log"
@@ -27,6 +28,7 @@ func init() {
 	rootCmd.AddCommand(db.DbCmd)
 	rootCmd.AddCommand(key.KeyCmd)
 	rootCmd.AddCommand(platform.PlatformCmd)
+	rootCmd.AddCommand(samplesheet.SampleSheetCmd)
 }
 
 func initConfig() {

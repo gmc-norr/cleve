@@ -7,9 +7,22 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type SectionType = int
+type SampleSheetService interface {
+	Create(string, SampleSheet) (*mongo.UpdateResult, error)
+	All() ([]SampleSheet, error)
+	Get(string) ([]SampleSheet, error)
+	GetIndex() ([]map[string]string, error)
+	SetIndex() (string, error)
+}
+
+type SectionType int
 
 const (
 	UnknownSection SectionType = iota
@@ -17,8 +30,37 @@ const (
 	DataSection
 )
 
+func (s SectionType) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	switch s {
+	case SettingsSection:
+		return bson.MarshalValue("settings")
+	case DataSection:
+		return bson.MarshalValue("data")
+	case UnknownSection:
+		return bson.MarshalValue("unknown")
+	default:
+		return bson.MarshalValue("unknown")
+	}
+}
+
+func (s *SectionType) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
+	switch string(b) {
+	case "settings":
+		*s = SettingsSection
+	case "data":
+		*s = DataSection
+	case "unknown":
+		*s = DataSection
+	default:
+		*s = UnknownSection
+	}
+	return nil
+}
+
 type SampleSheet struct {
-	Sections []Section
+	RunID            string    `bson:"run_id" json:"run_id"`
+	ModificationTime time.Time `bson:"modification_time" json:"modification_time"`
+	Sections         []Section `bson:"sections" json:"sections"`
 }
 
 func (s SampleSheet) Section(name string) *Section {
@@ -40,9 +82,9 @@ func (s SampleSheet) IsValid() bool {
 }
 
 type Section struct {
-	Name string
-	Type SectionType
-	Rows [][]string
+	Name string      `bson:"name" json:"name"`
+	Type SectionType `bson:"type" json:"type"`
+	Rows [][]string  `bson:"rows" json:"rows"`
 }
 
 func (s Section) Get(name string, index ...int) (string, bool) {
@@ -293,6 +335,18 @@ func ReadSampleSheet(filename string) (SampleSheet, error) {
 	if err != nil {
 		return SampleSheet{}, err
 	}
+	defer f.Close()
+	finfo, err := os.Stat(filename)
+	if err != nil {
+		return SampleSheet{}, err
+	}
+
 	r := bufio.NewReader(f)
-	return ParseSampleSheet(r)
+	sampleSheet, err := ParseSampleSheet(r)
+	if err != nil {
+		return sampleSheet, err
+	}
+
+	sampleSheet.ModificationTime = finfo.ModTime()
+	return sampleSheet, nil
 }
