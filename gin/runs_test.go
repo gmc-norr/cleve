@@ -59,27 +59,35 @@ func TestRunsHandler(t *testing.T) {
 	}
 
 	table := []struct {
-		Runs   []*cleve.Run
+		Runs   cleve.RunResult
 		Error  error
 		Params gin.Params
 	}{
 		{
-			nil,
-			nil,
-			gin.Params{},
-		},
-		{
-			[]*cleve.Run{novaseq1, novaseq2, nextseq1},
+			cleve.RunResult{
+				Runs: nil,
+			},
 			nil,
 			gin.Params{},
 		},
 		{
-			[]*cleve.Run{novaseq1, novaseq2, nextseq1},
+			cleve.RunResult{
+				Runs: []*cleve.Run{novaseq1, novaseq2, nextseq1},
+			},
+			nil,
+			gin.Params{},
+		},
+		{
+			cleve.RunResult{
+				Runs: []*cleve.Run{novaseq1, novaseq2, nextseq1},
+			},
 			nil,
 			gin.Params{gin.Param{Key: "brief", Value: "true"}},
 		},
 		{
-			[]*cleve.Run{novaseq1, novaseq2},
+			cleve.RunResult{
+				Runs: []*cleve.Run{novaseq1, novaseq2},
+			},
 			nil,
 			gin.Params{
 				gin.Param{Key: "brief", Value: "true"},
@@ -92,7 +100,7 @@ func TestRunsHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
-		rs.AllFn = func(bool, string, string) ([]*cleve.Run, error) {
+		rs.AllFn = func(filter cleve.RunFilter) (cleve.RunResult, error) {
 			return v.Runs, v.Error
 		}
 
@@ -110,8 +118,8 @@ func TestRunsHandler(t *testing.T) {
 		b, _ := io.ReadAll(w.Body)
 		count := strings.Count(string(b), "experiment_name")
 
-		if count != len(v.Runs) {
-			t.Fatalf("found %d runs, expected %d", count, len(v.Runs))
+		if count != len(v.Runs.Runs) {
+			t.Fatalf("found %d runs, expected %d", count, len(v.Runs.Runs))
 		}
 	}
 }

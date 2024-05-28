@@ -5,7 +5,7 @@ import (
 )
 
 type RunService struct {
-	AllFn                     func(bool, string, string) ([]*cleve.Run, error)
+	AllFn                     func(cleve.RunFilter) (cleve.RunResult, error)
 	AllInvoked                bool
 	CreateFn                  func(*cleve.Run) error
 	CreateInvoked             bool
@@ -33,9 +33,9 @@ type RunService struct {
 	SetIndexInvoked           bool
 }
 
-func (s *RunService) All(brief bool, platform string, state string) ([]*cleve.Run, error) {
+func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 	s.AllInvoked = true
-	return s.AllFn(brief, platform, state)
+	return s.AllFn(filter)
 }
 
 func (s *RunService) Create(r *cleve.Run) error {
