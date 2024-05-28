@@ -49,8 +49,8 @@ type QcResultItem struct {
 }
 
 type QcResult struct {
-	RunMetadata `bson:"metadata" json:"metadata"`
-	Qc          []QcResultItem `bson:"qc" json:"qc"`
+	PaginationMetadata `bson:"metadata" json:"metadata"`
+	Qc                 []QcResultItem `bson:"qc" json:"qc"`
 }
 
 type RunQcService interface {

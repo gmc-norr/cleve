@@ -128,6 +128,6 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		c.Header("Hx-Push-Url", filter.UrlParams())
-		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.RunMetadata, "platforms": platformStrings, "filter": filter, "chart-config": chartConfig})
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.PaginationMetadata, "platforms": platformStrings, "filter": filter, "chart-config": chartConfig})
 	}
 }

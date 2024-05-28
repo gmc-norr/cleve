@@ -179,11 +179,11 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 		if err != nil {
 			return cleve.RunResult{}, err
 		}
-		if r.RunMetadata.Page > r.RunMetadata.TotalPages {
+		if r.PaginationMetadata.Page > r.PaginationMetadata.TotalPages {
 			return r, fmt.Errorf(
 				"page %d is out of range, there are only %d pages",
-				r.RunMetadata.Page,
-				r.RunMetadata.TotalPages,
+				r.PaginationMetadata.Page,
+				r.PaginationMetadata.TotalPages,
 			)
 		}
 		return r, nil

@@ -41,16 +41,8 @@ func (f RunFilter) UrlParams() string {
 	return p
 }
 
-type RunMetadata struct {
-	TotalCount int `bson:"total_count" json:"total_count"`
-	Count      int `bson:"count" json:"count"`
-	Page       int `bson:"page" json:"page"`
-	PageSize   int `bson:"page_size" json:"page_size"`
-	TotalPages int `bson:"total_pages" json:"total_pages"`
-}
-
 type RunResult struct {
-	RunMetadata `bson:"metadata" json:"metadata"`
+	PaginationMetadata `bson:"metadata" json:"metadata"`
 	Runs        []*Run `bson:"runs" json:"runs"`
 }
 

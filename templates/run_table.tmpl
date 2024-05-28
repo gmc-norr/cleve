@@ -1,10 +1,10 @@
 {{ define "run_table" }}
 {{ $run_filter := .run_filter }}
-{{ $current_page := .runs.RunMetadata.Page }}
-{{ $total_pages := .runs.RunMetadata.TotalPages }}
+{{ $current_page := .runs.PaginationMetadata.Page }}
+{{ $total_pages := .runs.PaginationMetadata.TotalPages }}
 <p id="table-counts">
-    Showing {{ .runs.RunMetadata.Count}} out of {{ .runs.RunMetadata.TotalCount }} runs
-    Page {{ .runs.RunMetadata.Page }} / {{ .runs.RunMetadata.TotalPages }}
+    Showing {{ .runs.PaginationMetadata.Count}} out of {{ .runs.PaginationMetadata.TotalCount }} runs
+    Page {{ .runs.PaginationMetadata.Page }} / {{ .runs.PaginationMetadata.TotalPages }}
 </p>
 
 <div id="table-nav">
@@ -20,7 +20,7 @@
         hx-swap="outerHTML">Previous</button>
     {{ end }}
 
-    {{ range N 1 (addInt .runs.RunMetadata.TotalPages 1) }}
+    {{ range N 1 (addInt .runs.PaginationMetadata.TotalPages 1) }}
     {{ if eq . $current_page }}
     <button type="button" class="table-nav-item" disabled>{{ . }}</button>
     {{ else }}

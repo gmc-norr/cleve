@@ -136,7 +136,7 @@ func (s *RunQcService) All(filter cleve.QcFilter) (cleve.QcResult, error) {
 
 	if cursor.Next(context.TODO()) {
 		var qc cleve.QcResult
-		cursor.Current.Lookup("metadata").Unmarshal(&qc.RunMetadata)
+		cursor.Current.Lookup("metadata").Unmarshal(&qc.PaginationMetadata)
 		rawQc := cursor.Current.Lookup("qc")
 		err := rawQc.Unmarshal(&qc.Qc)
 		return qc, err
