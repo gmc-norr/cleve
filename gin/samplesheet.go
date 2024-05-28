@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gmc-norr/cleve"
 	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
 )
 

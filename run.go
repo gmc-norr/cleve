@@ -43,7 +43,7 @@ func (f RunFilter) UrlParams() string {
 
 type RunResult struct {
 	PaginationMetadata `bson:"metadata" json:"metadata"`
-	Runs        []*Run `bson:"runs" json:"runs"`
+	Runs               []*Run `bson:"runs" json:"runs"`
 }
 
 type RunService interface {

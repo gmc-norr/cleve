@@ -7,4 +7,3 @@ type PaginationMetadata struct {
 	PageSize   int `bson:"page_size" json:"page_size"`
 	TotalPages int `bson:"total_pages" json:"total_pages"`
 }
-
