@@ -42,7 +42,7 @@
         </tr>
     </thead>
     <tbody>
-        {{ range $read, $v := .qc.ReadSummaries }}
+        {{ range $read, $v := .qc.InteropSummary.ReadSummaries }}
             {{ range $v }}
                 <tr>
                     <td>{{ $read }}</td>
@@ -88,11 +88,13 @@
                 {{ range $i, $row := .Rows }}
                 <tr>
                 {{ if eq $sectionType 1 }}
+                    <!-- settings section -->
                     <th>{{ index $row 0 }}</th>
                     {{ range N 1 (len $row) }}
                     <td>{{ index $row . }}<td>
                     {{ end }}
                 {{ else if eq $sectionType 2 }}
+                    <!-- data section -->
                     {{ if eq $i 0 }}
                     {{ continue }}
                     {{ end }}

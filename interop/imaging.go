@@ -14,13 +14,13 @@ import (
 )
 
 type ImagingRecord struct {
-	Lane  int
-	Tile  int
-	Cycle int
-	Read  int
+	Lane  int `bson:"lane" json:"lane"`
+	Tile  int `bson:"tile" json:"tile"`
+	Cycle int `bson:"cycle" json:"cycle"`
+	Read  int `bson:"read" json:"read"`
 
-	PercentOccupied float64
-	PercentPF       float64
+	PercentOccupied float64 `bson:"percent_occupied" json:"percent_occupied"`
+	PercentPF       float64 `bson:"percent_pf" json:"percent_pf"`
 }
 
 type ImagingTable struct {
@@ -28,20 +28,27 @@ type ImagingTable struct {
 }
 
 type TileSummary struct {
-	PercentOccupied float64
-	PercentPF       float64
+	Lane            int     `bson:"lane" json:"lane"`
+	Tile            int     `bson:"tile" json:"tile"`
+	PercentOccupied float64 `bson:"percent_occupied" json:"percent_occupied"`
+	PercentPF       float64 `bson:"percent_pf" json:"percent_pf"`
 }
 
-func (t ImagingTable) LaneTileSummary() map[int]map[int]TileSummary {
-	tileSummary := make(map[int]map[int]TileSummary)
+func (t ImagingTable) LaneTileSummary() []TileSummary {
+	tileSummary := make([]TileSummary, 0)
+	tileSummaryMap := make(map[int]map[int]TileSummary)
 	laneTileCount := make(map[int]map[int]int)
 	for _, r := range t.Records {
-		if _, ok := tileSummary[r.Lane]; !ok {
-			tileSummary[r.Lane] = make(map[int]TileSummary)
+		if _, ok := tileSummaryMap[r.Lane]; !ok {
+			tileSummaryMap[r.Lane] = make(map[int]TileSummary)
 		}
-		summary, ok := tileSummary[r.Lane][r.Tile]
+		summary, ok := tileSummaryMap[r.Lane][r.Tile]
 		if !ok {
-			tileSummary[r.Lane][r.Tile] = TileSummary{}
+			summary = TileSummary{
+				Lane: r.Lane,
+				Tile: r.Tile,
+			}
+			tileSummaryMap[r.Lane][r.Tile] = summary
 		}
 		summary.PercentOccupied += r.PercentOccupied
 		summary.PercentPF += r.PercentPF
@@ -53,15 +60,15 @@ func (t ImagingTable) LaneTileSummary() map[int]map[int]TileSummary {
 
 		laneTileCount[r.Lane][r.Tile] += 1
 
-		tileSummary[r.Lane][r.Tile] = summary
+		tileSummaryMap[r.Lane][r.Tile] = summary
 	}
 
-	for lane := range tileSummary {
-		for tile := range tileSummary[lane] {
-			summary := tileSummary[lane][tile]
+	for lane := range tileSummaryMap {
+		for tile := range tileSummaryMap[lane] {
+			summary := tileSummaryMap[lane][tile]
 			summary.PercentOccupied /= float64(laneTileCount[lane][tile])
 			summary.PercentPF /= float64(laneTileCount[lane][tile])
-			tileSummary[lane][tile] = summary
+			tileSummary = append(tileSummary, summary)
 		}
 	}
 

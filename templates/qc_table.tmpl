@@ -84,12 +84,12 @@
                 <td><a href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
                 <td>{{ .Run.RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
                 <td>{{ .Run.Platform }}</td>
-                <td>{{ multiply (toFloat .RunSummary.Total.Yield) 1e-9 | printf "%.2f" }}</td>
-                <td>{{ .RunSummary.Total.PercentQ30 }}</td>
-                <td>{{ .RunSummary.Total.PercentAligned | printf "%.2f" }}</td>
-                <td>{{ .RunSummary.Total.ErrorRate | printf "%.2f" }}</td>
-                <td>{{ .RunSummary.Total.PercentOccupied }}</td>
-                <td>{{ .RunSummary.Total.IntensityC1 }}</td>
+                <td>{{ multiply (toFloat .InteropSummary.RunSummary.Total.Yield) 1e-9 | printf "%.2f" }}</td>
+                <td>{{ .InteropSummary.RunSummary.Total.PercentQ30 }}</td>
+                <td>{{ .InteropSummary.RunSummary.Total.PercentAligned | printf "%.2f" }}</td>
+                <td>{{ .InteropSummary.RunSummary.Total.ErrorRate | printf "%.2f" }}</td>
+                <td>{{ .InteropSummary.RunSummary.Total.PercentOccupied }}</td>
+                <td>{{ .InteropSummary.RunSummary.Total.IntensityC1 }}</td>
             </tr>
             {{ end }}
         </tbody>

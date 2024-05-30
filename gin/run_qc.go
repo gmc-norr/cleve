@@ -53,7 +53,7 @@ func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
 			runIds = append(runIds, r.RunID)
 		}
 
-		qc := make([]*interop.InteropSummary, 0)
+		qc := make([]*interop.InteropQC, 0)
 
 		for _, r := range runIds {
 			qcSummary, err := db.RunQC.Get(r)
@@ -113,13 +113,28 @@ func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		qc, err := interop.GenerateSummary(runId, run.Path)
+		summary, err := interop.GenerateSummary(run.Path)
 		if err != nil {
 			ctx.AbortWithStatusJSON(
 				http.StatusInternalServerError,
 				gin.H{"error": err.Error()},
 			)
 			return
+		}
+
+		imaging, err := interop.GenerateImagingTable(runId, run.Path)
+		if err != nil {
+			ctx.AbortWithStatusJSON(
+				http.StatusInternalServerError,
+				gin.H{"error": err.Error()},
+			)
+			return
+		}
+
+		qc := &interop.InteropQC{
+			RunID:          runId,
+			InteropSummary: summary,
+			TileSummary:    imaging.LaneTileSummary(),
 		}
 
 		if err := db.RunQC.Create(runId, qc); err != nil {

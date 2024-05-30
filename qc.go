@@ -44,8 +44,8 @@ func (f QcFilter) UrlParams() string {
 }
 
 type QcResultItem struct {
-	interop.InteropSummary `bson:",inline" json:",inline"`
-	Run                    Run `bson:"run" json:"run"`
+	interop.InteropQC `bson:",inline" json:",inline"`
+	Run               Run `bson:"run" json:"run"`
 }
 
 type QcResult struct {
@@ -54,9 +54,9 @@ type QcResult struct {
 }
 
 type RunQcService interface {
-	Create(string, *interop.InteropSummary) error
+	Create(string, *interop.InteropQC) error
 	All(QcFilter) (QcResult, error)
-	Get(string) (*interop.InteropSummary, error)
+	Get(string) (*interop.InteropQC, error)
 	GetTotalQ30(string) (float64, error)
 	GetTotalErrorRate(string) (float64, error)
 	GetIndex() ([]map[string]string, error)

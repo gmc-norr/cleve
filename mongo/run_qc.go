@@ -15,7 +15,7 @@ type RunQcService struct {
 	coll *mongo.Collection
 }
 
-func (s *RunQcService) Create(runId string, qc *interop.InteropSummary) error {
+func (s *RunQcService) Create(runId string, qc *interop.InteropQC) error {
 	_, err := s.coll.InsertOne(context.TODO(), qc)
 	return err
 }
@@ -136,17 +136,15 @@ func (s *RunQcService) All(filter cleve.QcFilter) (cleve.QcResult, error) {
 
 	if cursor.Next(context.TODO()) {
 		var qc cleve.QcResult
-		cursor.Current.Lookup("metadata").Unmarshal(&qc.PaginationMetadata)
-		rawQc := cursor.Current.Lookup("qc")
-		err := rawQc.Unmarshal(&qc.Qc)
+		err = cursor.Decode(&qc)
 		return qc, err
 	}
 
 	return qc, cursor.Err()
 }
 
-func (s *RunQcService) Get(runId string) (*interop.InteropSummary, error) {
-	var qc interop.InteropSummary
+func (s *RunQcService) Get(runId string) (*interop.InteropQC, error) {
+	var qc interop.InteropQC
 	err := s.coll.FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}).Decode(&qc)
 	return &qc, err
 }
@@ -156,7 +154,7 @@ func (s *RunQcService) GetTotalQ30(runId string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return float64(qc.RunSummary["Total"].PercentQ30), nil
+	return float64(qc.InteropSummary.RunSummary["Total"].PercentQ30), nil
 }
 
 func (s *RunQcService) GetTotalErrorRate(runId string) (float64, error) {
@@ -164,7 +162,7 @@ func (s *RunQcService) GetTotalErrorRate(runId string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return float64(e.RunSummary["Total"].ErrorRate), nil
+	return float64(e.InteropSummary.RunSummary["Total"].ErrorRate), nil
 }
 
 func (s *RunQcService) GetIndex() ([]map[string]string, error) {

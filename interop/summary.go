@@ -16,7 +16,6 @@ import (
 
 type InteropSummary struct {
 	Version       string                   `bson:"version" json:"version"`
-	RunID         string                   `bson:"run_id" json:"run_id"`
 	RunDirectory  string                   `bson:"run_directory" json:"run_directory"`
 	RunSummary    map[string]RunSummary    `bson:"run_summmary" json:"run_summary"`
 	ReadSummaries map[string][]ReadSummary `bson:"read_summary" json:"read_summary"`
@@ -159,7 +158,7 @@ func parseRange(s string) (Range, error) {
 	return Range{start, end}, nil
 }
 
-func GenerateSummary(runId string, runDirectory string) (*InteropSummary, error) {
+func GenerateSummary(runDirectory string) (*InteropSummary, error) {
 	interopBin, ok := os.LookupEnv("INTEROP_BIN")
 	if !ok {
 		return nil, fmt.Errorf("INTEROP_BIN env var not found")
@@ -177,7 +176,6 @@ func GenerateSummary(runId string, runDirectory string) (*InteropSummary, error)
 	if err != nil {
 		return nil, err
 	}
-	summary.RunID = runId
 	return summary, nil
 }
 

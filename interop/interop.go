@@ -7,6 +7,12 @@ import (
 	"sort"
 )
 
+type InteropQC struct {
+	RunID           string `bson:"run_id" json:"run_id"`
+	InteropSummary	*InteropSummary `bson:"summary" json:"summary"`
+	TileSummary     []TileSummary `bson:"imaging" json:"imaging"`
+}
+
 type InteropHeader struct {
 	Version    uint8
 	RecordSize uint8

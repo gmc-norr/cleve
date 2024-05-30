@@ -33,7 +33,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Type:  config.ChartType,
 			}
 			for _, q := range qc.Qc {
-				q30 := float64(q.RunSummary["Total"].PercentQ30)
+				q30 := float64(q.InteropSummary.RunSummary["Total"].PercentQ30)
 				datapoint := charts.RunStat[float64]{
 					RunID: q.RunID,
 				}
@@ -55,12 +55,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Type:  config.ChartType,
 			}
 			for _, q := range qc.Qc {
-				errorRate := float64(q.RunSummary["Total"].ErrorRate)
-				if err != nil {
-					if err == mongo.ErrNoDocuments {
-						continue
-					}
-				}
+				errorRate := float64(q.InteropSummary.RunSummary["Total"].ErrorRate)
 				datapoint := charts.RunStat[float64]{
 					RunID: q.RunID,
 				}
