@@ -260,18 +260,17 @@ func TestLaneTileSummary(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
 			summary := c.Table.LaneTileSummary()
-			for lane := range c.PercentOccupied {
-				for tile := range c.PercentOccupied[lane] {
-					if math.Abs(c.PercentOccupied[lane][tile]-summary[lane][tile].PercentOccupied) > 1e-6 {
-						t.Errorf("expected percent occupied to be %f, got %f", c.PercentOccupied[lane][tile], summary[lane][tile].PercentOccupied)
-					}
+			for _, tileStats := range summary {
+				observed := tileStats.PercentOccupied
+				expected := c.PercentOccupied[tileStats.Lane][tileStats.Tile]
+				if math.Abs(observed-expected) > 1e-6 {
+					t.Errorf("expected percent occupied to be %f, got %f", expected, observed)
 				}
-			}
-			for lane := range c.PercentPF {
-				for tile := range c.PercentPF[lane] {
-					if math.Abs(c.PercentPF[lane][tile]-summary[lane][tile].PercentPF) > 1e-6 {
-						t.Errorf("expected percent occupied to be %f, got %f", c.PercentPF[lane][tile], summary[lane][tile].PercentPF)
-					}
+
+				observed = tileStats.PercentPF
+				expected = c.PercentPF[tileStats.Lane][tileStats.Tile]
+				if math.Abs(observed-expected) > 1e-6 {
+					t.Errorf("expected percent PF to be %f, got %f", expected, observed)
 				}
 			}
 		})
