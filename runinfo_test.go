@@ -1,7 +1,6 @@
 package cleve
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -32,10 +31,9 @@ func TestParseRunInfo(t *testing.T) {
 		if err != nil {
 			t.Fatalf(`case "%s": %s`, k, err.Error())
 		}
-		runinfo, err := ParseRunInfo(b)
+		_, err = ParseRunInfo(b)
 		if err != nil {
 			t.Fatalf(`case "%s": %s`, k, err.Error())
 		}
-		fmt.Printf("%+v\n", runinfo)
 	}
 }

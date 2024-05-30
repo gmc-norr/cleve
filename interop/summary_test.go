@@ -12,8 +12,6 @@ func TestGenerateInteropSummary(t *testing.T) {
 		t.Fatalf("%s when generating summary", err.Error())
 	}
 
-	t.Logf("%#v\n", summary)
-
 	if summary.Version == "" {
 		t.Fail()
 	}

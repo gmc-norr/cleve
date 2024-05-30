@@ -358,9 +358,8 @@ key1,val1,val2
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
 			r := bufio.NewReader(bytes.NewReader(c.Data))
-			s, err := ParseSampleSheet(r)
+			_, err := ParseSampleSheet(r)
 			if err == nil {
-				t.Log(s)
 				t.Error("expected error, got nothing")
 			} else if err.Error() != c.Error {
 				t.Errorf("expected error: %q, got: %q", c.Error, err.Error())
@@ -408,7 +407,6 @@ func TestReadSampleSheet(t *testing.T) {
 			if err != nil {
 				t.Errorf("unexpected error: %s", err)
 			}
-			t.Logf("%+v\n", s)
 
 			foundHeader := false
 			for _, section := range s.Sections {

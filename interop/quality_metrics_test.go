@@ -82,7 +82,7 @@ func TestParseQMetrics(t *testing.T) {
 			t.Fatalf("expected histogram length %d, got %d", v.BinCount, len(metrics.Records[0].Histogram))
 		}
 
-		t.Logf("%s bins: %v", k, metrics.Bins)
+		// t.Logf("%s bins: %v", k, metrics.Bins)
 
 		// if v.Incomplete {
 		// 	t.Logf("%v", metrics)
@@ -125,7 +125,7 @@ func TestMaxCyclesPerLane(t *testing.T) {
 
 	cycles := m.MaxCyclePerLane()
 
-	t.Log(cycles)
+	// t.Log(cycles)
 
 	if cycles[1] != 5 {
 		t.Fatalf("expected 5 cycles for lane 1, got %d", cycles[1])

@@ -14,12 +14,10 @@ func TestParseErrorMetrics6(t *testing.T) {
 		},
 	}
 
-	for k, v := range cases {
+	for _, v := range cases {
 		r := bytes.NewReader(v.Bytes)
 		m := ErrorMetrics6{}
 		m.Parse(r)
-
-		t.Logf("%s: %#v", k, m)
 	}
 }
 
