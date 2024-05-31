@@ -1,6 +1,7 @@
 package interop
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/csv"
 	"math"
@@ -119,6 +120,65 @@ func TestParseHeaderRecords(t *testing.T) {
 			}
 			if record.PercentPF != c.Record.PercentPF {
 				t.Errorf("expected percent PF to be %f, got %f", c.Record.PercentPF, record.PercentPF)
+			}
+		})
+	}
+}
+
+func TestParseMissingRecords(t *testing.T) {
+	cases := []struct {
+		Name     string
+		Text     string
+		Expected []ImagingRecord
+	}{
+		{
+			"missing % occupied",
+			`Lane,Tile,Cycle,Read,% Pass Filter
+1,1234,53,2,85.3
+2,1234,53,2,78.8
+1,1234,53,2,81.0`,
+			[]ImagingRecord{
+				{
+					Lane:            1,
+					Tile:            1234,
+					Cycle:           53,
+					Read:            2,
+					PercentOccupied: 0.0,
+					PercentPF:       85.3,
+				},
+				{
+					Lane:            2,
+					Tile:            1234,
+					Cycle:           53,
+					Read:            2,
+					PercentOccupied: 0.0,
+					PercentPF:       78.8,
+				},
+				{
+					Lane:            1,
+					Tile:            1234,
+					Cycle:           53,
+					Read:            2,
+					PercentOccupied: 0.0,
+					PercentPF:       81.0,
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			table, err := ParseImagingTable(bufio.NewReader(bytes.NewReader([]byte(c.Text))))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(table.Records) != len(c.Expected) {
+				t.Fatalf("expected %d records, got %d", len(c.Expected), len(table.Records))
+			}
+			for i := range table.Records {
+				if table.Records[i] != c.Expected[i] {
+					t.Errorf("expected record %d to be %+v, got %+v", i, c.Expected[i], table.Records[i])
+				}
 			}
 		})
 	}

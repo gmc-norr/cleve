@@ -124,6 +124,8 @@ func (p ImagingTableParser) record() (*ImagingRecord, error) {
 
 	record := &ImagingRecord{}
 
+	// Lane, tile, cycle and read *should* be there, so I won't bother checking for errors
+	// when fetching the index.
 	record.Lane, err = strconv.Atoi(rec[p.headerIndex["Lane"]])
 	if err != nil {
 		return record, err
@@ -144,14 +146,20 @@ func (p ImagingTableParser) record() (*ImagingRecord, error) {
 		return record, err
 	}
 
-	record.PercentOccupied, err = strconv.ParseFloat(rec[p.headerIndex["% Occupied"]], 64)
-	if err != nil {
-		return record, err
+	pOccupiedIndex, ok := p.headerIndex["% Occupied"]
+	if ok {
+		record.PercentOccupied, err = strconv.ParseFloat(rec[pOccupiedIndex], 64)
+		if err != nil {
+			return record, err
+		}
 	}
 
-	record.PercentPF, err = strconv.ParseFloat(rec[p.headerIndex["% Pass Filter"]], 64)
-	if err != nil {
-		return record, err
+	pPassFilterIndex, ok := p.headerIndex["% Pass Filter"]
+	if ok {
+		record.PercentPF, err = strconv.ParseFloat(rec[pPassFilterIndex], 64)
+		if err != nil {
+			return record, err
+		}
 	}
 
 	return record, nil
