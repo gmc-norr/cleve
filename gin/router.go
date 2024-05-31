@@ -134,6 +134,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/runs/:runId", DashboardRunHandler(db))
 	r.GET("/qc", DashboardQCHandler(db))
 	r.GET("/qc/charts/global", GlobalChartsHandler(db))
+	r.GET("/qc/charts/run/:runId", RunChartsHandler(db))
 
 	hxEndpoints := r.Group("/")
 	hxEndpoints.Use(hxMiddleware())

@@ -8,8 +8,6 @@ import (
 	"github.com/go-echarts/go-echarts/v2/render"
 )
 
-type ChartData struct{}
-
 type RunStats[T float64 | int] struct {
 	Data  []RunStat[T]
 	Label string
@@ -33,6 +31,23 @@ func (s RunStats[T]) Plot() (render.Renderer, error) {
 	default:
 		return nil, fmt.Errorf("invalid chart type: %q", s.Type)
 	}
+}
+
+type ScatterData struct {
+	Data     []ScatterDatum
+	XLabel   string
+	YLabel   string
+	Grouping string
+}
+
+type ScatterDatum struct {
+	X     float64
+	Y     float64
+	Color any
+}
+
+func (d ScatterData) Plot() (render.Renderer, error) {
+	return ScatterChart(d), nil
 }
 
 func LineChart[T float64 | int](d RunStats[T]) *charts.Line {
@@ -70,5 +85,29 @@ func BarChart[T float64 | int](d RunStats[T]) *charts.Bar {
 	chart.SetXAxis(xLabels).
 		AddSeries(d.Label, barData)
 
+	return chart
+}
+
+func ScatterChart(d ScatterData) *charts.Scatter {
+	chart := charts.NewScatter()
+	chart.SetGlobalOptions(
+		charts.WithLegendOpts(opts.Legend{Show: true}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
+		charts.WithXAxisOpts(opts.XAxis{Name: d.XLabel}),
+		charts.WithYAxisOpts(opts.YAxis{Name: d.YLabel}),
+	)
+	series := make(map[any][]opts.ScatterData)
+	for _, k := range d.Data {
+		sd := opts.ScatterData{
+			Value:      []interface{}{k.X, k.Y},
+			Symbol:     "circle",
+			SymbolSize: 5,
+		}
+		series[k.Color] = append(series[k.Color], sd)
+	}
+	chart.SetXAxis(nil)
+	for k, v := range series {
+		chart.AddSeries(fmt.Sprintf("%v", k), v)
+	}
 	return chart
 }

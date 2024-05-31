@@ -80,7 +80,7 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 			}
 		}
 
-		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet})
+		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet, "chart_config": GetRunChartConfig(c)})
 	}
 }
 

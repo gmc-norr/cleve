@@ -111,5 +111,43 @@
 </div>
 {{ end }}
 
+<h2>Charts</h2>
+
+<form id="chart-form"
+    autocomplete="off"
+    hx-get="/qc/charts/run/{{ .run.RunID }}"
+    hx-target="#chart-container"
+    hx-trigger="change"
+    hx-swap="innerHtml ignoreTitle:true"
+    hx-include="#qc-table-form">
+    <label for="chart-data-x-select">X-axis:</label>
+    <select id="chart-data-x-select" name="chart-data-x">
+        <option value="percent_occupied"{{ if eq .chart_config.XData "percent_occupied" }} selected{{ end }}>% occupied</option>
+        <option value="percent_pf"{{ if eq .chart_config.XData "percent_pf" }} selected{{ end }}>% passing filter</option>
+    </select>
+    <label for="chart-data-y-select">Y-axis:</label>
+    <select id="chart-data-y-select" name="chart-data-y">
+        <option value="percent_occupied"{{ if eq .chart_config.YData "percent_occupied" }} selected{{ end }}>% occupied</option>
+        <option value="percent_pf"{{ if eq .chart_config.YData "percent_pf" }} selected{{ end }}>% passing filter</option>
+    </select>
+    <label for="chart-type-select">Chart type:</label>
+    <select id="chart-type-select" name="chart-type">
+        <option value="scatter"{{ if eq .chart_config.ChartType "scatter" }} selected{{ end }}>Scatter plot</option>
+    </select>
+    <label for="chart-color-by-select">Color by:</label>
+    <select id="chart-color-by-select" name="chart-color-by">
+        <option value="lane"{{ if eq .chart_config.ColorBy "lane" }} selected{{ end }}>Lane</option>
+    </select>
+</form>
+<div id="chart-container"
+    hx-get="/qc/charts/run/{{ .run.RunID }}"
+    hx-include="#chart-form,#qc-table-form"
+    hx-trigger="load"
+    hx-swap="innerHTML ignoreTitle:true">
+    <p>Loading chart...</p>
+</div>
+
+<script src="https://go-echarts.github.io/go-echarts-assets/assets/echarts.min.js"></script>
+
 {{ template "footer" }}
 {{ end }}
