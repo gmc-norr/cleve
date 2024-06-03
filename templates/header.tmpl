@@ -4,15 +4,17 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
     <title>Cleve Dashboard</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
-    <header>
-    <h1>Cleve Dashboard</h1>
-    <nav>
-        <ul>
-            <li><a href="/runs">Runs</a></li>
-            <li><a href="/qc">QC</a></li>
+    <header class="bg-accent-900 text-white p-4 mb-4">
+    <h1 class="text-4xl font-bold"><a href="/">Cleve Dashboard</a></h1>
+    <nav class="my-4">
+        <ul class="list-none">
+            <li class="inline-block bg-accent-200 text-accent-900 mr-2 font-bold"><a class="px-4 py-2" href="/runs">Runs</a></li>
+            <li class="inline-block bg-accent-200 text-accent-900 mr-2 font-bold"><a class="px-4 py-2" href="/qc">QC</a></li>
         </ul>
     </nav>
     </header>
+    <main class="m-5">
 {{ end }}

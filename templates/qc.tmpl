@@ -1,13 +1,11 @@
 {{ define "qc" }}
 {{ template "header" }}
-<h2>Sequencing QC</h2>
-
-<p>Here are QC data from the sequencing for runs that have completed.</p>
+<h2 class="text-3xl my-4">Sequencing QC</h2>
 
 {{ template "qc_table" . }}
 
-<div>
-    <h2>Charts</h2>
+<section class="my-8">
+    <h2 class="text-3xl my-4">Charts</h2>
     <form id="chart-form"
         autocomplete="off"
         hx-get="/qc/charts/global"
@@ -33,7 +31,7 @@
         hx-swap="innerHTML ignoreTitle:true">
         <p>Loading chart...</p>
     </div>
-</div>
+</section>
 <script src="https://go-echarts.github.io/go-echarts-assets/assets/echarts.min.js"></script>
 {{ template "footer" }}
 {{ end }}

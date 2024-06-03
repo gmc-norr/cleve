@@ -3,15 +3,15 @@
 {{ $current_page := .runs.PaginationMetadata.Page }}
 {{ $total_pages := .runs.PaginationMetadata.TotalPages }}
 <p id="table-counts">
-    Showing {{ .runs.PaginationMetadata.Count}} out of {{ .runs.PaginationMetadata.TotalCount }} runs
+    Showing {{ .runs.PaginationMetadata.Count}} of {{ .runs.PaginationMetadata.TotalCount }} runs
     Page {{ .runs.PaginationMetadata.Page }} / {{ .runs.PaginationMetadata.TotalPages }}
 </p>
 
 <div id="table-nav">
     {{ if eq $current_page 1 }}
-    <button type="button" class="table-nav-item" disabled>Previous</button>
+    <button type="button" class="table-nav-item bg-gray-400 text-white py-1 px-2" disabled>Previous</button>
     {{ else }}
-    <button type="button" class="table-nav-item"
+    <button type="button" class="table-nav-item bg-accent-900 text-white py-1 px-2"
         hx-get="/runtable?page={{ subtractInt $current_page 1 }}"
         hx-include="form"
         hx-select="#runtable-body"
@@ -22,9 +22,9 @@
 
     {{ range N 1 (addInt .runs.PaginationMetadata.TotalPages 1) }}
     {{ if eq . $current_page }}
-    <button type="button" class="table-nav-item" disabled>{{ . }}</button>
+    <button type="button" class="table-nav-item w-10 bg-gray-400 text-white p-1" disabled>{{ . }}</button>
     {{ else }}
-    <button type="button" class="table-nav-item"
+    <button type="button" class="table-nav-item w-10 bg-accent-900 text-white p-1"
         hx-get="/runtable?page={{ . }}"
         hx-include="form"
         hx-select="#runtable-body"
@@ -35,9 +35,9 @@
     {{ end }}
 
     {{ if eq $current_page $total_pages }}
-    <button type="button" class="table-nav-item" disabled>Next</button>
+    <button type="button" class="table-nav-item bg-gray-400 text-white py-1 px-2" disabled>Next</button>
     {{ else }}
-    <button type="button" class="table-nav-item"
+    <button type="button" class="table-nav-item bg-accent-900 text-white py-1 px-2"
         hx-get="/runtable?page={{ addInt $current_page 1 }}"
         hx-include="form"
         hx-select="#runtable-body"
@@ -47,54 +47,56 @@
     {{ end }}
 </div>
 
-<form hx-get="/runtable" hx-target="#runtable-body" hx-select="#runtable-body" hx-swap="outerHTML" hx-trigger="keyup delay:300ms from:input[name=run_id], change from:select[name=platform], change from:select[name=state]" hx-select-oob="#table-counts,#table-nav">
-    <table>
-        <thead>
-            <tr>
-                <th>Run</th>
-                <th>Platform</th>
-                <th>Flowcell</th>
-                <th>Sequencing date</th>
-                <th>Status</th>
-                <th>Last updated</th>
-                <th>Path</th>
-            </tr>
-            <tr>
-                <th><input type="text" name="run_id" placeholder="Filter by run ID" value="{{ .run_filter.RunID }}" /></th>
-                <th>
-                    <select name="platform">
-                        <option value="" {{ if eq $run_filter.Platform "" }}selected{{ end }}>All</option>
-                        {{ range .platforms }}
-                        <option value="{{ . }}" {{ if eq $run_filter.Platform . }}selected{{ end }}>{{ . }}</option>
-                        {{ end }}
-                    </select>
-                <th/>
-                <th/>
-                <th>
-                    <select name="state">
-                        <option value="" {{ if eq $run_filter.State "" }}selected{{ end }}>All</option>
-                        <option value="ready" {{ if eq $run_filter.State "ready" }}selected{{ end }}>Ready</option>
-                        <option value="pending" {{ if eq $run_filter.State "pending" }}selected{{ end }}>Pending</option>
-                        <option value="error" {{ if eq $run_filter.State "error" }}selected{{ end }}>Error</option>
-                    </select>
-                </th>
-                </th>
-            </tr>
-        </thead>
+<div class="overflow-x-auto">
+    <form hx-get="/runtable" hx-target="#runtable-body" hx-select="#runtable-body" hx-swap="outerHTML" hx-trigger="keyup delay:300ms from:input[name=run_id], change from:select[name=platform], change from:select[name=state]" hx-select-oob="#table-counts,#table-nav">
+        <table class="w-full">
+            <thead class="text-left">
+                <tr class="border-b border-slate-500">
+                    <th>Run</th>
+                    <th>Platform</th>
+                    <th>Flowcell</th>
+                    <th>Sequencing date</th>
+                    <th>Status</th>
+                    <th>Last updated</th>
+                    <th>Path</th>
+                </tr>
+                <tr>
+                    <th><input class="w-full border border-slate-300" type="text" name="run_id" placeholder="Filter by run ID" value="{{ .run_filter.RunID }}" /></th>
+                    <th>
+                        <select name="platform">
+                            <option value="" {{ if eq $run_filter.Platform "" }}selected{{ end }}>All</option>
+                            {{ range .platforms }}
+                            <option value="{{ . }}" {{ if eq $run_filter.Platform . }}selected{{ end }}>{{ . }}</option>
+                            {{ end }}
+                        </select>
+                    <th/>
+                    <th/>
+                    <th>
+                        <select name="state">
+                            <option value="" {{ if eq $run_filter.State "" }}selected{{ end }}>All</option>
+                            <option value="ready" {{ if eq $run_filter.State "ready" }}selected{{ end }}>Ready</option>
+                            <option value="pending" {{ if eq $run_filter.State "pending" }}selected{{ end }}>Pending</option>
+                            <option value="error" {{ if eq $run_filter.State "error" }}selected{{ end }}>Error</option>
+                        </select>
+                    </th>
+                    </th>
+                </tr>
+            </thead>
 
-        <tbody id="runtable-body">
-            {{ range .runs.Runs }}
-            <tr>
-                <td><a href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
-                <td>{{ .Platform }}</td>
-                <td>{{ .RunParameters.Flowcell }}</td>
-                <td>{{ .RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
-                <td>{{ (index .StateHistory 0).State.String | title }}</td>
-                <td>{{ (index .StateHistory 0).Time.Local.Format "2006-01-02 15:04:05 MST" }}</td>
-                <td><code>{{ .Path }}</code></td>
-            </tr>
-            {{ end }}
-        </tbody>
-    </table>
-</form>
+            <tbody class="border-y border-slate-500" id="runtable-body">
+                {{ range .runs.Runs }}
+                <tr class="hover:bg-accent-100">
+                    <td><a class="text-accent-900" href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
+                    <td>{{ .Platform }}</td>
+                    <td>{{ .RunParameters.Flowcell }}</td>
+                    <td>{{ .RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
+                    <td>{{ (index .StateHistory 0).State.String | title }}</td>
+                    <td>{{ (index .StateHistory 0).Time.Local.Format "2006-01-02 15:04:05 MST" }}</td>
+                    <td><code>{{ .Path }}</code></td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </form>
+</div>
 {{ end }}

@@ -1,151 +1,165 @@
 {{ define "run" }}
 {{ template "header" }}
 {{ $state := (index .run.StateHistory 0).State.String }}
-<h2>Sequencing run: {{ .run.RunID }}</h2>
+<h2 class="text-3xl">Sequencing run: {{ .run.RunID }}
+        <span class="inline-block py-1 px-2 rounded-md
+            {{ if eq $state "ready" }}
+            bg-green-600 text-white
+            {{ else if eq $state "pending" }}
+            bg-yellow-400 text-black
+            {{ else if eq $state "error" }}
+            bg-red-600 text-white
+            {{ end }}">
+            {{ title $state }}
+        </span>
+</h2>
 
-<div>
-    <div><span>{{ title $state }}</span></div>
-    <table>
+<section class="my-8">
+    <table class="bg-accent-100 my-4">
         <tr>
-            <th>Sequencing date</th>
-            <td>{{ .run.RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
+            <th class="bg-accent-900 text-accent-100 text-right px-2">Sequencing date</th>
+            <td class="px-2">{{ .run.RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
         </tr>
         <tr>
-            <th>Platform</th>
-            <td>{{ .run.Platform }}</td>
+            <th class="bg-accent-900 text-accent-100 text-right px-2">Platform</th>
+            <td class="px-2">{{ .run.Platform }}</td>
         </tr>
         <tr>
-            <th>Flowcell</th>
-            <td>{{ .run.RunParameters.Flowcell }}</td>
+            <th class="bg-accent-900 text-accent-100 text-right px-2">Flowcell</th>
+            <td class="px-2">{{ .run.RunParameters.Flowcell }}</td>
         </tr>
         <tr>
-            <th>Path</th>
-            <td><code>{{ .run.Path }}</code></td>
+            <th class="bg-accent-900 text-accent-100 text-right px-2">Path</th>
+            <td class="px-2"><code>{{ .run.Path }}</code></td>
         </tr>
     </table>
-</div>
+</section>
 
-<h3>Sequencing QC</h3>
+<section class="my-8 border-t overflow-x-auto">
+    <h3 class="text-2xl my-4">Sequencing QC</h3>
 
-{{ if .hasQc }}
-<table>
-    <thead>
-        <tr>
-            <th>Read</th>
-            <th>Lane</th>
-            <th>Tiles</th>
-            <th>Density</th>
-            <th>% PF Clusters</th>
-            <th>Reads (M)</th>
-            <th>PF Reads (M)</th>
-            <th>Yield (Gbp)</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{ range $read, $v := .qc.InteropSummary.ReadSummaries }}
-            {{ range $v }}
-                <tr>
-                    <td>{{ $read }}</td>
-                    <td>{{ .Lane }}</td>
-                    <td>{{ .Tiles }}</td>
-                    <td>{{ .Density.Mean | printf "%.2f" }} &pm; {{ .Density.SD | printf "%.2f" }}</td>
-                    <td>{{ .ClusterPF.Mean | printf "%.2f" }} &pm; {{ .ClusterPF.SD | printf "%.2f" }}</td>
-                    <td>{{ multiply (toFloat .Reads) 1e-6 | printf "%.2f" }}</td>
-                    <td>{{ multiply (toFloat .ReadsPF) 1e-6 | printf "%.2f" }}</td>
-                    <td>{{ multiply (toFloat .Yield) 1e-9 | printf "%.2f" }}</td>
-                </tr>
+    {{ if .hasQc }}
+    <table class="w-full text-left">
+        <thead class="bg-accent-900 text-accent-100">
+            <tr>
+                <th class="px-2">Read</th>
+                <th class="px-2">Lane</th>
+                <th class="px-2">Tiles</th>
+                <th class="px-2">Density</th>
+                <th class="px-2">% PF Clusters</th>
+                <th class="px-2">Reads (M)</th>
+                <th class="px-2">PF Reads (M)</th>
+                <th class="px-2">Yield (Gbp)</th>
+            </tr>
+        </thead>
+        <tbody class="bg-accent-100">
+            {{ range $read, $v := .qc.InteropSummary.ReadSummaries }}
+                {{ range $v }}
+                    <tr>
+                        <td class="px-2">{{ $read }}</td>
+                        <td class="px-2">{{ .Lane }}</td>
+                        <td class="px-2">{{ .Tiles }}</td>
+                        <td class="px-2">{{ .Density.Mean | printf "%.2f" }} &pm; {{ .Density.SD | printf "%.2f" }}</td>
+                        <td class="px-2">{{ .ClusterPF.Mean | printf "%.2f" }} &pm; {{ .ClusterPF.SD | printf "%.2f" }}</td>
+                        <td class="px-2">{{ multiply (toFloat .Reads) 1e-6 | printf "%.2f" }}</td>
+                        <td class="px-2">{{ multiply (toFloat .ReadsPF) 1e-6 | printf "%.2f" }}</td>
+                        <td class="px-2">{{ multiply (toFloat .Yield) 1e-9 | printf "%.2f" }}</td>
+                    </tr>
+                {{ end }}
             {{ end }}
-        {{ end }}
-    </tbody>
-</table>
-{{ else if eq $state "ready" }}
-<p>QC data has yet to be imported for this run.</p>
-{{ else }}
-<p>QC data is not available until the run is ready.</p>
-{{ end }}
-
-<h3>Samplesheet</h3>
-
-{{ if eq .samplesheet.RunID "" }}
-<p>No samplesheet has been imported for this run.</p>
-{{ else }}
-<div>
-    {{ range .samplesheet.Sections }}
-    {{ $sectionType := .Type }}
-    <section>
-        <h4>{{ .Name }}</h4>
-        <table>
-            {{ if eq $sectionType 2 }}
-            <thead>
-                <tr>
-                {{ range (index .Rows 0) }}
-                    <th>{{ . }}</th>
-                {{ end }}
-                </tr>
-            <thead>
-            {{ end }}
-            <tbody>
-                {{ range $i, $row := .Rows }}
-                <tr>
-                {{ if eq $sectionType 1 }}
-                    <!-- settings section -->
-                    <th>{{ index $row 0 }}</th>
-                    {{ range N 1 (len $row) }}
-                    <td>{{ index $row . }}<td>
-                    {{ end }}
-                {{ else if eq $sectionType 2 }}
-                    <!-- data section -->
-                    {{ if eq $i 0 }}
-                    {{ continue }}
-                    {{ end }}
-                    {{ range $row }}
-                        <td>{{ . }}</td>
-                    {{ end }}
-                {{ end }}
-                </tr>
-                {{ end }}
-            </tbody>
-        </table>
-    </section>
+        </tbody>
+    </table>
+    {{ else if eq $state "ready" }}
+    <p>QC data has yet to be imported for this run.</p>
+    {{ else }}
+    <p>QC data is not available until the run is ready.</p>
     {{ end }}
-</div>
-{{ end }}
+</section>
 
-<h2>Charts</h2>
+<section class="my-8 border-t">
+    <h3 class="text-2xl my-4">Samplesheet</h3>
 
-<form id="chart-form"
-    autocomplete="off"
-    hx-get="/qc/charts/run/{{ .run.RunID }}"
-    hx-target="#chart-container"
-    hx-trigger="change"
-    hx-swap="innerHtml ignoreTitle:true"
-    hx-include="#qc-table-form">
-    <label for="chart-data-x-select">X-axis:</label>
-    <select id="chart-data-x-select" name="chart-data-x">
-        <option value="percent_occupied"{{ if eq .chart_config.XData "percent_occupied" }} selected{{ end }}>% occupied</option>
-        <option value="percent_pf"{{ if eq .chart_config.XData "percent_pf" }} selected{{ end }}>% passing filter</option>
-    </select>
-    <label for="chart-data-y-select">Y-axis:</label>
-    <select id="chart-data-y-select" name="chart-data-y">
-        <option value="percent_occupied"{{ if eq .chart_config.YData "percent_occupied" }} selected{{ end }}>% occupied</option>
-        <option value="percent_pf"{{ if eq .chart_config.YData "percent_pf" }} selected{{ end }}>% passing filter</option>
-    </select>
-    <label for="chart-type-select">Chart type:</label>
-    <select id="chart-type-select" name="chart-type">
-        <option value="scatter"{{ if eq .chart_config.ChartType "scatter" }} selected{{ end }}>Scatter plot</option>
-    </select>
-    <label for="chart-color-by-select">Color by:</label>
-    <select id="chart-color-by-select" name="chart-color-by">
-        <option value="lane"{{ if eq .chart_config.ColorBy "lane" }} selected{{ end }}>Lane</option>
-    </select>
-</form>
-<div id="chart-container"
-    hx-get="/qc/charts/run/{{ .run.RunID }}"
-    hx-include="#chart-form,#qc-table-form"
-    hx-trigger="load"
-    hx-swap="innerHTML ignoreTitle:true">
-    <p>Loading chart...</p>
-</div>
+    {{ if eq .samplesheet.RunID "" }}
+    <p>No samplesheet has been imported for this run.</p>
+    {{ else }}
+        {{ range .samplesheet.Sections }}
+        {{ $sectionType := .Type }}
+        <section class="my-4 overflow-x-auto">
+            <h4 class="text-xl my-2">{{ .Name }}</h4>
+            <table class="{{ if eq $sectionType 2 }}w-full {{ end }}text-left">
+                {{ if eq $sectionType 2 }}
+                <thead class="bg-accent-900 text-accent-100">
+                    <tr>
+                    {{ range (index .Rows 0) }}
+                        <th>{{ . }}</th>
+                    {{ end }}
+                    </tr>
+                <thead>
+                {{ end }}
+                <tbody class="bg-accent-100">
+                    {{ range $i, $row := .Rows }}
+                    <tr>
+                    {{ if eq $sectionType 1 }}
+                        <!-- settings section -->
+                        <th class="bg-accent-900 text-accent-100 text-right px-2">{{ index $row 0 }}</th>
+                        {{ range N 1 (len $row) }}
+                        <td class="px-2">{{ index $row . }}<td>
+                        {{ end }}
+                    {{ else if eq $sectionType 2 }}
+                        <!-- data section -->
+                        {{ if eq $i 0 }}
+                        {{ continue }}
+                        {{ end }}
+                        {{ range $row }}
+                            <td>{{ . }}</td>
+                        {{ end }}
+                    {{ end }}
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </section>
+        {{ end }}
+    {{ end }}
+</section>
+
+<section class="my-8 border-t">
+    <h2 class="text-2xl my-4">Charts</h2>
+
+    <form id="chart-form"
+        autocomplete="off"
+        hx-get="/qc/charts/run/{{ .run.RunID }}"
+        hx-target="#chart-container"
+        hx-trigger="change"
+        hx-swap="innerHtml ignoreTitle:true"
+        hx-include="#qc-table-form">
+        <label for="chart-data-x-select">X-axis:</label>
+        <select id="chart-data-x-select" name="chart-data-x">
+            <option value="percent_occupied"{{ if eq .chart_config.XData "percent_occupied" }} selected{{ end }}>% occupied</option>
+            <option value="percent_pf"{{ if eq .chart_config.XData "percent_pf" }} selected{{ end }}>% passing filter</option>
+        </select>
+        <label for="chart-data-y-select">Y-axis:</label>
+        <select id="chart-data-y-select" name="chart-data-y">
+            <option value="percent_occupied"{{ if eq .chart_config.YData "percent_occupied" }} selected{{ end }}>% occupied</option>
+            <option value="percent_pf"{{ if eq .chart_config.YData "percent_pf" }} selected{{ end }}>% passing filter</option>
+        </select>
+        <label for="chart-type-select">Chart type:</label>
+        <select id="chart-type-select" name="chart-type">
+            <option value="scatter"{{ if eq .chart_config.ChartType "scatter" }} selected{{ end }}>Scatter plot</option>
+        </select>
+        <label for="chart-color-by-select">Color by:</label>
+        <select id="chart-color-by-select" name="chart-color-by">
+            <option value="lane"{{ if eq .chart_config.ColorBy "lane" }} selected{{ end }}>Lane</option>
+        </select>
+    </form>
+    <div id="chart-container"
+        hx-get="/qc/charts/run/{{ .run.RunID }}"
+        hx-include="#chart-form,#qc-table-form"
+        hx-trigger="load"
+        hx-swap="innerHTML ignoreTitle:true">
+        <p>Loading chart...</p>
+    </div>
+</section>
 
 <script src="https://go-echarts.github.io/go-echarts-assets/assets/echarts.min.js"></script>
 
