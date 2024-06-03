@@ -128,6 +128,8 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	})
 	r.LoadHTMLGlob(fmt.Sprintf("%s/templates/*", viper.GetString("assets")))
 
+	r.Static("/assets", fmt.Sprintf("%s/assets", viper.GetString("assets")))
+
 	// Dashboard endpoints
 	r.GET("/", DashboardHandler(db))
 	r.GET("/runs", DashboardHandler(db))
