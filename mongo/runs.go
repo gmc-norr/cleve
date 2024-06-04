@@ -20,6 +20,13 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 	var aggPipeline mongo.Pipeline
 	var runPipeline mongo.Pipeline
 
+	// Sort by sequencing date
+	runPipeline = append(runPipeline, bson.D{
+		{Key: "$sort", Value: bson.D{
+			{Key: "run_info.run.date", Value: -1},
+		}},
+	})
+
 	// Skip
 	if filter.Page > 0 {
 		runPipeline = append(runPipeline, bson.D{
@@ -108,13 +115,6 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 					}},
 				},
 			},
-		}},
-	})
-
-	// Sort by sequencing date
-	runPipeline = append(runPipeline, bson.D{
-		{Key: "$sort", Value: bson.D{
-			{Key: "run_info.run.date", Value: -1},
 		}},
 	})
 
