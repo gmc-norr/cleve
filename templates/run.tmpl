@@ -2,14 +2,7 @@
 {{ template "header" }}
 {{ $state := (index .run.StateHistory 0).State.String }}
 <h2 class="text-3xl">Sequencing run: {{ .run.RunID }}
-        <span class="inline-block py-1 px-2 rounded-md
-            {{ if eq $state "ready" }}
-            bg-green-600 text-white
-            {{ else if eq $state "pending" }}
-            bg-yellow-400 text-black
-            {{ else if eq $state "error" }}
-            bg-red-600 text-white
-            {{ end }}">
+        <span class="state-{{ $state }} inline-block py-1 px-2 rounded-md">
             {{ title $state }}
         </span>
 </h2>
