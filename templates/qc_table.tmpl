@@ -63,6 +63,7 @@
                     <th>Run</th>
                     <th>Sequencing date</th>
                     <th>Platform</th>
+                    <th>Flowcell</th>
                     <th>Yield (Gbp)</th>
                     <th>%&ge;Q30</th>
                     <th>% Aligned to PhiX</th>
@@ -96,6 +97,7 @@
                     <td><a class="text-accent-900" href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
                     <td>{{ .Run.RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
                     <td>{{ .Run.Platform }}</td>
+                    <td>{{ .Run.RunParameters.Flowcell }}</td>
                     <td>{{ multiply (toFloat .InteropSummary.RunSummary.Total.Yield) 1e-9 | printf "%.2f" }}</td>
                     <td>{{ .InteropSummary.RunSummary.Total.PercentQ30 }}</td>
                     <td>{{ .InteropSummary.RunSummary.Total.PercentAligned | printf "%.2f" }}</td>
