@@ -8,43 +8,34 @@
 </p>
 
 <div id="table-nav">
-    {{ if eq $current_page 1 }}
-    <button type="button" class="table-nav-item bg-gray-400 text-white py-1 px-2" disabled>Previous</button>
-    {{ else }}
-    <button type="button" class="table-nav-item bg-accent-900 text-white py-1 px-2"
+    <button type="button" class="table-nav-item disabled:bg-gray-400 bg-accent-900 text-white py-1 px-2"
         hx-get="/runtable?page={{ subtractInt $current_page 1 }}"
         hx-include="form"
         hx-select="#runtable-body"
         hx-target="#runtable-body"
         hx-select-oob="#table-counts,#table-nav"
-        hx-swap="outerHTML">Previous</button>
-    {{ end }}
+        hx-swap="outerHTML"
+        {{ if eq $current_page 1 }}disabled{{ end }}>Previous</button>
 
     {{ range N 1 (addInt .runs.PaginationMetadata.TotalPages 1) }}
-    {{ if eq . $current_page }}
-    <button type="button" class="table-nav-item w-10 bg-gray-400 text-white p-1" disabled>{{ . }}</button>
-    {{ else }}
-    <button type="button" class="table-nav-item w-10 bg-accent-900 text-white p-1"
+    <button type="button" class="table-nav-item w-10 disabled:bg-gray-400 bg-accent-900 text-white p-1"
         hx-get="/runtable?page={{ . }}"
         hx-include="form"
         hx-select="#runtable-body"
         hx-target="#runtable-body"
         hx-select-oob="#table-counts,#table-nav"
-        hx-swap="outerHTML">{{ . }}</button>
-    {{ end }}
+        hx-swap="outerHTML"
+        {{ if eq $current_page . }}disabled{{ end }}>{{ . }}</button>
     {{ end }}
 
-    {{ if eq $current_page $total_pages }}
-    <button type="button" class="table-nav-item bg-gray-400 text-white py-1 px-2" disabled>Next</button>
-    {{ else }}
-    <button type="button" class="table-nav-item bg-accent-900 text-white py-1 px-2"
+    <button type="button" class="table-nav-item disabled:bg-gray-400 bg-accent-900 text-white py-1 px-2"
         hx-get="/runtable?page={{ addInt $current_page 1 }}"
         hx-include="form"
         hx-select="#runtable-body"
         hx-target="#runtable-body"
         hx-select-oob="#table-counts,#table-nav"
-        hx-swap="outerHTML">Next</button>
-    {{ end }}
+        hx-swap="outerHTML"
+        {{ if eq $current_page $total_pages }}disabled{{ end }}>Next</button>
 </div>
 
 <div class="overflow-x-auto">

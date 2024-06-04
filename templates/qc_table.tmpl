@@ -14,31 +14,40 @@
 
     <div id="table-nav">
         <button type="button" 
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
             hx-get="/qc?page={{ subtractInt $current_page 1 }}"
             hx-include="#qc-table-form"
             hx-select="#qc-table-body"
             hx-target="#qc-table-body"
             hx-select-oob="#table-counts,#table-nav"
             hx-swap="outerHTML"
-            {{ if eq $current_page 1 }}disabled class="bg-gray-400 {{ else }}class="bg-accent-900 {{ end }}text-white table-nav-item py-1 px-2">Previous</button>
+            {{ if eq $current_page 1 }}disabled{{ end }}>
+            Previous
+        </button>
         {{ range N 1 (addInt .metadata.TotalPages 1) }}
         <button type="button"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
             hx-get="/qc?page={{ . }}"
             hx-include="#qc-table-form"
             hx-select="#qc-table-body"
             hx-target="#qc-table-body"
             hx-select-oob="#table-counts,#table-nav"
             hx-swap="outerHTML"
-            {{ if eq $current_page 1 }}disabled class="bg-gray-400 {{ else }}class="bg-accent-900 {{ end }}text-white table-nav-item py-1 px-2">{{ . }}</button>
+            {{ if eq $current_page 1 }}disabled{{ end }}>
+            {{ . }}
+        </button>
         {{ end }}
         <button type="button"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
             hx-get="/qc?page={{ addInt $current_page 1 }}"
             hx-include="#qc-table-form"
             hx-select="#qc-table-body"
             hx-target="#qc-table-body"
             hx-select-oob="#table-counts,#table-nav"
             hx-swap="outerHTML"
-            {{ if eq $current_page $total_pages }}disabled class="bg-gray-400 {{ else }}class="bg-accent-900 {{ end }}text-white table-nav-item py-1 px-2">Next</button>
+            {{ if eq $current_page $total_pages }}disabled{{ end }}>
+            Next
+        </button>
     </div>
 
     <form id="qc-table-form"
