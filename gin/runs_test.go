@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -213,5 +214,65 @@ func TestRunHandler(t *testing.T) {
 		if strings.Count(string(b), v.Body) == 0 {
 			t.Fatalf(`Expected %v in body: %v`, v.Body, string(b))
 		}
+	}
+}
+
+func TestAddRunHandler(t *testing.T) {
+	gin.SetMode("test")
+
+	cases := []struct {
+		name          string
+		data          []byte
+		code          int
+		createInvoked bool
+	}{
+		{
+			"path missing",
+			[]byte(`{"path": "/path/to/run", "state": "ready"}`),
+			http.StatusInternalServerError,
+			false,
+		},
+		{
+			"valid run",
+			[]byte(`{"path": "/home/nima18/git/cleve/test_data/novaseq_full", "state": "ready"}`),
+			http.StatusOK,
+			true,
+		},
+		{
+			"missing state",
+			[]byte(`{"path": "/home/nima18/git/cleve/test_data/novaseq_full"}`),
+			http.StatusBadRequest,
+			false,
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.name, func(t *testing.T) {
+			var ks mock.APIKeyService
+			var rs mock.RunService
+
+			db := mongo.DB{
+				Keys: &ks,
+				Runs: &rs,
+			}
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			rs.CreateFn = func(run *cleve.Run) error {
+				return nil
+			}
+
+			c.Request = httptest.NewRequest(http.MethodPost, "/runs", bytes.NewBuffer(v.data))
+			AddRunHandler(&db)(c)
+
+			if rs.CreateInvoked && !v.createInvoked {
+				t.Error(`RunService.Create was invoked, but it shouldn't have been`)
+			} else if !rs.CreateInvoked && v.createInvoked {
+				t.Error(`RunService.Create was not invoked, but it should have been`)
+			}
+
+			if w.Code != v.code {
+				t.Errorf(`Got HTTP %d, expected %d`, w.Code, v.code)
+			}
+		})
 	}
 }

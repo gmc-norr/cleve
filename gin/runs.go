@@ -1,13 +1,15 @@
 package gin
 
 import (
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
-	"io"
-	"mime/multipart"
-	"net/http"
-	"time"
 )
 
 func RunsHandler(db *mongo.DB) gin.HandlerFunc {
@@ -53,18 +55,17 @@ func RunHandler(db *mongo.DB) gin.HandlerFunc {
 func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var addRunRequest struct {
-			Path             string                `form:"path" binding:"required"`
-			State            string                `form:"state" binding:"required"`
-			RunParameterFile *multipart.FileHeader `form:"runparameters" binding:"required"`
-			RunInfoFile      *multipart.FileHeader `form:"runinfo" binding:"required"`
+			Path  string `json:"path" binding:"required"`
+			State string `json:"state" binding:"required"`
 		}
 
-		if err := c.Bind(&addRunRequest); err != nil {
+		if err := c.BindJSON(&addRunRequest); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing request body"})
 			return
 		}
 
-		paramsFile, err := addRunRequest.RunParameterFile.Open()
+		paramsFilename := filepath.Join(addRunRequest.Path, "RunParameters.xml")
+		paramsFile, err := os.Open(paramsFilename)
 		defer paramsFile.Close()
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "opening run parameters file"})
@@ -85,7 +86,8 @@ func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		infoFile, err := addRunRequest.RunInfoFile.Open()
+		infoFilename := filepath.Join(addRunRequest.Path, "RunInfo.xml")
+		infoFile, err := os.Open(infoFilename)
 		defer infoFile.Close()
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "opening run info file"})
