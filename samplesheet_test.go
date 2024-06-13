@@ -511,7 +511,7 @@ func TestMostRecentSamplesheet(t *testing.T) {
 			for i, fname := range c.filenames {
 				ssPath := filepath.Join(dir, fname)
 				_, err := os.Create(ssPath)
-				if err != nil && err.Error() != "no samplesheet found" {
+				if err != nil {
 					t.Fatal(err.Error())
 				}
 				if os.Chtimes(ssPath, c.modtimes[i], c.modtimes[i]) != nil {
@@ -519,10 +519,10 @@ func TestMostRecentSamplesheet(t *testing.T) {
 				}
 			}
 			ss, err := MostRecentSamplesheet(dir)
-			if err != nil {
+			if err != nil && err.Error() != "no samplesheet found" {
 				t.Fatal(err.Error())
 			}
-			if ss != filepath.Join(dir, c.filenames[0]) {
+			if len(c.filenames) > 0 && ss != filepath.Join(dir, c.filenames[0]) {
 				t.Errorf(`expected to get "%s", got "%s"`, c.filenames[0], ss)
 			}
 		})
