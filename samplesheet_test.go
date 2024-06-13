@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestSampleSheet(t *testing.T) {
@@ -455,6 +457,68 @@ func TestSectionType(t *testing.T) {
 			}
 			if string(b) != fmt.Sprintf(`%q`, c.String) {
 				t.Errorf(`expected %q, got %q`, c.String, string(b))
+			}
+		})
+	}
+}
+
+func TestMostRecentSamplesheet(t *testing.T) {
+	cases := []struct {
+		name      string
+		filenames []string
+		modtimes  []time.Time
+	}{
+		// The first samplesheet should be the most recent for the test to work properly
+		{
+			"single samplesheet",
+			[]string{"SampleSheet.csv"},
+			[]time.Time{time.Now()},
+		},
+		{
+			"two samplesheets",
+			[]string{
+				"SampleSheet_updated.csv",
+				"SampleSheet.csv",
+			},
+			[]time.Time{
+				time.Now(),
+				time.Now().Add(-2 * time.Hour),
+			},
+		},
+		{
+			"three samplesheets",
+			[]string{
+				"SampleSheet_updated.final.csv",
+				"SampleSheet.csv",
+				"SampleSheet_updated.csv",
+			},
+			[]time.Time{
+				time.Now(),
+				time.Now().Add(-2 * time.Hour),
+				time.Now().Add(-2 * time.Second),
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			dir := t.TempDir()
+			for i, fname := range c.filenames {
+				ssPath := filepath.Join(dir, fname)
+				_, err := os.Create(ssPath)
+				if err != nil {
+					t.Fatal(err.Error())
+				}
+				if os.Chtimes(ssPath, c.modtimes[i], c.modtimes[i]) != nil {
+					t.Fatal(err.Error())
+				}
+			}
+			ss, err := MostRecentSamplesheet(dir)
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+			if ss != filepath.Join(dir, c.filenames[0]) {
+				t.Errorf(`expected to get "%s", got "%s"`, c.filenames[0], ss)
 			}
 		})
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -368,4 +369,37 @@ func ReadSampleSheet(filename string) (SampleSheet, error) {
 
 	sampleSheet.ModificationTime = finfo.ModTime()
 	return sampleSheet, nil
+}
+
+// Find the SampleSheet with the most recent modification time
+// in a directory. The file name must be on the format `SampleSheet*.csv`.
+func MostRecentSamplesheet(path string) (string, error) {
+	files, err := os.ReadDir(path)
+	if err != nil {
+		return "", err
+	}
+
+	var samplesheet string
+	modtime := time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+	for _, f := range files {
+		fname := f.Name()
+		if strings.HasPrefix(fname, "SampleSheet") && strings.HasSuffix(fname, ".csv") {
+			ss := filepath.Join(path, fname)
+			s, err := os.Stat(ss)
+			if err != nil {
+				return "", err
+			}
+			if s.ModTime().Compare(modtime) > 0 {
+				modtime = s.ModTime()
+				samplesheet = ss
+			}
+		}
+	}
+
+	if samplesheet == "" {
+		return "", fmt.Errorf("no samplesheet found")
+	}
+
+	return samplesheet, nil
 }
