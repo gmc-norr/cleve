@@ -86,7 +86,7 @@ var addCmd = &cobra.Command{
 		}
 
 		var state cleve.RunState
-		if err = state.Set("new"); err != nil {
+		if err = state.Set("pending"); err != nil {
 			log.Fatal(err)
 		}
 
