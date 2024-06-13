@@ -58,6 +58,14 @@ func (s *SampleSheetService) Create(runID string, sampleSheet cleve.SampleSheet)
 	)
 }
 
+func (s *SampleSheetService) Delete(runID string) error {
+	res, err := s.coll.DeleteOne(context.TODO(), bson.D{{Key: "run_id", Value: runID}})
+	if err == nil && res.DeletedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return err
+}
+
 func (s *SampleSheetService) All() ([]cleve.SampleSheet, error) {
 	var sampleSheets []cleve.SampleSheet
 	cursor, err := s.coll.Find(context.TODO(), bson.D{})

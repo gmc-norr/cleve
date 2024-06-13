@@ -9,6 +9,8 @@ type SampleSheetService struct {
 	AllInvoked      bool
 	CreateFn        func(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
 	CreateInvoked   bool
+	DeleteFn        func(string) error
+	DeleteInvoked   bool
 	GetFn           func(string) (cleve.SampleSheet, error)
 	GetInvoked      bool
 	GetIndexFn      func() ([]map[string]string, error)
@@ -25,6 +27,11 @@ func (s *SampleSheetService) All() ([]cleve.SampleSheet, error) {
 func (s *SampleSheetService) Create(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
 	s.CreateInvoked = true
 	return s.CreateFn(runId, samplesheet)
+}
+
+func (s *SampleSheetService) Delete(runId string) error {
+	s.DeleteInvoked = true
+	return s.DeleteFn(runId)
 }
 
 func (s *SampleSheetService) Get(runId string) (cleve.SampleSheet, error) {

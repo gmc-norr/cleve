@@ -20,6 +20,7 @@ type UpdateResult = mongo.UpdateResult
 
 type SampleSheetService interface {
 	Create(string, SampleSheet) (*UpdateResult, error)
+	Delete(string) error
 	All() ([]SampleSheet, error)
 	Get(string) (SampleSheet, error)
 	GetIndex() ([]map[string]string, error)

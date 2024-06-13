@@ -21,9 +21,13 @@ var deleteCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = db.Runs.Delete(args[0])
-		if err != nil {
+		if err := db.Runs.Delete(args[0]); err != nil {
 			log.Fatal(err)
+		}
+		if err := db.SampleSheets.Delete(args[0]); err != nil {
+			if err != mongo.ErrNoDocuments {
+				log.Fatal(err)
+			}
 		}
 		log.Printf("Deleted run %s", args[0])
 	},
