@@ -124,6 +124,28 @@ func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 			Analysis:       []*cleve.Analysis{},
 		}
 
+		// Check for a sspath
+		sspath, err := cleve.MostRecentSamplesheet(run.Path)
+		if err != nil {
+			if err.Error() != "no samplesheet found" {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "looking for samplesheet"})
+				return
+			}
+		}
+		if sspath != "" {
+			samplesheet, err := cleve.ReadSampleSheet(sspath)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading samplesheet"})
+				return
+			}
+			_, err = db.SampleSheets.Create(run.RunID, samplesheet)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "saving samplesheet"})
+				return
+			}
+		}
+
+		// Save the run
 		if err := db.Runs.Create(&run); err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

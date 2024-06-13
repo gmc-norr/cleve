@@ -470,6 +470,11 @@ func TestMostRecentSamplesheet(t *testing.T) {
 	}{
 		// The first samplesheet should be the most recent for the test to work properly
 		{
+			"no samplesheet",
+			[]string{},
+			[]time.Time{},
+		},
+		{
 			"single samplesheet",
 			[]string{"SampleSheet.csv"},
 			[]time.Time{time.Now()},
@@ -506,7 +511,7 @@ func TestMostRecentSamplesheet(t *testing.T) {
 			for i, fname := range c.filenames {
 				ssPath := filepath.Join(dir, fname)
 				_, err := os.Create(ssPath)
-				if err != nil {
+				if err != nil && err.Error() != "no samplesheet found" {
 					t.Fatal(err.Error())
 				}
 				if os.Chtimes(ssPath, c.modtimes[i], c.modtimes[i]) != nil {

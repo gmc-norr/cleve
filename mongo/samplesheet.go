@@ -18,7 +18,7 @@ type SampleSheetService struct {
 // Add a samplesheet to the database. If a samplesheet for the run already
 // exists, it will be updated, but only if the modification time is newer than
 // the existing samplesheet.
-func (s *SampleSheetService) Create(runID string, sampleSheet cleve.SampleSheet) (*mongo.UpdateResult, error) {
+func (s *SampleSheetService) Create(runID string, sampleSheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
 	sampleSheet.RunID = runID
 
 	updateCond := bson.E{Key: "$gt", Value: bson.A{

@@ -16,8 +16,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type UpdateResult = mongo.UpdateResult
+
 type SampleSheetService interface {
-	Create(string, SampleSheet) (*mongo.UpdateResult, error)
+	Create(string, SampleSheet) (*UpdateResult, error)
 	All() ([]SampleSheet, error)
 	Get(string) (SampleSheet, error)
 	GetIndex() ([]map[string]string, error)

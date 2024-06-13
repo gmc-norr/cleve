@@ -221,15 +221,17 @@ func TestAddRunHandler(t *testing.T) {
 	gin.SetMode("test")
 
 	cases := []struct {
-		name          string
-		data          []byte
-		code          int
-		createInvoked bool
+		name           string
+		data           []byte
+		code           int
+		createInvoked  bool
+		hasSamplesheet bool
 	}{
 		{
 			"path missing",
 			[]byte(`{"path": "/path/to/run", "state": "ready"}`),
 			http.StatusInternalServerError,
+			false,
 			false,
 		},
 		{
@@ -237,11 +239,13 @@ func TestAddRunHandler(t *testing.T) {
 			[]byte(`{"path": "/home/nima18/git/cleve/test_data/novaseq_full", "state": "ready"}`),
 			http.StatusOK,
 			true,
+			true,
 		},
 		{
 			"missing state",
 			[]byte(`{"path": "/home/nima18/git/cleve/test_data/novaseq_full"}`),
 			http.StatusBadRequest,
+			false,
 			false,
 		},
 	}
@@ -250,15 +254,20 @@ func TestAddRunHandler(t *testing.T) {
 		t.Run(v.name, func(t *testing.T) {
 			var ks mock.APIKeyService
 			var rs mock.RunService
+			var ss mock.SampleSheetService
 
 			db := mongo.DB{
-				Keys: &ks,
-				Runs: &rs,
+				Keys:         &ks,
+				Runs:         &rs,
+				SampleSheets: &ss,
 			}
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			rs.CreateFn = func(run *cleve.Run) error {
 				return nil
+			}
+			ss.CreateFn = func(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
+				return nil, nil
 			}
 
 			c.Request = httptest.NewRequest(http.MethodPost, "/runs", bytes.NewBuffer(v.data))
@@ -268,6 +277,12 @@ func TestAddRunHandler(t *testing.T) {
 				t.Error(`RunService.Create was invoked, but it shouldn't have been`)
 			} else if !rs.CreateInvoked && v.createInvoked {
 				t.Error(`RunService.Create was not invoked, but it should have been`)
+			}
+
+			if ss.CreateInvoked && !v.hasSamplesheet {
+				t.Error(`SampleSheetService.Create was invoked, but it shouldn't have been`)
+			} else if !ss.CreateInvoked && v.hasSamplesheet {
+				t.Error(`SampleSheetService.Create was not invoked, but it should have been`)
 			}
 
 			if w.Code != v.code {
