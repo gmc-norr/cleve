@@ -65,6 +65,15 @@ var addCmd = &cobra.Command{
 		}
 		runParametersFile := filepath.Join(runDir, "RunParameters.xml")
 		runInfoFile := filepath.Join(runDir, "RunInfo.xml")
+		sampleSheetFile, err := cleve.MostRecentSamplesheet(runDir)
+		if err != nil {
+			if err.Error() == "no samplesheet found" {
+				log.Printf("no samplesheet found for run")
+			} else {
+				log.Fatal(err)
+			}
+		}
+		log.Printf("most recent samplesheet: %s", sampleSheetFile)
 
 		runParams, err := parseRunParameters(runParametersFile)
 		if err != nil {
@@ -78,6 +87,15 @@ var addCmd = &cobra.Command{
 
 		var state cleve.RunState
 		if err = state.Set("new"); err != nil {
+			log.Fatal(err)
+		}
+
+		samplesheet, err := cleve.ReadSampleSheet(sampleSheetFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = db.SampleSheets.Create(runParams.GetRunID(), samplesheet)
+		if err != nil {
 			log.Fatal(err)
 		}
 
