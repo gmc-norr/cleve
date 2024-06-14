@@ -73,7 +73,6 @@ var addCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 		}
-		log.Printf("most recent samplesheet: %s", sampleSheetFile)
 
 		runParams, err := parseRunParameters(runParametersFile)
 		if err != nil {
@@ -90,13 +89,16 @@ var addCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		samplesheet, err := cleve.ReadSampleSheet(sampleSheetFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = db.SampleSheets.Create(runParams.GetRunID(), samplesheet)
-		if err != nil {
-			log.Fatal(err)
+		if sampleSheetFile != "" {
+			log.Printf("most recent samplesheet: %s", sampleSheetFile)
+			samplesheet, err := cleve.ReadSampleSheet(sampleSheetFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = db.SampleSheets.Create(runParams.GetRunID(), samplesheet)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		run := cleve.Run{

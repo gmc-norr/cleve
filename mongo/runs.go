@@ -100,6 +100,31 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 		runPipeline = append(runPipeline, stateFilter)
 	}
 
+	// Add samplesheet information
+	runPipeline = append(aggPipeline, bson.D{
+		{Key: "$lookup", Value: bson.M{
+			"from":         "samplesheets",
+			"localField":   "run_id",
+			"foreignField": "run_id",
+			"as":           "samplesheet",
+			"pipeline": bson.A{
+				bson.M{
+					"$project": bson.M{
+						"path": 1,
+						"modification_time": 1,
+					},
+				},
+			},
+		}},
+	})
+
+	runPipeline = append(runPipeline, bson.D{
+		{Key: "$unwind", Value: bson.M{
+			"path": "$samplesheet",
+			"preserveNullAndEmptyArrays": true,
+		}},
+	})
+
 	// Count number of analyses
 	runPipeline = append(runPipeline, bson.D{
 		{Key: "$set", Value: bson.D{

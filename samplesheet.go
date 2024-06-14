@@ -80,10 +80,15 @@ func (s SectionType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
 }
 
+type SampleSheetInfo struct {
+	Path             string    `bson:"path" json:"path"`
+	ModificationTime time.Time `bson:"modification_time" json:"modification_time"`
+}
+
 type SampleSheet struct {
 	RunID            string    `bson:"run_id" json:"run_id"`
-	ModificationTime time.Time `bson:"modification_time" json:"modification_time"`
-	Sections         []Section `bson:"sections" json:"sections"`
+	SampleSheetInfo `bson:",inline" json:",inline"`
+	Sections        []Section `bson:"sections" json:"sections"`
 }
 
 func (s SampleSheet) Section(name string) *Section {
@@ -370,6 +375,10 @@ func ReadSampleSheet(filename string) (SampleSheet, error) {
 		return sampleSheet, err
 	}
 
+	sampleSheet.Path, err = filepath.Abs(filename)
+	if err != nil {
+		return sampleSheet, err
+	}
 	sampleSheet.ModificationTime = finfo.ModTime()
 	return sampleSheet, nil
 }

@@ -46,6 +46,14 @@ func (s *SampleSheetService) Create(runID string, sampleSheet cleve.SampleSheet)
 					}},
 				}}}}},
 			bson.D{{Key: "$set", Value: bson.D{
+				{Key: "path", Value: bson.D{
+					{Key: "$cond", Value: bson.A{
+						updateCond,
+						sampleSheet.Path,
+						"$path",
+					}},
+				}}}}},
+			bson.D{{Key: "$set", Value: bson.D{
 				{Key: "sections", Value: bson.D{
 					{Key: "$cond", Value: bson.A{
 						updateCond,

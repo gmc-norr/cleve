@@ -70,6 +70,7 @@ type Run struct {
 	Platform       string             `bson:"platform" json:"platform"`
 	Created        time.Time          `bson:"created" json:"created"`
 	StateHistory   []TimedRunState    `bson:"state_history" json:"state_history"`
+	SampleSheet    *SampleSheetInfo    `bson:"samplesheet,omitempty" json:"samplesheet,omitempty"`
 	RunParameters  RunParameters      `bson:"run_parameters,omitempty" json:"run_parameters,omitempty"`
 	RunInfo        RunInfo            `bson:"run_info,omitempty" json:"run_info,omitempty"`
 	Analysis       []*Analysis        `bson:"analysis,omitempty" json:"analysis,omitempty"`
@@ -97,6 +98,14 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 	err = rawData.Lookup("state_history").Unmarshal(&r.StateHistory)
 	if err != nil {
 		return err
+	}
+
+	ss := rawData.Lookup("samplesheet")
+	if len(ss.Value) > 0 {
+		err = ss.Unmarshal(&r.SampleSheet)
+		if err != nil {
+			return err
+		}
 	}
 
 	ra := rawData.Lookup("analysis")
