@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
@@ -169,6 +170,17 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	authEndpoints.POST("/api/platforms", AddPlatformHandler(db))
 
 	r.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/api") {
+			c.AbortWithStatusJSON(
+				http.StatusNotFound,
+				gin.H{
+					"error": fmt.Sprintf("no such api endpoint for method %s", c.Request.Method),
+					"code":  http.StatusNotFound,
+				},
+			)
+			return
+		}
 		c.HTML(http.StatusNotFound, "error404", nil)
 	})
 
