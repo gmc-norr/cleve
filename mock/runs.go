@@ -25,6 +25,8 @@ type RunService struct {
 	SetAnalysisSummaryInvoked bool
 	GetStateHistoryFn         func(string) ([]cleve.TimedRunState, error)
 	GetStateHistoryInvoked    bool
+	SetPathFn                 func(string, string) error
+	SetPathInvoked            bool
 	SetStateFn                func(string, cleve.RunState) error
 	SetStateInvoked           bool
 	GetIndexFn                func() ([]map[string]string, error)
@@ -81,6 +83,11 @@ func (s *RunService) SetAnalysisSummary(run_id string, analysis_id string, summa
 func (s *RunService) GetStateHistory(run_id string) ([]cleve.TimedRunState, error) {
 	s.GetStateHistoryInvoked = true
 	return s.GetStateHistoryFn(run_id)
+}
+
+func (s *RunService) SetPath(run_id string, path string) error {
+	s.SetPathInvoked = true
+	return s.SetPathFn(run_id, path)
 }
 
 func (s *RunService) SetState(run_id string, state cleve.RunState) error {

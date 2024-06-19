@@ -3,13 +3,15 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
-	"time"
 )
 
 type RunService struct {
@@ -308,6 +310,25 @@ func (s *RunService) SetState(runId string, state cleve.RunState) error {
 		return mongo.ErrNoDocuments
 	}
 	return err
+}
+
+func (s *RunService) SetPath(runId string, path string) error {
+	dirStat, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+
+	if !dirStat.IsDir() {
+		return fmt.Errorf("not a directory: %s", path)
+	}
+
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "path", Value: path}}}}
+	result, err := s.coll.UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
+	if err == nil && result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+
+	return nil
 }
 
 func (s *RunService) GetStateHistory(runId string) ([]cleve.TimedRunState, error) {

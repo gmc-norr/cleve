@@ -58,6 +58,7 @@ type RunService interface {
 	SetAnalysisSummary(string, string, *AnalysisSummary) error
 	GetStateHistory(string) ([]TimedRunState, error)
 	SetState(string, RunState) error
+	SetPath(string, string) error
 	GetIndex() ([]map[string]string, error)
 	SetIndex() (string, error)
 }

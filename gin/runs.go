@@ -155,7 +155,7 @@ func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
+func UpdateRunStateHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 
@@ -180,6 +180,28 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "run updated", "run_id": runId, "state": state.String()})
+		c.JSON(http.StatusOK, gin.H{"message": "run state updated", "run_id": runId, "state": state.String()})
+	}
+}
+
+func UpdateRunPathHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		runId := c.Param("runId")
+
+		var updateRequest struct {
+			Path string `json:"path" binding:"required"`
+		}
+
+		if err := c.ShouldBindJSON(&updateRequest); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing request body"})
+			return
+		}
+
+		if err := db.Runs.SetPath(runId, updateRequest.Path); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run path"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "run path updated", "run_id": runId, "path": updateRequest.Path})
 	}
 }
