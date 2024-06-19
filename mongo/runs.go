@@ -112,7 +112,7 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 			"pipeline": bson.A{
 				bson.M{
 					"$project": bson.M{
-						"path": 1,
+						"path":              1,
 						"modification_time": 1,
 					},
 				},
@@ -122,7 +122,7 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 
 	runPipeline = append(runPipeline, bson.D{
 		{Key: "$unwind", Value: bson.M{
-			"path": "$samplesheet",
+			"path":                       "$samplesheet",
 			"preserveNullAndEmptyArrays": true,
 		}},
 	})
