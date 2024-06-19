@@ -103,7 +103,7 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 	}
 
 	// Add samplesheet information
-	runPipeline = append(aggPipeline, bson.D{
+	runPipeline = append(runPipeline, bson.D{
 		{Key: "$lookup", Value: bson.M{
 			"from":         "samplesheets",
 			"localField":   "run_id",
@@ -238,6 +238,32 @@ func (s *RunService) Get(runId string, brief bool) (*cleve.Run, error) {
 		},
 	}
 
+	// Get samplesheet information
+	lookupStage := bson.D{
+		{Key: "$lookup", Value: bson.M{
+			"from":         "samplesheets",
+			"localField":   "run_id",
+			"foreignField": "run_id",
+			"as":           "samplesheet",
+			"pipeline": bson.A{
+				bson.M{
+					"$project": bson.M{
+						"path":              1,
+						"modification_time": 1,
+					},
+				},
+			},
+		}},
+	}
+
+	// Unwind array of samplesheets
+	unwindStage := bson.D{
+		{Key: "$unwind", Value: bson.M{
+			"path":                       "$samplesheet",
+			"preserveNullAndEmptyArrays": true,
+		}},
+	}
+
 	// Count number of analyses
 	setStage := bson.D{
 		{Key: "$set", Value: bson.D{
@@ -265,9 +291,9 @@ func (s *RunService) Get(runId string, brief bool) (*cleve.Run, error) {
 
 	var aggPipeline mongo.Pipeline
 	if brief {
-		aggPipeline = mongo.Pipeline{matchStage, setStage, unsetStage, sortStage}
+		aggPipeline = mongo.Pipeline{matchStage, setStage, unsetStage, sortStage, lookupStage, unwindStage}
 	} else {
-		aggPipeline = mongo.Pipeline{matchStage, setStage, sortStage}
+		aggPipeline = mongo.Pipeline{matchStage, setStage, sortStage, lookupStage, unwindStage}
 	}
 
 	cursor, err := s.coll.Aggregate(context.TODO(), aggPipeline)
