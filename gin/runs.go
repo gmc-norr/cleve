@@ -201,6 +201,27 @@ func UpdateRunPathHandler(db *mongo.DB) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run path"})
 			return
 		}
+		
+		samplesheetPath, err := cleve.MostRecentSamplesheet(updateRequest.Path)
+		if err != nil {
+			if err.Error() != "no samplesheet found" {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "looking for samplesheet"})
+				return
+			}
+		}
+
+		if samplesheetPath != "" {
+			samplesheet, err := cleve.ReadSampleSheet(samplesheetPath)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading samplesheet"})
+				return
+			}
+			_, err = db.SampleSheets.Create(runId, samplesheet)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "saving samplesheet"})
+				return
+			}
+		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "run path updated", "run_id": runId, "path": updateRequest.Path})
 	}

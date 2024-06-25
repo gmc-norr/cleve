@@ -2,9 +2,12 @@ package gin
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -288,6 +291,79 @@ func TestAddRunHandler(t *testing.T) {
 			if w.Code != v.code {
 				t.Errorf(`Got HTTP %d, expected %d`, w.Code, v.code)
 			}
+		})
+	}
+}
+
+func TestUpdateRunPathHandler(t *testing.T) {
+	gin.SetMode("test")
+
+	cases := []struct {
+		name                     string
+		runId                    string
+		code                     int
+		hasSampleSheet           bool
+	}{
+		{
+			"moved run with samplesheet",
+			"run1",
+			http.StatusOK,
+			true,
+		},
+		{
+			"moved run without samplesheet",
+			"run1",
+			http.StatusOK,
+			false,
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.name, func(t *testing.T) {
+			var ks mock.APIKeyService
+			var rs mock.RunService
+			var ss mock.SampleSheetService
+
+			db := mongo.DB{
+				Keys:         &ks,
+				Runs:         &rs,
+				SampleSheets: &ss,
+			}
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			rs.SetPathFn = func(runId string, path string) error {
+				return nil
+			}
+			ss.CreateFn = func(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
+				return nil, nil
+			}
+
+			runDir := t.TempDir()
+			if v.hasSampleSheet {
+				os.OpenFile(filepath.Join(runDir, "SampleSheet.csv"), os.O_RDONLY|os.O_CREATE, 0644)
+			}
+
+			c.Request = httptest.NewRequest(
+				http.MethodPost,
+				"/runs/run1/path",
+				bytes.NewBuffer([]byte(fmt.Sprintf(`{"run_id": "%s", "path": "%s"}`, v.runId, runDir))),
+			)
+			UpdateRunPathHandler(&db)(c)
+
+			if ss.CreateInvoked && !v.hasSampleSheet {
+				t.Error(`SampleSheetService.Create was invoked, but it should not have been`)
+			}
+			if !ss.CreateInvoked && v.hasSampleSheet {
+				t.Error(`SampleSheetService.Create was not invoked, but it should have been`)
+			}
+
+			if w.Code != v.code {
+				t.Errorf(`Got HTTP %d, expected %d`, w.Code, v.code)
+			}
+
+			// Reset invoked fields
+			ss.CreateInvoked = false
 		})
 	}
 }
