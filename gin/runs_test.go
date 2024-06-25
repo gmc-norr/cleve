@@ -299,21 +299,31 @@ func TestUpdateRunPathHandler(t *testing.T) {
 	gin.SetMode("test")
 
 	cases := []struct {
-		name                     string
-		runId                    string
-		code                     int
-		hasSampleSheet           bool
+		name              string
+		runId             string
+		code              int
+		destinationExists bool
+		hasSampleSheet    bool
 	}{
 		{
 			"moved run with samplesheet",
 			"run1",
 			http.StatusOK,
 			true,
+			true,
 		},
 		{
 			"moved run without samplesheet",
 			"run1",
 			http.StatusOK,
+			true,
+			false,
+		},
+		{
+			"moved run with missing path",
+			"run1",
+			http.StatusInternalServerError,
+			false,
 			false,
 		},
 	}
@@ -333,15 +343,25 @@ func TestUpdateRunPathHandler(t *testing.T) {
 			c, _ := gin.CreateTestContext(w)
 
 			rs.SetPathFn = func(runId string, path string) error {
+				s, err := os.Stat(path)
+				if err != nil {
+					return err
+				}
+				if !s.IsDir() {
+					return fmt.Errorf(`%s is not a directory`, path)
+				}
 				return nil
 			}
 			ss.CreateFn = func(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
 				return nil, nil
 			}
 
-			runDir := t.TempDir()
-			if v.hasSampleSheet {
-				os.OpenFile(filepath.Join(runDir, "SampleSheet.csv"), os.O_RDONLY|os.O_CREATE, 0644)
+			runDir := "/nonexistent/path/to/run"
+			if v.destinationExists {
+				runDir = t.TempDir()
+				if v.hasSampleSheet {
+					os.OpenFile(filepath.Join(runDir, "SampleSheet.csv"), os.O_RDONLY|os.O_CREATE, 0644)
+				}
 			}
 
 			c.Request = httptest.NewRequest(
@@ -364,6 +384,7 @@ func TestUpdateRunPathHandler(t *testing.T) {
 
 			// Reset invoked fields
 			ss.CreateInvoked = false
+			rs.SetPathInvoked = false
 		})
 	}
 }
