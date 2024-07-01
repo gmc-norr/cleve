@@ -74,7 +74,7 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 	}
 
 	// Sort state history chronologically
-	runPipeline = append(runPipeline, bson.D{
+	stateSort := bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "state_history", Value: bson.D{
 				{Key: "$sortArray", Value: bson.M{
@@ -83,7 +83,10 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 			}},
 		},
 		},
-	})
+	}
+
+	runPipeline = append(runPipeline, stateSort)
+	aggPipeline = append(aggPipeline, stateSort)
 
 	// Filter on most recent state
 	if filter.State != "" {
