@@ -188,5 +188,18 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 }
 
 func ApiIndexHandler(c *gin.Context, routes []gin.RouteInfo) {
-	c.HTML(http.StatusOK, "api.tmpl", gin.H{"routes": routes})
+	apidocFile, err := os.Open(viper.GetString("apidoc"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	apidocData, err := io.ReadAll(apidocFile)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+	apiDocs, err := ParseAPIDocs(apidocData)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+	c.HTML(http.StatusOK, "api.tmpl", apiDocs)
 }

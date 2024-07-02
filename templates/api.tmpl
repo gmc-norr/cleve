@@ -14,12 +14,65 @@
 
             <div class="container">
                 <h2>Endpoints</h2>
-                {{ range .routes }}
-                <div>
-                    <header><span class="badge bg-secondary">{{ .Method }}</span> <code>{{ .Path }}</code></header>
+                <button id="toggle-details" data-open="false">Open all sections</button>
+                {{ $baseUrl := .BaseURL }}
+                {{ $endpoints := .Endpoints }}
+                {{ range .Sections }}
+                {{ $currentSection := .Name }}
+                <h3 class="mt-4">{{ $currentSection }}</h3>
+                <p>{{ .Description }}</p>
+                {{ range $endpoints }}
+                {{ if eq .Section $currentSection }}
+                <div class="border p-4 my-2">
+                    <details>
+                        <summary>
+                            <header class="d-inline-block">
+                                <span class="badge bg-secondary">{{ .Method }}</span>
+                                <code>{{ $baseUrl }}{{ .Path }}</code>
+                            </header>
+                        </summary>
+                        <p class="my-2">{{ .Description }}</p>
+                        {{ if .Headers }}
+                            <h4>Headers</h4>
+                            {{ range .Headers }}
+                            <div>
+                                <code>{{ .Key }}</code> - {{ .Type }} -{{ if .Required }} <span class="badge bg-danger">Required</span>{{ end }} {{ .Description }} {{ if .Default }}(Default: {{ .Default }}){{ end }}
+                            <div>
+                            {{ end }}
+                        {{ end }}
+                        {{ if .Params }}
+                            <h4>Parameters</h4>
+                            {{ range .Params }}
+                            <div>
+                                <code>{{ .Key }}</code> - {{ .Type }} -{{ if .Required }} <span class="badge bg-danger">Required</span>{{ end }} {{ .Description }} {{ if .Default }}(Default: {{ .Default }}){{ end }}
+                            <div>
+                            {{ end }}
+                        {{ end }}
+                    </details>
                 </div>
+                {{ end }}
+                {{ end }}
                 {{ end }}
             </div>
         </div>
+        <script>
+            let openDetailsButton = document.getElementById("toggle-details");
+            openDetailsButton.addEventListener("click", toggleDetails);
+
+            function toggleDetails() {
+                let isOpen = openDetailsButton.dataset.open;
+                if (isOpen === "true") {
+                    openDetailsButton.dataset.open = "false";
+                    openDetailsButton.textContent = "Open all sections";
+                } else {
+                    openDetailsButton.dataset.open = "true";
+                    openDetailsButton.textContent = "Collapse all sections";
+                }
+                let details = document.querySelectorAll("details");
+                for (let d of details) {
+                    d.open = isOpen !== "true";
+                }
+            }
+        </script>
     </body>
 </html>

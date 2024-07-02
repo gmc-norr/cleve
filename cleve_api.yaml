@@ -1,0 +1,304 @@
+base_url: /api
+sections:
+  - name: runs
+    description: Details for sequencing runs.
+  - name: analysis
+    description: Analysis of sequencing data.
+  - name: qc
+    description: Quality control of sequencing data.
+  - name: samplesheet
+    description: Samplesheet information for sequencing runs.
+  - name: platforms
+    description: Information on sequencing platforms.
+endpoints:
+  - path: /runs
+    method: GET
+    section: runs
+    description: Get all sequencing runs
+    params:
+      - key: brief
+        type: boolean
+        description: if true, exclude detailed information
+        default: false
+      - key: run_id
+        type: string
+        description: partial sequencing run ID to filter on
+      - key: state
+        type: string
+        description: sequencing run state to filter on
+        examples:
+          - ready
+          - error
+          - pending
+      - key: page
+        type: integer
+        description: page number to get
+        default: 1
+      - key: page_size
+        type: integer
+        description: number of items per page
+        default: 10
+
+  - path: /runs
+    method: POST
+    section: runs
+    description: Create a new sequencing run
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: path
+        type: string
+        description: path to the run directory
+        required: true
+      - key: state
+        type: string
+        description: state of the run directory
+        required: true
+
+  - path: /runs/{run_id}
+    method: GET
+    section: runs
+    description: Get a single sequencing run
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run to get
+        required: true
+      - key: brief
+        type: boolean
+        description: if true, exclude detailed information
+        default: false
+
+  - path: /runs/{run_id}/state
+    method: PATCH
+    section: runs
+    description: Update the state of a run
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run to update
+        required: true
+      - key: state
+        type: string
+        description: new state of the run directory
+        required: true
+
+  - path: /runs/{run_id}/path
+    method: PATCH
+    section: runs
+    description: Update the path of a run
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run to update
+        required: true
+      - key: path
+        type: string
+        description: new path of the run directory
+        required: true
+
+  - path: /runs/{run_id}/analysis
+    method: GET
+    section: analysis
+    description: Get all analyses associated with a run. Only valid for NovaSeq runs.
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+
+  - path: /runs/{run_id}/analysis
+    method: POST
+    section: analysis
+    description: Add an analysis to a run. Only valid for NovaSeq runs.
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+      - key: path
+        type: string
+        description: path to the analysis directory
+        required: true
+      - key: state
+        type: string
+        description: path to the analysis directory
+        required: true
+      - key: summary_file
+        type: string
+        description: path to the analysis summary file
+        required: false
+
+  - path: /runs/{run_id}/analysis
+    method: POST
+    section: analysis
+    description: Get all analyses associated with a run. Only valid for NovaSeq runs.
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+
+  - path: /runs/{run_id}/analysis/{analysis_id}
+    method: GET
+    section: analysis
+    description: Get a specific analysis associated with a sequencing run. Only valid for NovaSeq runs.
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+      - key: analysis_id
+        type: string
+        description: ID of the analysis
+        required: true
+
+  - path: /runs/{run_id}/analysis/{analysis_id}
+    method: PATCH
+    section: analysis
+    description: Update an analysis associated with a sequencing run. Only valid for NovaSeq runs.
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+      - key: analysis_id
+        type: string
+        description: ID of the analysis
+        required: true
+      - key: state
+        type: string
+        description: new state of the analysis
+        required: false
+      - key: summary_file
+        type: file
+        description: analysis summary file
+        required: false
+
+  - path: /runs/{run_id}/samplesheet
+    method: GET
+    section: samplesheet
+    description: Get samplesheet information associated with a run
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+
+  - path: /runs/{run_id}/samplesheet
+    method: POST
+    section: samplesheet
+    description: Update samplesheet information for a run
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+      - key: samplesheet
+        type: string
+        description: path to the samplesheet
+        required: true
+
+  - path: /qc/{platform}
+    method: GET
+    section: qc
+    description: Get QC information associated with a platform
+    params:
+      - key: platform
+        type: string
+        description: platform name
+        required: true
+        examples:
+          - NovaSeq
+          - NextSeq
+
+  - path: /runs/{run_id}/qc
+    method: GET
+    section: qc
+    description: Get QC information associated with a run
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+
+  - path: /platforms
+    method: GET
+    section: platforms
+    description: Get all sequencing platforms
+
+  - path: /platforms
+    method: POST
+    section: platforms
+    description: Create a new sequencing platform
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: platform
+        type: string
+        description: platform name
+        required: true
+      - key: name
+        type: string
+        description: platform name
+        required: true
+      - key: serial_tag
+        type: string
+        description: the XML tag in `RunParameters.xml` where the platform serial number is stored
+        required: true
+      - key: serial_prefix
+        type: string
+        description: the prefix of the platform serial number
+        required: true
+      - key: ready_marker
+        type: string
+        description: name of the file that marks that a sequencing run is complete
+        default: CopyComplete.txt
+        required: false
+
+  - path: /platforms/{platform}
+    method: GET
+    section: platforms
+    description: Get information on a specific platform
+    params:
+      - key: platform
+        type: string
+        description: platform name
+        required: true
+

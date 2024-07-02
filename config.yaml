@@ -10,6 +10,9 @@ database:
 # If not set, logs will only be written to stdout
 logfile: cleve.log
 
+# Path to a yaml file containing the api specification
+apidoc: cleve_api.yaml
+
 # Path to assets, such as templates and static files
 assets: .
 
