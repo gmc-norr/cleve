@@ -3,8 +3,6 @@ package cleve
 import (
 	"fmt"
 	"time"
-
-	"github.com/gmc-norr/cleve/interop"
 )
 
 type QcFilter struct {
@@ -44,7 +42,7 @@ func (f QcFilter) UrlParams() string {
 }
 
 type QcResultItem struct {
-	interop.InteropQC `bson:",inline" json:",inline"`
+	InteropQC `bson:",inline" json:",inline"`
 	Run               Run `bson:"run" json:"run"`
 }
 
@@ -54,9 +52,9 @@ type QcResult struct {
 }
 
 type RunQcService interface {
-	Create(string, *interop.InteropQC) error
+	Create(string, *InteropQC) error
 	All(QcFilter) (QcResult, error)
-	Get(string) (*interop.InteropQC, error)
+	Get(string) (*InteropQC, error)
 	GetTotalQ30(string) (float64, error)
 	GetTotalErrorRate(string) (float64, error)
 	GetIndex() ([]map[string]string, error)

@@ -1,11 +1,11 @@
-package interop
+package cleve
 
 import (
 	"testing"
 )
 
 func TestGenerateInteropSummary(t *testing.T) {
-	rundirectory := "../test_data/novaseq_full"
+	rundirectory := "test_data/novaseq_full"
 	summary, err := GenerateSummary(rundirectory)
 	if err != nil {
 		t.Fatalf("%s when generating summary", err.Error())

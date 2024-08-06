@@ -1,8 +1,18 @@
-package interop
+package cleve
 
 import (
+	"math"
 	"testing"
 )
+
+func almostEqual[T float32 | float64](a, b T) bool {
+	return math.Abs(float64(a-b)) < math.Pow(10, -6)
+}
+
+func roundFloat(val float64, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(val*ratio) / ratio
+}
 
 func TestRunningVariance(t *testing.T) {
 	var numbers = []float32{

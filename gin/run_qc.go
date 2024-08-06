@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 )
 
@@ -53,7 +52,7 @@ func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
 			runIds = append(runIds, r.RunID)
 		}
 
-		qc := make([]*interop.InteropQC, 0)
+		qc := make([]*cleve.InteropQC, 0)
 
 		for _, r := range runIds {
 			qcSummary, err := db.RunQC.Get(r)
@@ -113,7 +112,7 @@ func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		summary, err := interop.GenerateSummary(run.Path)
+		summary, err := cleve.GenerateSummary(run.Path)
 		if err != nil {
 			ctx.AbortWithStatusJSON(
 				http.StatusInternalServerError,
@@ -122,7 +121,7 @@ func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		imaging, err := interop.GenerateImagingTable(runId, run.Path)
+		imaging, err := cleve.GenerateImagingTable(runId, run.Path)
 		if err != nil {
 			ctx.AbortWithStatusJSON(
 				http.StatusInternalServerError,
@@ -131,7 +130,7 @@ func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		qc := &interop.InteropQC{
+		qc := &cleve.InteropQC{
 			RunID:          runId,
 			InteropSummary: summary,
 			TileSummary:    imaging.LaneTileSummary(),

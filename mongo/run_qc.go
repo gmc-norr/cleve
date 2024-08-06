@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/interop"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -15,7 +14,7 @@ type RunQcService struct {
 	coll *mongo.Collection
 }
 
-func (s *RunQcService) Create(runId string, qc *interop.InteropQC) error {
+func (s *RunQcService) Create(runId string, qc *cleve.InteropQC) error {
 	_, err := s.coll.InsertOne(context.TODO(), qc)
 	return err
 }
@@ -143,8 +142,8 @@ func (s *RunQcService) All(filter cleve.QcFilter) (cleve.QcResult, error) {
 	return qc, cursor.Err()
 }
 
-func (s *RunQcService) Get(runId string) (*interop.InteropQC, error) {
-	var qc interop.InteropQC
+func (s *RunQcService) Get(runId string) (*cleve.InteropQC, error) {
+	var qc cleve.InteropQC
 	err := s.coll.FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}).Decode(&qc)
 	return &qc, err
 }

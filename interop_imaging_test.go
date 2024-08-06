@@ -1,4 +1,4 @@
-package interop
+package cleve
 
 import (
 	"bufio"
@@ -344,11 +344,11 @@ func TestGenerateImagingTable(t *testing.T) {
 	}{
 		{
 			"novaseq",
-			"../test_data/novaseq_full",
+			"test_data/novaseq_full",
 		},
 		{
 			"nextseq",
-			"../test_data/nextseq1_full",
+			"test_data/nextseq1_full",
 		},
 	}
 
