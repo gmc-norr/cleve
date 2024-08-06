@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/csv"
+	"errors"
 	"math"
+	"os"
 	"testing"
 )
 
@@ -354,6 +356,9 @@ func TestGenerateImagingTable(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
+			if _, err := os.Stat(c.Path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			_, err := GenerateImagingTable(c.Name, c.Path)
 			if err != nil {
 				t.Fatalf("%s when generating imaging table", err.Error())

@@ -2,6 +2,7 @@ package gin
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -225,6 +226,7 @@ func TestAddRunHandler(t *testing.T) {
 
 	cases := []struct {
 		name           string
+		runPath string
 		data           []byte
 		code           int
 		createInvoked  bool
@@ -232,6 +234,7 @@ func TestAddRunHandler(t *testing.T) {
 	}{
 		{
 			"path missing",
+			"",
 			[]byte(`{"path": "/path/to/run", "state": "ready"}`),
 			http.StatusInternalServerError,
 			false,
@@ -239,6 +242,7 @@ func TestAddRunHandler(t *testing.T) {
 		},
 		{
 			"valid run",
+			"/home/nima18/git/cleve/test_data/novaseq_full",
 			[]byte(`{"path": "/home/nima18/git/cleve/test_data/novaseq_full", "state": "ready"}`),
 			http.StatusOK,
 			true,
@@ -246,6 +250,7 @@ func TestAddRunHandler(t *testing.T) {
 		},
 		{
 			"missing state",
+			"/home/nima18/git/cleve/test_data/novaseq_full",
 			[]byte(`{"path": "/home/nima18/git/cleve/test_data/novaseq_full"}`),
 			http.StatusBadRequest,
 			false,
@@ -258,6 +263,10 @@ func TestAddRunHandler(t *testing.T) {
 			var ks mock.APIKeyService
 			var rs mock.RunService
 			var ss mock.SampleSheetService
+
+			if _, err := os.Stat(v.runPath); errors.Is(err, os.ErrNotExist) {
+                t.Skip("test data not found, skipping")
+            }
 
 			db := mongo.DB{
 				Keys:         &ks,
@@ -290,6 +299,7 @@ func TestAddRunHandler(t *testing.T) {
 
 			if w.Code != v.code {
 				t.Errorf(`Got HTTP %d, expected %d`, w.Code, v.code)
+				t.Errorf(`Message: %s`, w.Body.String())
 			}
 		})
 	}

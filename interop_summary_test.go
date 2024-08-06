@@ -1,11 +1,16 @@
 package cleve
 
 import (
+	"errors"
+	"os"
 	"testing"
 )
 
 func TestGenerateInteropSummary(t *testing.T) {
 	rundirectory := "test_data/novaseq_full"
+	if _, err := os.Stat(rundirectory); errors.Is(err, os.ErrNotExist) {
+		t.Skip("test data not found, skipping")
+	}
 	summary, err := GenerateSummary(rundirectory)
 	if err != nil {
 		t.Fatalf("%s when generating summary", err.Error())

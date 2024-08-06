@@ -1,6 +1,7 @@
 package cleve
 
 import (
+	"errors"
 	"io"
 	"os"
 	"testing"
@@ -22,6 +23,9 @@ func TestParseRunInfo(t *testing.T) {
 	}
 
 	for k, v := range cases {
+		if _, err := os.Stat(v.runinfo); errors.Is(err, os.ErrNotExist) {
+			t.Skip("test data not found, skipping")
+		}
 		f, err := os.Open(v.runinfo)
 		if err != nil {
 			t.Fatalf(`case "%s": %s`, k, err.Error())

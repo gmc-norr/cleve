@@ -1,6 +1,8 @@
 package cleve
 
 import (
+	"errors"
+	"os"
 	"testing"
 )
 
@@ -31,7 +33,7 @@ func TestReadRunCompletionStatus(t *testing.T) {
 		},
 		{
 			"nextseq_failed",
-			"test_data/230713_NB551119_0374_AHMVKTBGXT/RunCompletionStatus.xml",
+			"test_data/230713_NB551119_0374_AHMVKTBGX/RunCompletionStatus.xml",
 			"error",
 			"Thread was being aborted. (System.Threading.ThreadAbortException)",
 		},
@@ -39,6 +41,9 @@ func TestReadRunCompletionStatus(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.filename); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			rct, err := ReadRunCompletionStatus(c.filename)
 			if err != nil {
 				t.Fatal(err.Error())

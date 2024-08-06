@@ -3,6 +3,7 @@ package cleve
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -405,6 +406,9 @@ func TestReadSampleSheet(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
+			if _, err := os.Stat(c.Filename); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			s, err := ReadSampleSheet(c.Filename)
 			if err != nil {
 				t.Errorf("unexpected error: %s", err)

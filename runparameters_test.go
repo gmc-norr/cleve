@@ -2,6 +2,7 @@ package cleve
 
 import (
 	"encoding/xml"
+	"errors"
 	"io"
 	"os"
 	"testing"
@@ -27,6 +28,9 @@ func TestRunparameters(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		if _, err := os.Stat(c.filename); errors.Is(err, os.ErrNotExist) {
+			t.Skip("test data not found, skipping")
+		}
 		f, err := os.Open(c.filename)
 		if err != nil {
 			t.Fatal(err)
