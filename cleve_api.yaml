@@ -301,4 +301,3 @@ endpoints:
         type: string
         description: platform name
         required: true
-

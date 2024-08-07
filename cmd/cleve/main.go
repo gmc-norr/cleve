@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gmc-norr/cleve/cmd/cleve/db"
 	"github.com/gmc-norr/cleve/cmd/cleve/key"
 	"github.com/gmc-norr/cleve/cmd/cleve/platform"
@@ -8,7 +10,6 @@ import (
 	"github.com/gmc-norr/cleve/cmd/cleve/samplesheet"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"log"
 )
 
 var configFile string

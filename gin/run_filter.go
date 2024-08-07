@@ -1,9 +1,10 @@
 package gin
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
-	"strconv"
 )
 
 func getRunFilter(c *gin.Context, brief bool) (cleve.RunFilter, error) {

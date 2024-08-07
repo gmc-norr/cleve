@@ -2,11 +2,12 @@ package run
 
 import (
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
-	"log"
-	"strings"
 )
 
 var (

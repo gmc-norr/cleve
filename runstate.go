@@ -3,9 +3,10 @@ package cleve
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
-	"time"
 )
 
 type RunState int

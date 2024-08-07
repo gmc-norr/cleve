@@ -3,12 +3,13 @@ package run
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/mongo"
-	"github.com/spf13/cobra"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/mongo"
+	"github.com/spf13/cobra"
 )
 
 var csvOutput, jsonOutput, brief bool

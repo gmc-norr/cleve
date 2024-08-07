@@ -2,10 +2,11 @@ package gin
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
-	"net/http"
 )
 
 func PlatformsHandler(db *mongo.DB) gin.HandlerFunc {

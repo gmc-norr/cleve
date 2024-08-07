@@ -2,14 +2,15 @@ package run
 
 import (
 	"fmt"
-	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/mongo"
-	"github.com/spf13/cobra"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/mongo"
+	"github.com/spf13/cobra"
 )
 
 var runPath string

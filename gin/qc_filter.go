@@ -1,9 +1,10 @@
 package gin
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
-	"strconv"
 )
 
 func getQcFilter(c *gin.Context) (cleve.QcFilter, error) {

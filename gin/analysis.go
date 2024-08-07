@@ -1,14 +1,15 @@
 package gin
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/mongo"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"regexp"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/mongo"
 )
 
 func AnalysesHandler(db *mongo.DB) gin.HandlerFunc {

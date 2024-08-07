@@ -2,9 +2,10 @@ package db
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
-	"log"
 )
 
 var update bool

@@ -3,11 +3,12 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 type PlatformService struct {

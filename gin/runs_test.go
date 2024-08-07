@@ -226,7 +226,7 @@ func TestAddRunHandler(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		runPath string
+		runPath        string
 		data           []byte
 		code           int
 		createInvoked  bool
@@ -265,8 +265,8 @@ func TestAddRunHandler(t *testing.T) {
 			var ss mock.SampleSheetService
 
 			if _, err := os.Stat(v.runPath); errors.Is(err, os.ErrNotExist) {
-                t.Skip("test data not found, skipping")
-            }
+				t.Skip("test data not found, skipping")
+			}
 
 			db := mongo.DB{
 				Keys:         &ks,

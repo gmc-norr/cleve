@@ -3,11 +3,12 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gmc-norr/cleve/mongo"
-	"github.com/spf13/cobra"
 	"log"
 	"os"
 	"text/tabwriter"
+
+	"github.com/gmc-norr/cleve/mongo"
+	"github.com/spf13/cobra"
 )
 
 var (

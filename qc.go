@@ -43,7 +43,7 @@ func (f QcFilter) UrlParams() string {
 
 type QcResultItem struct {
 	InteropQC `bson:",inline" json:",inline"`
-	Run               Run `bson:"run" json:"run"`
+	Run       Run `bson:"run" json:"run"`
 }
 
 type QcResult struct {

@@ -3,14 +3,15 @@ package gin
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/gmc-norr/cleve"
-	"github.com/gmc-norr/cleve/mock"
-	"github.com/gmc-norr/cleve/mongo"
 	"io"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/mock"
+	"github.com/gmc-norr/cleve/mongo"
 )
 
 var platformNovaSeq = &cleve.Platform{

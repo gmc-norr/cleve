@@ -8,9 +8,9 @@ import (
 )
 
 type InteropQC struct {
-	RunID           string `bson:"run_id" json:"run_id"`
-	InteropSummary	*InteropSummary `bson:"summary" json:"summary"`
-	TileSummary     []TileSummary `bson:"imaging" json:"imaging"`
+	RunID          string          `bson:"run_id" json:"run_id"`
+	InteropSummary *InteropSummary `bson:"summary" json:"summary"`
+	TileSummary    []TileSummary   `bson:"imaging" json:"imaging"`
 }
 
 type InteropHeader struct {
