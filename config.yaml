@@ -13,9 +13,6 @@ logfile: cleve.log
 # Path to a yaml file containing the api specification
 apidoc: cleve_api.yaml
 
-# Path to assets, such as templates and static files
-assets: .
-
 # Host and port where cleve will be served
 host: 127.0.0.1
 port: 8080

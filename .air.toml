@@ -1,7 +1,7 @@
 [build]
 args_bin = []
 bin = "tmp/cleve serve"
-cmd = "tailwindcss -i ./assets/css/input.css -o ./assets/css/style.css && go build -o ./tmp/cleve ./cmd/cleve"
+cmd = "tailwindcss -i ./assets/css/_input.css -o ./assets/css/style.css && go build -o ./tmp/cleve ./cmd/cleve"
 delay = 200
 exclude_dir = ["test_data"]
 exclude_regex = ["*_test.go"]

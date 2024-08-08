@@ -2,14 +2,16 @@ package gin
 
 import (
 	"fmt"
+	"html/template"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"strings"
-	"text/template"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
@@ -99,6 +101,11 @@ func toFloat(x interface{}) float64 {
 	return 0
 }
 
+func LoadHTMLFS(e *gin.Engine, fs fs.FS, patterns ...string) {
+	t := template.Must(template.New("").Funcs(e.FuncMap).ParseFS(fs, patterns...))
+	e.SetHTMLTemplate(t)
+}
+
 func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	gin.DisableConsoleColor()
 	if viper.GetString("logfile") != "" {
@@ -127,9 +134,17 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 		"toFloat":     toFloat,
 		"N":           N,
 	})
-	r.LoadHTMLGlob(fmt.Sprintf("%s/templates/*", viper.GetString("assets")))
+	templateFS, err := cleve.GetTemplateFS()
+	if err != nil {
+		log.Fatalf("failed to get template fs: %s", err.Error())
+	}
+	LoadHTMLFS(r, templateFS, "*.tmpl")
 
-	r.Static("/assets", fmt.Sprintf("%s/assets", viper.GetString("assets")))
+	assetFS, err := cleve.GetAssetFS()
+	if err != nil {
+		log.Fatalf("failed to get asset fs: %s", err.Error())
+	}
+	r.StaticFS("/static", http.FS(assetFS))
 
 	// Dashboard endpoints
 	r.GET("/", DashboardHandler(db))
