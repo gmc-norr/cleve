@@ -203,16 +203,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 }
 
 func ApiIndexHandler(c *gin.Context, routes []gin.RouteInfo) {
-	apidocFile, err := os.Open(viper.GetString("apidoc"))
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	apidocData, err := io.ReadAll(apidocFile)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	}
-	apiDocs, err := ParseAPIDocs(apidocData)
+	apiDocs, err := ParseAPIDocs(cleve.GetAPIDoc())
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
