@@ -115,14 +115,15 @@ type Section struct {
 	Rows [][]string  `bson:"rows" json:"rows"`
 }
 
-func (s Section) Get(name string, index ...int) (string, bool) {
+func (s Section) Get(name string, index ...int) (string, error) {
 	switch s.Type {
 	case SettingsSection:
 		for _, row := range s.Rows {
 			if row[0] == name {
-				return row[1], true
+				return row[1], nil
 			}
 		}
+		return "", fmt.Errorf("key %s not found in section %s", name, s.Name)
 	case DataSection:
 		colIndex := -1
 		for i, s := range s.Rows[0] {
@@ -132,42 +133,62 @@ func (s Section) Get(name string, index ...int) (string, bool) {
 			}
 		}
 
+		if colIndex == -1 {
+			return "", fmt.Errorf("column %s not found in section %s", name, s.Name)
+		}
+
 		rowIndex := -1
 		if len(index) > 0 {
 			rowIndex = index[0]
 		} else {
-			return "", false
+			return "", fmt.Errorf("no index given")
 		}
 
 		if colIndex >= 0 && rowIndex >= 0 {
-			return s.Rows[rowIndex][colIndex], true
+			return s.Rows[rowIndex][colIndex], nil
+		} else {
+			return "", fmt.Errorf("index %d out of bounds for column %q", rowIndex, name)
 		}
-
+	default:
+		return "", fmt.Errorf("unknown section type: %v", s.Type)
 	}
-
-	return "", false
 }
 
 func (s Section) GetInt(name string, index ...int) (int, error) {
-	v, ok := s.Get(name, index...)
-	if !ok {
-		if index != nil {
-			return 0, fmt.Errorf("index %d for key %s not found", index[0], name)
-		}
-		return 0, fmt.Errorf("key %s not found", name)
+	v, err := s.Get(name, index...)
+	if err != nil {
+		return 0, err
 	}
 	return strconv.Atoi(v)
 }
 
 func (s Section) GetFloat(name string, index ...int) (float64, error) {
-	v, ok := s.Get(name, index...)
-	if !ok {
-		if index != nil {
-			return 0, fmt.Errorf("index %d for key %s not found", index[0], name)
-		}
-		return 0, fmt.Errorf("key %s not found", name)
+	v, err := s.Get(name, index...)
+	if err != nil {
+		return 0, err
 	}
 	return strconv.ParseFloat(v, 64)
+}
+
+func (s Section) GetColumn(name string) ([]string, error) {
+	if s.Type != DataSection {
+		return nil, fmt.Errorf("section %q is not a data section", s.Name)
+	}
+	header := s.Rows[0]
+	colIndex := -1
+	for i, colName := range header {
+		if colName == name {
+			colIndex = i
+		}
+	}
+	if colIndex == -1 {
+		return nil, fmt.Errorf("column %q not found in section %q", name, s.Name)
+	}
+	colValues := make([]string, len(s.Rows)-1)
+	for i := 1; i < len(s.Rows); i++ {
+		colValues[i-1] = s.Rows[i][colIndex]
+	}
+	return colValues, nil
 }
 
 type sampleSheetParser struct {

@@ -68,6 +68,24 @@ func AddSampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
 func SampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runID := c.Param("runId")
+		sectionName := c.Query("section")
+		columnName := c.QueryArray("column")
+		key := c.Query("key")
+
+		if key != "" && columnName != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "give key or column, not both",
+			})
+			return
+		}
+
+		if sectionName == "" && (key != "" || columnName != nil) {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "section required when using key or column",
+			})
+			return
+		}
+
 		sampleSheet, err := db.SampleSheets.Get(runID)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
@@ -77,6 +95,46 @@ func SampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
 				return
 			}
 			log.Fatal(err)
+		}
+
+		if sectionName != "" {
+			section := sampleSheet.Section(sectionName)
+			if section == nil {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+					"error": fmt.Sprintf("section %q not found in samplesheet", sectionName),
+				})
+				return
+			}
+
+			if columnName != nil {
+				colData := make(map[string][]string)
+				for _, colName := range columnName {
+					col, err := section.GetColumn(colName)
+					if err != nil {
+						c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+							"error": err.Error(),
+						})
+						return
+					}
+					colData[colName] = col
+				}
+				c.JSON(http.StatusOK, colData)
+				return
+			}
+
+			if key != "" {
+				val, err := section.Get(key)
+				if err != nil {
+					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+						"error": err.Error(),
+					})
+					return
+				}
+				c.JSON(http.StatusOK, val)
+				return
+			}
+			c.JSON(http.StatusOK, section)
+			return
 		}
 
 		c.JSON(http.StatusOK, sampleSheet)

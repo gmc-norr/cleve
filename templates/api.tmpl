@@ -48,6 +48,14 @@
                             <div>
                             {{ end }}
                         {{ end }}
+                        {{ if .QueryParams }}
+                            <h4>Query Parameters</h4>
+                            {{ range .QueryParams }}
+                            <div>
+                                <code>{{ .Key }}</code> - {{ .Type }} -{{ if .Multiple }} <span class="badge bg-primary">Multiple</span>{{ end }} {{ .Description }}
+                            </div>
+                            {{ end }}
+                        {{ end }}
                     </details>
                 </div>
                 {{ end }}

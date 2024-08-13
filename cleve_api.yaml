@@ -212,6 +212,23 @@ endpoints:
         type: string
         description: ID of the run
         required: true
+    query_params:
+      - key: section
+        type: string
+        multiple: false
+        description: Extract a single section from a samplesheet
+      - key: column
+        type: string
+        multiple: true
+        description: >
+          Extract one or more columns from a data section of the samplesheet.
+          Incompatible with <code>key</code>, and <code>section</code> required.
+      - key: key
+        type: string
+        multiple: false
+        description: >
+          Extract the value associated with key from a settings section of the samplesheet
+          Incompatible with <code>column</code>, and <code>section</code> required.
 
   - path: /runs/{run_id}/samplesheet
     method: POST

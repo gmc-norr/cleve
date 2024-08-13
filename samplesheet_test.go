@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -381,8 +382,8 @@ key2,val2
 		t.Fatalf("%s", err)
 	}
 
-	v, ok := s.Section("Header").Get("key3")
-	if ok {
+	v, err := s.Section("Header").Get("key3")
+	if err == nil {
 		t.Error("expected not ok, got ok")
 	}
 	if v != "" {
@@ -461,6 +462,71 @@ func TestSectionType(t *testing.T) {
 			}
 			if string(b) != fmt.Sprintf(`%q`, c.String) {
 				t.Errorf(`expected %q, got %q`, c.String, string(b))
+			}
+		})
+	}
+}
+
+func TestGetDataColumn(t *testing.T) {
+	cases := []struct {
+		name    string
+		nrows   int
+		section Section
+		tests   map[string][]string
+	}{
+		{
+			"data section",
+			3,
+			Section{
+				Name: "Data",
+				Type: DataSection,
+				Rows: [][]string{
+					{"col1", "col2", "col3"},
+					{"val1.1", "val2.1", "val3.1"},
+					{"val1.2", "val2.2", "val3.2"},
+					{"val1.3", "val2.3", "val3.3"},
+				},
+			},
+			map[string][]string{
+				"col1": {"val1.1", "val1.2", "val1.3"},
+				"col4": nil,
+			},
+		}, {
+			"settings section",
+			0,
+			Section{
+				Name: "Header",
+				Type: SettingsSection,
+				Rows: [][]string{
+					{"FileFormatVersion", "2"},
+					{"RunName", "TestRun"},
+					{"InstrumentPlatform", "NovaSeq"},
+					{"InstrumentType", "NovaSeq X Plus"},
+				},
+			},
+			map[string][]string{
+				"FileFormatVersion": nil,
+				"RunName":           nil,
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			for colName, v := range c.tests {
+				col, err := c.section.GetColumn(colName)
+				if err != nil {
+					t.Logf("got error: %s", err)
+					if v != nil {
+						t.Fatal(err.Error())
+					}
+				}
+				if v != nil && len(col) != c.nrows {
+					t.Errorf("expected %d rows, got %d", c.nrows, len(col))
+				}
+				if !reflect.DeepEqual(col, v) {
+					t.Errorf("expected column %v, got %v", v, col)
+				}
 			}
 		})
 	}

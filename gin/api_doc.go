@@ -1,6 +1,8 @@
 package gin
 
 import (
+	"html/template"
+
 	"github.com/go-yaml/yaml"
 )
 
@@ -11,26 +13,34 @@ type APIDocs struct {
 }
 
 type Section struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
+	Name        string        `yaml:"name"`
+	Description template.HTML `yaml:"description"`
 }
 
 type Endpoint struct {
-	Method      string  `yaml:"method"`
-	Path        string  `yaml:"path"`
-	Description string  `yaml:"description"`
-	Section     string  `yaml:"section"`
-	Params      []Param `yaml:"params"`
-	Headers     []Param `yaml:"headers"`
+	Method      string        `yaml:"method"`
+	Path        string        `yaml:"path"`
+	Description template.HTML `yaml:"description"`
+	Section     string        `yaml:"section"`
+	Params      []Param       `yaml:"params"`
+	QueryParams []QueryParam  `yaml:"query_params"`
+	Headers     []Param       `yaml:"headers"`
 }
 
 type Param struct {
-	Key         string   `yaml:"key"`
-	Description string   `yaml:"description"`
-	Type        string   `yaml:"type"`
-	Default     string   `yaml:"default"`
-	Required    bool     `yaml:"required"`
-	Examples    []string `yaml:"examples"`
+	Key         string        `yaml:"key"`
+	Description template.HTML `yaml:"description"`
+	Type        string        `yaml:"type"`
+	Default     string        `yaml:"default"`
+	Required    bool          `yaml:"required"`
+	Examples    []string      `yaml:"examples"`
+}
+
+type QueryParam struct {
+	Key         string        `yaml:"key"`
+	Description template.HTML `yaml:"description"`
+	Type        string        `yaml:"type"`
+	Multiple    bool          `yaml:"multiple"`
 }
 
 func ParseAPIDocs(doc []byte) (*APIDocs, error) {
