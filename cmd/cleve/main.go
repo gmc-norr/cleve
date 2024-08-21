@@ -16,7 +16,7 @@ var configFile string
 var rootCmd = &cobra.Command{
 	Use:     "cleve",
 	Short:   "Interact with the sequencing database",
-	Version: Version,
+	Version: GetVersion(),
 }
 
 func init() {
