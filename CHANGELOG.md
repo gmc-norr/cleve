@@ -2,6 +2,7 @@
 
 ## 0.1.0 (2024-08-21)
 
+This is the first release of Cleve with basic functionality in place. More things to come!
 
 ### Miscellaneous Chores
 
