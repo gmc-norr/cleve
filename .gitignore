@@ -1,4 +1,6 @@
 /cleve
+/bin/
+/cmd/cleve/version.txt
 cleve.log
 test_data/
 cleve*.dump
