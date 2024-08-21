@@ -25,5 +25,8 @@ jobs:
     - name: Install dependencies
       run: go get .
 
+    - name: Build
+      run: go generate ./... && go build ./cmd/cleve
+
     - name: Test
       run: go test -v ./...
