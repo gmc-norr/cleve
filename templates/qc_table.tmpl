@@ -33,7 +33,7 @@
             hx-target="#qc-table-body"
             hx-select-oob="#table-counts,#table-nav"
             hx-swap="outerHTML"
-            {{ if eq $current_page 1 }}disabled{{ end }}>
+            {{ if eq $current_page .}}disabled{{ end }}>
             {{ . }}
         </button>
         {{ end }}
