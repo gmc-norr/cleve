@@ -13,4 +13,3 @@ jobs:
           release-type: go
           package-name: ${{ github.event.repository.name }}
           bump-minor-pre-major: true
-          extra-files: cmd/cleve/main.go

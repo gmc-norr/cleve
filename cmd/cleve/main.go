@@ -16,12 +16,13 @@ var configFile string
 var rootCmd = &cobra.Command{
 	Use:     "cleve",
 	Short:   "Interact with the sequencing database",
-	Version: "0.1.0", // x-release-please-version
+	Version: Version,
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
 
+	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file")
 
 	rootCmd.AddCommand(serveCmd)
