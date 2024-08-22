@@ -52,6 +52,13 @@ func hxMiddleware() gin.HandlerFunc {
 	}
 }
 
+func versionMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("X-cleve-version", cleve.GetVersion())
+		c.Next()
+	}
+}
+
 func add(x, y float64) float64 {
 	return x + y
 }
@@ -145,6 +152,8 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 		log.Fatalf("failed to get asset fs: %s", err.Error())
 	}
 	r.StaticFS("/static", http.FS(assetFS))
+
+	r.Use(versionMiddleware())
 
 	// Dashboard endpoints
 	r.GET("/", DashboardHandler(db))

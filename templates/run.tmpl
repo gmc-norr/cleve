@@ -1,5 +1,5 @@
 {{ define "run" }}
-{{ template "header" }}
+{{ template "header" . }}
 {{ $state := (index .run.StateHistory 0).State.String }}
 <h2 class="text-3xl">Sequencing run: {{ .run.RunID }}
         <span class="state-{{ $state }} inline-block py-1 px-2 rounded-md">

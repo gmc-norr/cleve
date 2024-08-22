@@ -35,6 +35,7 @@ func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		dashboardData, err := getDashboardData(db, filter)
+		dashboardData["version"] = cleve.GetVersion()
 
 		if err != nil {
 			c.HTML(http.StatusInternalServerError, "error500", dashboardData)
@@ -80,7 +81,7 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 			}
 		}
 
-		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet, "chart_config": GetRunChartConfig(c)})
+		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet, "chart_config": GetRunChartConfig(c), "version": cleve.GetVersion()})
 	}
 }
 
@@ -128,6 +129,6 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		c.Header("Hx-Push-Url", filter.UrlParams())
-		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.PaginationMetadata, "platforms": platformStrings, "filter": filter, "chart-config": chartConfig})
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.PaginationMetadata, "platforms": platformStrings, "filter": filter, "chart-config": chartConfig, "version": cleve.GetVersion()})
 	}
 }

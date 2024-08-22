@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/cmd/cleve/db"
 	"github.com/gmc-norr/cleve/cmd/cleve/key"
 	"github.com/gmc-norr/cleve/cmd/cleve/platform"
@@ -16,7 +17,7 @@ var configFile string
 var rootCmd = &cobra.Command{
 	Use:     "cleve",
 	Short:   "Interact with the sequencing database",
-	Version: GetVersion(),
+	Version: cleve.GetVersion(),
 }
 
 func init() {
