@@ -12,7 +12,23 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func AnalysesHandler(db *mongo.DB) gin.HandlerFunc {
+type AnalysisGetter interface {
+	Analyses(string) ([]*cleve.Analysis, error)
+	Analysis(string, string) (*cleve.Analysis, error)
+}
+
+type AnalysisSetter interface {
+	CreateAnalysis(string, *cleve.Analysis) error
+	SetAnalysisState(string, string, cleve.RunState) error
+	SetAnalysisSummary(string, string, *cleve.AnalysisSummary) error
+}
+
+type AnalysisGetterSetter interface {
+	AnalysisGetter
+	AnalysisSetter
+}
+
+func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		analyses, err := db.Analyses(runId)
@@ -28,7 +44,7 @@ func AnalysesHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AnalysisHandler(db *mongo.DB) gin.HandlerFunc {
+func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		analysisId := c.Param("analysisId")
@@ -52,7 +68,7 @@ func AnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AddAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
+func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		var addAnalysisRequest struct {
@@ -172,7 +188,7 @@ func AddAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func UpdateAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
+func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		analysisId := c.Param("analysisId")

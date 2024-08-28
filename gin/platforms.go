@@ -9,7 +9,16 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func PlatformsHandler(db *mongo.DB) gin.HandlerFunc {
+type PlatformGetter interface {
+	Platform(string) (*cleve.Platform, error)
+	Platforms() ([]*cleve.Platform, error)
+}
+
+type PlatformSetter interface {
+	CreatePlatform(*cleve.Platform) error
+}
+
+func PlatformsHandler(db PlatformGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		platforms, err := db.Platforms()
 		if err != nil {
@@ -24,7 +33,7 @@ func PlatformsHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func GetPlatformHandler(db *mongo.DB) gin.HandlerFunc {
+func GetPlatformHandler(db PlatformGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.Param("platformName")
 
@@ -47,7 +56,7 @@ func GetPlatformHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AddPlatformHandler(db *mongo.DB) gin.HandlerFunc {
+func AddPlatformHandler(db PlatformSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var platform cleve.Platform
 

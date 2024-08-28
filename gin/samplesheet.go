@@ -10,7 +10,15 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func AddSampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
+type SampleSheetGetter interface {
+	SampleSheet(string) (cleve.SampleSheet, error)
+}
+
+type SampleSheetSetter interface {
+	CreateSampleSheet(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
+}
+
+func AddSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runID := c.Param("runId")
 
@@ -65,7 +73,7 @@ func AddSampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func SampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
+func SampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runID := c.Param("runId")
 		sectionName := c.Query("section")

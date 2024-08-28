@@ -12,7 +12,19 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func RunsHandler(db *mongo.DB) gin.HandlerFunc {
+type RunGetter interface {
+	Run(string, bool) (*cleve.Run, error)
+	Runs(cleve.RunFilter) (cleve.RunResult, error)
+}
+
+type RunSetter interface {
+	CreateRun(*cleve.Run) error
+	CreateSampleSheet(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
+	SetRunState(string, cleve.RunState) error
+	SetRunPath(string, string) error
+}
+
+func RunsHandler(db RunGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		_, brief := c.GetQuery("brief")
 		filter, err := getRunFilter(c, brief)
@@ -32,7 +44,7 @@ func RunsHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func RunHandler(db *mongo.DB) gin.HandlerFunc {
+func RunHandler(db RunGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		_, brief := c.GetQuery("brief")
@@ -52,7 +64,7 @@ func RunHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
+func AddRunHandler(db RunSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var addRunRequest struct {
 			Path  string `json:"path" binding:"required"`
@@ -155,7 +167,7 @@ func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func UpdateRunStateHandler(db *mongo.DB) gin.HandlerFunc {
+func UpdateRunStateHandler(db RunSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 
@@ -184,7 +196,7 @@ func UpdateRunStateHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func UpdateRunPathHandler(db *mongo.DB) gin.HandlerFunc {
+func UpdateRunPathHandler(db RunSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 

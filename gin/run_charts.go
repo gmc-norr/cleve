@@ -8,7 +8,7 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func RunChartsHandler(db *mongo.DB) gin.HandlerFunc {
+func RunChartsHandler(db RunQCGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		config := GetRunChartConfig(c)

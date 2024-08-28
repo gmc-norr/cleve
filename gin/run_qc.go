@@ -11,7 +11,23 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func RunQcHandler(db *mongo.DB) gin.HandlerFunc {
+type RunQCGetter interface {
+	Runs(cleve.RunFilter) (cleve.RunResult, error)
+	RunQC(string) (*cleve.InteropQC, error)
+	RunQCs(cleve.QcFilter) (cleve.QcResult, error)
+}
+
+type RunQCSetter interface {
+	Run(string, bool) (*cleve.Run, error)
+	CreateRunQC(string, *cleve.InteropQC) error
+}
+
+type RunQCGetterSetter interface {
+	RunQCGetter
+	RunQCSetter
+}
+
+func RunQcHandler(db RunQCGetter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		runId := ctx.Param("runId")
 		qc, err := db.RunQC(runId)
@@ -32,7 +48,7 @@ func RunQcHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
+func AllRunQcHandler(db RunQCGetter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		filter := cleve.RunFilter{
 			Brief:    true,
@@ -68,7 +84,7 @@ func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
+func AddRunQcHandler(db RunQCGetterSetter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		runId := ctx.Param("runId")
 		run, err := db.Run(runId, true)
