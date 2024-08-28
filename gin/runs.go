@@ -21,7 +21,7 @@ func RunsHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		runs, err := db.Runs.All(filter)
+		runs, err := db.Runs(filter)
 
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -36,7 +36,7 @@ func RunHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		_, brief := c.GetQuery("brief")
-		run, err := db.Runs.Get(runId, brief)
+		run, err := db.Run(runId, brief)
 
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
@@ -138,7 +138,7 @@ func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading samplesheet"})
 				return
 			}
-			_, err = db.SampleSheets.Create(run.RunID, samplesheet)
+			_, err = db.CreateSampleSheet(run.RunID, samplesheet)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "saving samplesheet"})
 				return
@@ -146,7 +146,7 @@ func AddRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		// Save the run
-		if err := db.Runs.Create(&run); err != nil {
+		if err := db.CreateRun(&run); err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -175,7 +175,7 @@ func UpdateRunStateHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		if err = db.Runs.SetState(runId, state); err != nil {
+		if err = db.SetRunState(runId, state); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run state"})
 			return
 		}
@@ -197,7 +197,7 @@ func UpdateRunPathHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		if err := db.Runs.SetPath(runId, updateRequest.Path); err != nil {
+		if err := db.SetRunPath(runId, updateRequest.Path); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run path"})
 			return
 		}
@@ -216,7 +216,7 @@ func UpdateRunPathHandler(db *mongo.DB) gin.HandlerFunc {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading samplesheet"})
 				return
 			}
-			_, err = db.SampleSheets.Create(runId, samplesheet)
+			_, err = db.CreateSampleSheet(runId, samplesheet)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "saving samplesheet"})
 				return

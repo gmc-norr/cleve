@@ -23,7 +23,7 @@ var (
 			if err != nil {
 				log.Fatal(err)
 			}
-			if err := db.Keys.Delete(args[0]); err != nil {
+			if err := db.DeleteKey(args[0]); err != nil {
 				if err == mongo.ErrNoDocuments {
 					log.Fatal("error: key not found")
 				}

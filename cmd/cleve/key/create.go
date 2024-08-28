@@ -26,7 +26,7 @@ var (
 			}
 
 			key := cleve.NewAPIKey(args[0])
-			if err := db.Keys.Create(key); err != nil {
+			if err := db.CreateKey(key); err != nil {
 				log.Fatalf("error: %s", err)
 			}
 

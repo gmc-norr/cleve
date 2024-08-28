@@ -11,7 +11,7 @@ import (
 
 func PlatformsHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		platforms, err := db.Platforms.All()
+		platforms, err := db.Platforms()
 		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
@@ -28,7 +28,7 @@ func GetPlatformHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.Param("platformName")
 
-		platform, err := db.Platforms.Get(name)
+		platform, err := db.Platform(name)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(
@@ -63,7 +63,7 @@ func AddPlatformHandler(db *mongo.DB) gin.HandlerFunc {
 			platform.ReadyMarker = "CopyComplete.txt"
 		}
 
-		if err := db.Platforms.Create(&platform); err != nil {
+		if err := db.CreatePlatform(&platform); err != nil {
 			if mongo.IsDuplicateKeyError(err) {
 				c.AbortWithStatusJSON(
 					http.StatusConflict,

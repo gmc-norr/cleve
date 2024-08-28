@@ -17,7 +17,7 @@ var (
 			if err != nil {
 				log.Fatal(err)
 			}
-			keys, err := db.Keys.All()
+			keys, err := db.Keys()
 			if err != nil {
 				log.Fatal(err)
 			}

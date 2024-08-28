@@ -43,7 +43,7 @@ var (
 				ReadyMarker:  readyMarker,
 			}
 
-			if err := db.Platforms.Create(&platform); err != nil {
+			if err := db.CreatePlatform(&platform); err != nil {
 				if mongo.IsDuplicateKeyError(err) {
 					log.Fatalf("error: platform %s already exists", name)
 				}

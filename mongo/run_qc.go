@@ -10,16 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type RunQcService struct {
-	coll *mongo.Collection
-}
-
-func (s *RunQcService) Create(runId string, qc *cleve.InteropQC) error {
-	_, err := s.coll.InsertOne(context.TODO(), qc)
+func (db DB) CreateRunQC(runId string, qc *cleve.InteropQC) error {
+	_, err := db.RunQCCollection().InsertOne(context.TODO(), qc)
 	return err
 }
 
-func (s *RunQcService) All(filter cleve.QcFilter) (cleve.QcResult, error) {
+func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	var qcPipeline mongo.Pipeline
 	var aggPipeline mongo.Pipeline
 	var qc cleve.QcResult
@@ -128,7 +124,7 @@ func (s *RunQcService) All(filter cleve.QcFilter) (cleve.QcResult, error) {
 		})
 	}
 
-	cursor, err := s.coll.Aggregate(context.TODO(), aggPipeline)
+	cursor, err := db.RunQCCollection().Aggregate(context.TODO(), aggPipeline)
 	if err != nil {
 		return qc, err
 	}
@@ -142,30 +138,30 @@ func (s *RunQcService) All(filter cleve.QcFilter) (cleve.QcResult, error) {
 	return qc, cursor.Err()
 }
 
-func (s *RunQcService) Get(runId string) (*cleve.InteropQC, error) {
+func (db DB) RunQC(runId string) (*cleve.InteropQC, error) {
 	var qc cleve.InteropQC
-	err := s.coll.FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}).Decode(&qc)
+	err := db.RunQCCollection().FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}).Decode(&qc)
 	return &qc, err
 }
 
-func (s *RunQcService) GetTotalQ30(runId string) (float64, error) {
-	qc, err := s.Get(runId)
+func (db DB) RunTotalQ30(runId string) (float64, error) {
+	qc, err := db.RunQC(runId)
 	if err != nil {
 		return 0, err
 	}
 	return float64(qc.InteropSummary.RunSummary["Total"].PercentQ30), nil
 }
 
-func (s *RunQcService) GetTotalErrorRate(runId string) (float64, error) {
-	e, err := s.Get(runId)
+func (db DB) RunTotalErrorRate(runId string) (float64, error) {
+	e, err := db.RunQC(runId)
 	if err != nil {
 		return 0, err
 	}
 	return float64(e.InteropSummary.RunSummary["Total"].ErrorRate), nil
 }
 
-func (s *RunQcService) GetIndex() ([]map[string]string, error) {
-	cursor, err := s.coll.Indexes().List(context.TODO())
+func (db DB) RunQCIndex() ([]map[string]string, error) {
+	cursor, err := db.RunQCCollection().Indexes().List(context.TODO())
 	defer cursor.Close(context.TODO())
 
 	var indexes []map[string]string
@@ -189,7 +185,7 @@ func (s *RunQcService) GetIndex() ([]map[string]string, error) {
 	return indexes, nil
 }
 
-func (s *RunQcService) SetIndex() (string, error) {
+func (db DB) SetRunQCIndex() (string, error) {
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
 			{Key: "run_id", Value: 1},
@@ -198,11 +194,11 @@ func (s *RunQcService) SetIndex() (string, error) {
 	}
 
 	// TODO: do this as a transaction and roll back if anything fails
-	_, err := s.coll.Indexes().DropAll(context.TODO())
+	_, err := db.RunQCCollection().Indexes().DropAll(context.TODO())
 	if err != nil {
 		return "", err
 	}
 
-	name, err := s.coll.Indexes().CreateOne(context.TODO(), indexModel)
+	name, err := db.RunQCCollection().Indexes().CreateOne(context.TODO(), indexModel)
 	return name, err
 }

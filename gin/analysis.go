@@ -15,7 +15,7 @@ import (
 func AnalysesHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
-		analyses, err := db.Runs.GetAnalyses(runId)
+		analyses, err := db.Analyses(runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.JSON(http.StatusNotFound, gin.H{"error": "run not found"})
@@ -32,7 +32,7 @@ func AnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		analysisId := c.Param("analysisId")
-		analysis, err := db.Runs.GetAnalysis(runId, analysisId)
+		analysis, err := db.Analysis(runId, analysisId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(
@@ -117,7 +117,7 @@ func AddAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		// Check that the analysis doesn't already exist
-		_, err := db.Runs.GetAnalysis(runId, a.AnalysisId)
+		_, err := db.Analysis(runId, a.AnalysisId)
 		if err == nil {
 			c.AbortWithStatusJSON(
 				http.StatusConflict,
@@ -156,7 +156,7 @@ func AddAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		if err := db.Runs.CreateAnalysis(runId, &a); err != nil {
+		if err := db.CreateAnalysis(runId, &a); err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
 				gin.H{"error": err.Error(), "when": "adding analysis"},
@@ -206,7 +206,7 @@ func UpdateAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 				return
 			}
 
-			err = db.Runs.SetAnalysisState(runId, analysisId, state)
+			err = db.SetAnalysisState(runId, analysisId, state)
 			if err != nil {
 				c.AbortWithStatusJSON(
 					http.StatusInternalServerError,
@@ -237,7 +237,7 @@ func UpdateAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 				return
 			}
 			summary, err := cleve.ParseAnalysisSummary(summaryData)
-			err = db.Runs.SetAnalysisSummary(runId, analysisId, &summary)
+			err = db.SetAnalysisSummary(runId, analysisId, &summary)
 			if err != nil {
 				c.AbortWithStatusJSON(
 					http.StatusInternalServerError,

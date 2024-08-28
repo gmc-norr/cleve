@@ -8,8 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (s *RunService) GetAnalyses(runId string) ([]*cleve.Analysis, error) {
-	run, err := s.Get(runId, false)
+func (db DB) Analyses(runId string) ([]*cleve.Analysis, error) {
+	run, err := db.Run(runId, false)
 	if err != nil {
 		return nil, err
 	}
@@ -21,8 +21,8 @@ func (s *RunService) GetAnalyses(runId string) ([]*cleve.Analysis, error) {
 	return analyses, nil
 }
 
-func (s *RunService) GetAnalysis(runId string, analysisId string) (*cleve.Analysis, error) {
-	analyses, err := s.GetAnalyses(runId)
+func (db DB) Analysis(runId string, analysisId string) (*cleve.Analysis, error) {
+	analyses, err := db.Analyses(runId)
 	if err != nil {
 		return nil, err
 	}
@@ -36,13 +36,13 @@ func (s *RunService) GetAnalysis(runId string, analysisId string) (*cleve.Analys
 	return nil, mongo.ErrNoDocuments
 }
 
-func (s *RunService) CreateAnalysis(runId string, analysis *cleve.Analysis) error {
+func (db DB) CreateAnalysis(runId string, analysis *cleve.Analysis) error {
 	update := bson.D{{
 		Key: "$push", Value: bson.D{
 			{Key: "analysis", Value: analysis},
 		},
 	}}
-	res, err := s.coll.UpdateOne(
+	res, err := db.RunCollection().UpdateOne(
 		context.TODO(),
 		bson.D{{Key: "run_id", Value: runId}},
 		update,
@@ -55,7 +55,7 @@ func (s *RunService) CreateAnalysis(runId string, analysis *cleve.Analysis) erro
 	return nil
 }
 
-func (s *RunService) SetAnalysisState(runId string, analysisId string, state cleve.RunState) error {
+func (db DB) SetAnalysisState(runId string, analysisId string, state cleve.RunState) error {
 	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
 	update := bson.D{{
 		Key: "$set", Value: bson.D{
@@ -63,7 +63,7 @@ func (s *RunService) SetAnalysisState(runId string, analysisId string, state cle
 		},
 	}}
 
-	res, err := s.coll.UpdateOne(context.TODO(), filter, update)
+	res, err := db.RunCollection().UpdateOne(context.TODO(), filter, update)
 	if err == nil && res.MatchedCount == 0 {
 		return mongo.ErrNoDocuments
 	}
@@ -71,7 +71,7 @@ func (s *RunService) SetAnalysisState(runId string, analysisId string, state cle
 	return err
 }
 
-func (s *RunService) SetAnalysisSummary(runId string, analysisId string, summary *cleve.AnalysisSummary) error {
+func (db DB) SetAnalysisSummary(runId string, analysisId string, summary *cleve.AnalysisSummary) error {
 	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
 	update := bson.D{{
 		Key: "$set", Value: bson.D{
@@ -79,7 +79,7 @@ func (s *RunService) SetAnalysisSummary(runId string, analysisId string, summary
 		},
 	}}
 
-	res, err := s.coll.UpdateOne(context.TODO(), filter, update)
+	res, err := db.RunCollection().UpdateOne(context.TODO(), filter, update)
 	if err == nil && res.MatchedCount == 0 {
 		return mongo.ErrNoDocuments
 	}

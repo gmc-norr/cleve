@@ -38,7 +38,7 @@ func AddSampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
 
 		log.Printf("adding samplesheet for run %q", runID)
 
-		res, err := db.SampleSheets.Create(runID, sampleSheet)
+		res, err := db.CreateSampleSheet(runID, sampleSheet)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -86,7 +86,7 @@ func SampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		sampleSheet, err := db.SampleSheets.Get(runID)
+		sampleSheet, err := db.SampleSheet(runID)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{

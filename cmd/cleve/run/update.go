@@ -31,7 +31,7 @@ var (
 
 			if stateArg != "" {
 				log.Printf("Updating state of run %s to '%s'", args[0], stateUpdate.String())
-				err := db.Runs.SetState(args[0], stateUpdate)
+				err := db.SetRunState(args[0], stateUpdate)
 				if err != nil {
 					log.Fatalf("error: %s", err)
 				}

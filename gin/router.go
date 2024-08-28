@@ -29,7 +29,7 @@ func authMiddleware(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		_, err := db.Keys.Get(requestKey)
+		_, err := db.Key(requestKey)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "unauthorized",

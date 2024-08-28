@@ -96,7 +96,7 @@ var addCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			_, err = db.SampleSheets.Create(runParams.GetRunID(), samplesheet)
+			_, err = db.CreateSampleSheet(runParams.GetRunID(), samplesheet)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -113,7 +113,7 @@ var addCmd = &cobra.Command{
 			Analysis:       []*cleve.Analysis{},
 		}
 
-		if err = db.Runs.Create(&run); err != nil {
+		if err = db.CreateRun(&run); err != nil {
 			log.Fatal(err)
 		}
 

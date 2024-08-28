@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/gmc-norr/cleve"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -24,11 +23,7 @@ var GenericDuplicateKeyError = mongo.WriteException{
 }
 
 type DB struct {
-	Keys         cleve.APIKeyService
-	Runs         cleve.RunService
-	Platforms    cleve.PlatformService
-	RunQC        cleve.RunQcService
-	SampleSheets cleve.SampleSheetService
+	*mongo.Database
 }
 
 func Connect() (*DB, error) {
@@ -58,41 +53,51 @@ func Connect() (*DB, error) {
 		log.Fatalf("error reaching database: %s\n", err)
 	}
 
-	runCollection := client.Database(viper.GetString("database.name")).Collection("runs")
-	keyCollection := client.Database(viper.GetString("database.name")).Collection("keys")
-	platformCollection := client.Database(viper.GetString("database.name")).Collection("platforms")
-	RunQCCollection := client.Database(viper.GetString("database.name")).Collection("run_qc")
-	sampleSheetCollection := client.Database(viper.GetString("database.name")).Collection("samplesheets")
-
 	return &DB{
-		&APIKeyService{keyCollection},
-		&RunService{runCollection},
-		&PlatformService{platformCollection},
-		&RunQcService{RunQCCollection},
-		&SampleSheetService{sampleSheetCollection},
+		client.Database(mongo_db),
 	}, nil
 }
 
+func (db DB) RunCollection() *mongo.Collection {
+	return db.Collection("runs")
+}
+
+func (db DB) KeyCollection() *mongo.Collection {
+	return db.Collection("keys")
+}
+
+func (db DB) PlatformCollection() *mongo.Collection {
+	return db.Collection("platforms")
+}
+
+func (db DB) RunQCCollection() *mongo.Collection {
+	return db.Collection("run_qc")
+}
+
+func (db DB) SampleSheetCollection() *mongo.Collection {
+	return db.Collection("samplesheets")
+}
+
 func (db *DB) SetIndexes() error {
-	name, err := db.Runs.SetIndex()
+	name, err := db.SetRunIndex()
 	if err != nil {
 		return err
 	}
 	log.Printf("Set index %s on runs", name)
 
-	name, err = db.Platforms.SetIndex()
+	name, err = db.SetPlatformIndex()
 	if err != nil {
 		return err
 	}
 	log.Printf("Set index %s on platforms", name)
 
-	name, err = db.RunQC.SetIndex()
+	name, err = db.SetRunQCIndex()
 	if err != nil {
 		return err
 	}
 	log.Printf("Set index %s on run qc", name)
 
-	name, err = db.SampleSheets.SetIndex()
+	name, err = db.SetSampleSheetIndex()
 	if err != nil {
 		return err
 	}
@@ -102,17 +107,17 @@ func (db *DB) SetIndexes() error {
 }
 
 func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
-	runIndex, err := db.Runs.GetIndex()
+	runIndex, err := db.RunIndex()
 	if err != nil {
 		return nil, err
 	}
 
-	runQcIndex, err := db.RunQC.GetIndex()
+	runQcIndex, err := db.RunQCIndex()
 	if err != nil {
 		return nil, err
 	}
 
-	sampleSheetIndex, err := db.SampleSheets.GetIndex()
+	sampleSheetIndex, err := db.SampleSheetIndex()
 	if err != nil {
 		return nil, err
 	}

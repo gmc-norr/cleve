@@ -13,7 +13,7 @@ func RunChartsHandler(db *mongo.DB) gin.HandlerFunc {
 		runId := c.Param("runId")
 		config := GetRunChartConfig(c)
 
-		qc, err := db.RunQC.Get(runId)
+		qc, err := db.RunQC(runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
