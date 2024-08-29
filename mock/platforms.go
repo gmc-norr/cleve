@@ -4,40 +4,36 @@ import (
 	"github.com/gmc-norr/cleve"
 )
 
-type PlatformService struct {
-	AllFn           func() ([]*cleve.Platform, error)
-	AllInvoked      bool
-	GetFn           func(string) (*cleve.Platform, error)
-	GetInvoked      bool
-	CreateFn        func(*cleve.Platform) error
-	CreateInvoked   bool
-	DeleteFn        func(string) error
-	DeleteInvoked   bool
-	SetIndexFn      func() (string, error)
-	SetIndexInvoked bool
+type PlatformGetter struct {
+	PlatformFn       func(string) (*cleve.Platform, error)
+	PlatformInvoked  bool
+	PlatformsFn      func() ([]*cleve.Platform, error)
+	PlatformsInvoked bool
 }
 
-func (s *PlatformService) All() ([]*cleve.Platform, error) {
-	s.AllInvoked = true
-	return s.AllFn()
+func (s *PlatformGetter) Platforms() ([]*cleve.Platform, error) {
+	s.PlatformsInvoked = true
+	return s.PlatformsFn()
 }
 
-func (s *PlatformService) Get(name string) (*cleve.Platform, error) {
-	s.GetInvoked = true
-	return s.GetFn(name)
+func (s *PlatformGetter) Platform(name string) (*cleve.Platform, error) {
+	s.PlatformInvoked = true
+	return s.PlatformFn(name)
 }
 
-func (s *PlatformService) Create(p *cleve.Platform) error {
-	s.CreateInvoked = true
-	return s.CreateFn(p)
+type PlatformSetter struct {
+	CreatePlatformFn      func(*cleve.Platform) error
+	CreatePlatformInvoked bool
+	DeletePlatformFn      func(string) error
+	DeletePlatformInvoked bool
 }
 
-func (s *PlatformService) Delete(name string) error {
-	s.DeleteInvoked = true
-	return s.DeleteFn(name)
+func (s *PlatformSetter) CreatePlatform(p *cleve.Platform) error {
+	s.CreatePlatformInvoked = true
+	return s.CreatePlatformFn(p)
 }
 
-func (s *PlatformService) SetIndex() (string, error) {
-	s.SetIndexInvoked = true
-	return s.SetIndexFn()
+func (s *PlatformSetter) DeletePlatform(name string) error {
+	s.DeletePlatformInvoked = true
+	return s.DeletePlatformFn(name)
 }

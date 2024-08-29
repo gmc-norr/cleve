@@ -7,14 +7,6 @@ type Platform struct {
 	ReadyMarker  string `bson:"ready_marker" json:"ready_marker"`
 }
 
-type PlatformService interface {
-	All() ([]*Platform, error)
-	Get(string) (*Platform, error)
-	Create(*Platform) error
-	Delete(string) error
-	SetIndex() (string, error)
-}
-
 func NewPlatform(name, serialTag, serialPrefix, readyMarker string) *Platform {
 	return &Platform{
 		name,

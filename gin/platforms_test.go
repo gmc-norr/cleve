@@ -40,10 +40,7 @@ var platformNextSeq = &cleve.Platform{
 
 func TestPlatformsHandler(t *testing.T) {
 	gin.SetMode("test")
-	ps := mock.PlatformService{}
-	db := mongo.DB{
-		Platforms: &ps,
-	}
+	pg := mock.PlatformGetter{}
 
 	table := map[string]struct {
 		Platforms []*cleve.Platform
@@ -63,16 +60,16 @@ func TestPlatformsHandler(t *testing.T) {
 	}
 
 	for k, v := range table {
-		ps.AllFn = func() ([]*cleve.Platform, error) {
+		pg.PlatformsFn = func() ([]*cleve.Platform, error) {
 			return v.Platforms, v.Error
 		}
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		PlatformsHandler(&db)(c)
+		PlatformsHandler(&pg)(c)
 
-		if !ps.AllInvoked {
-			t.Fatalf("PlatformService.All not invoked for %s", k)
+		if !pg.PlatformsInvoked {
+			t.Fatalf("Platforms not invoked for %s", k)
 		}
 
 		if w.Code != v.Code {
@@ -83,10 +80,7 @@ func TestPlatformsHandler(t *testing.T) {
 
 func TestGetPlatformHandler(t *testing.T) {
 	gin.SetMode("test")
-	ps := mock.PlatformService{}
-	db := mongo.DB{
-		Platforms: &ps,
-	}
+	pg := mock.PlatformGetter{}
 
 	table := map[string]struct {
 		Platform *cleve.Platform
@@ -106,16 +100,16 @@ func TestGetPlatformHandler(t *testing.T) {
 	}
 
 	for k, v := range table {
-		ps.GetFn = func(name string) (*cleve.Platform, error) {
+		pg.PlatformFn = func(name string) (*cleve.Platform, error) {
 			return v.Platform, v.Error
 		}
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		GetPlatformHandler(&db)(c)
+		GetPlatformHandler(&pg)(c)
 
-		if !ps.GetInvoked {
-			t.Fatalf("PlatformService.Get not invoked for %s", k)
+		if !pg.PlatformInvoked {
+			t.Fatalf("Platform not invoked for %s", k)
 		}
 
 		if w.Code != v.Code {
@@ -169,12 +163,9 @@ func TestAddPlatformHandler(t *testing.T) {
 	}
 
 	for k, v := range table {
-		ps := mock.PlatformService{}
-		ps.CreateFn = func(p *cleve.Platform) error {
+		ps := mock.PlatformSetter{}
+		ps.CreatePlatformFn = func(p *cleve.Platform) error {
 			return v.Error
-		}
-		db := mongo.DB{
-			Platforms: &ps,
 		}
 
 		w := httptest.NewRecorder()
@@ -184,13 +175,13 @@ func TestAddPlatformHandler(t *testing.T) {
 		r := httptest.NewRequest("POST", "/api/platforms", strings.NewReader(string(rBody)))
 		c.Request = r
 
-		AddPlatformHandler(&db)(c)
+		AddPlatformHandler(&ps)(c)
 
-		if ps.CreateInvoked != v.InvokesCreate {
+		if ps.CreatePlatformInvoked != v.InvokesCreate {
 			if v.InvokesCreate {
-				t.Fatalf("PlatformService.Create should have been invoked, but was not")
+				t.Fatalf("CreatePlatform should have been invoked, but was not")
 			} else {
-				t.Fatalf("PlatformService.Create should not have been invoked, but was")
+				t.Fatalf("CreatePlatform should not have been invoked, but was")
 			}
 		}
 
