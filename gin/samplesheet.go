@@ -10,10 +10,12 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
+// Interface for reading samplesheets from the database.
 type SampleSheetGetter interface {
 	SampleSheet(string) (cleve.SampleSheet, error)
 }
 
+// Interface for storing samplesheets in the database.
 type SampleSheetSetter interface {
 	CreateSampleSheet(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
 }

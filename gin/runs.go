@@ -12,11 +12,13 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
+// Interface for reading runs from the database.
 type RunGetter interface {
 	Run(string, bool) (*cleve.Run, error)
 	Runs(cleve.RunFilter) (cleve.RunResult, error)
 }
 
+// Interface for storing/updating runs in the database.
 type RunSetter interface {
 	CreateRun(*cleve.Run) error
 	CreateSampleSheet(string, cleve.SampleSheet) (*cleve.UpdateResult, error)

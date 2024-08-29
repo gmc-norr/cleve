@@ -4,6 +4,9 @@ import (
 	"github.com/gmc-norr/cleve"
 )
 
+// Mock implementing the gin.PlatformGetter interface.
+//
+// See [mock.RunGetter] for more information.
 type PlatformGetter struct {
 	PlatformFn       func(string) (*cleve.Platform, error)
 	PlatformInvoked  bool
@@ -21,6 +24,9 @@ func (s *PlatformGetter) Platform(name string) (*cleve.Platform, error) {
 	return s.PlatformFn(name)
 }
 
+// Mock implementing the gin.PlatformSetter interface.
+//
+// See [mock.RunGetter] for more information.
 type PlatformSetter struct {
 	CreatePlatformFn      func(*cleve.Platform) error
 	CreatePlatformInvoked bool

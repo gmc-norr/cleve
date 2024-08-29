@@ -12,17 +12,20 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
+// Interface for reading analyses from the database.
 type AnalysisGetter interface {
 	Analyses(string) ([]*cleve.Analysis, error)
 	Analysis(string, string) (*cleve.Analysis, error)
 }
 
+// Interface for storing/updating analyses in the database.
 type AnalysisSetter interface {
 	CreateAnalysis(string, *cleve.Analysis) error
 	SetAnalysisState(string, string, cleve.RunState) error
 	SetAnalysisSummary(string, string, *cleve.AnalysisSummary) error
 }
 
+// Interface for both getting and storing/updating analyses.
 type AnalysisGetterSetter interface {
 	AnalysisGetter
 	AnalysisSetter

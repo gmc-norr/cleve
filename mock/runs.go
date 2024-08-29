@@ -28,9 +28,7 @@ func (g *RunGetter) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 
 // Mock implementing the gin.RunSetter interface.
 //
-// The *Fn fields are the functions that will get called in the end, and
-// the corresponding *Invoked fields register whether the function has been
-// called. The interface implementation then just wraps the *Fn functions.
+// See [mock.RunGetter] for more information.
 type RunSetter struct {
 	CreateRunFn              func(*cleve.Run) error
 	CreateRunInvoked         bool

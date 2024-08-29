@@ -11,17 +11,20 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
+// Interface for reading run QC data from the database.
 type RunQCGetter interface {
 	Runs(cleve.RunFilter) (cleve.RunResult, error)
 	RunQC(string) (*cleve.InteropQC, error)
 	RunQCs(cleve.QcFilter) (cleve.QcResult, error)
 }
 
+// Interface for storing run QC data in the database.
 type RunQCSetter interface {
 	Run(string, bool) (*cleve.Run, error)
 	CreateRunQC(string, *cleve.InteropQC) error
 }
 
+// Interface for both getting and storing run QC data.
 type RunQCGetterSetter interface {
 	RunQCGetter
 	RunQCSetter

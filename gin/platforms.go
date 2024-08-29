@@ -9,11 +9,13 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
+// Interface for reading platform information from the database.
 type PlatformGetter interface {
 	Platform(string) (*cleve.Platform, error)
 	Platforms() ([]*cleve.Platform, error)
 }
 
+// Interface for storing platforms in the database.
 type PlatformSetter interface {
 	CreatePlatform(*cleve.Platform) error
 }
