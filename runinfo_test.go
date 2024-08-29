@@ -12,13 +12,13 @@ func TestParseRunInfo(t *testing.T) {
 		runinfo string
 	}{
 		"novaseq": {
-			runinfo: "test_data/novaseq_full/RunInfo.xml",
+			runinfo: "/home/nima18/git/cleve/test_data/novaseq_full/RunInfo.xml",
 		},
 		"nextseq1": {
-			runinfo: "test_data/nextseq1_full/RunInfo.xml",
+			runinfo: "/home/nima18/git/cleve/test_data/nextseq1_full/RunInfo.xml",
 		},
 		"nextseq2": {
-			runinfo: "test_data/nextseq2_full/RunInfo.xml",
+			runinfo: "/home/nima18/git/cleve/test_data/nextseq2_full/RunInfo.xml",
 		},
 	}
 

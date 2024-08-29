@@ -346,11 +346,11 @@ func TestGenerateImagingTable(t *testing.T) {
 	}{
 		{
 			"novaseq",
-			"test_data/novaseq_full",
+			"/home/nima18/git/cleve/test_data/novaseq_full",
 		},
 		{
 			"nextseq",
-			"test_data/nextseq1_full",
+			"/home/nima18/git/cleve/test_data/nextseq1_full",
 		},
 	}
 
