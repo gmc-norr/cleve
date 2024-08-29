@@ -32,7 +32,7 @@ var listCmd = &cobra.Command{
 			Platform: platform,
 			State:    state,
 		}
-		runs, err := db.Runs.All(filter)
+		runs, err := db.Runs(filter)
 		if err != nil {
 			log.Fatal(err)
 		}

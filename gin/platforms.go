@@ -9,9 +9,20 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func PlatformsHandler(db *mongo.DB) gin.HandlerFunc {
+// Interface for reading platform information from the database.
+type PlatformGetter interface {
+	Platform(string) (*cleve.Platform, error)
+	Platforms() ([]*cleve.Platform, error)
+}
+
+// Interface for storing platforms in the database.
+type PlatformSetter interface {
+	CreatePlatform(*cleve.Platform) error
+}
+
+func PlatformsHandler(db PlatformGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		platforms, err := db.Platforms.All()
+		platforms, err := db.Platforms()
 		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
@@ -24,11 +35,11 @@ func PlatformsHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func GetPlatformHandler(db *mongo.DB) gin.HandlerFunc {
+func GetPlatformHandler(db PlatformGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.Param("platformName")
 
-		platform, err := db.Platforms.Get(name)
+		platform, err := db.Platform(name)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(
@@ -47,7 +58,7 @@ func GetPlatformHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AddPlatformHandler(db *mongo.DB) gin.HandlerFunc {
+func AddPlatformHandler(db PlatformSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var platform cleve.Platform
 
@@ -63,7 +74,7 @@ func AddPlatformHandler(db *mongo.DB) gin.HandlerFunc {
 			platform.ReadyMarker = "CopyComplete.txt"
 		}
 
-		if err := db.Platforms.Create(&platform); err != nil {
+		if err := db.CreatePlatform(&platform); err != nil {
 			if mongo.IsDuplicateKeyError(err) {
 				c.AbortWithStatusJSON(
 					http.StatusConflict,

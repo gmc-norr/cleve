@@ -14,11 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type RunService struct {
-	coll *mongo.Collection
-}
-
-func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
+func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 	var aggPipeline mongo.Pipeline
 	var runPipeline mongo.Pipeline
 
@@ -197,7 +193,7 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 		})
 	}
 
-	cursor, err := s.coll.Aggregate(context.TODO(), aggPipeline)
+	cursor, err := db.RunCollection().Aggregate(context.TODO(), aggPipeline)
 	if err != nil {
 		return cleve.RunResult{}, err
 	}
@@ -223,7 +219,7 @@ func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
 	return cleve.RunResult{}, err
 }
 
-func (s *RunService) Get(runId string, brief bool) (*cleve.Run, error) {
+func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
 	var run *cleve.Run
 
 	matchStage := bson.D{
@@ -299,7 +295,8 @@ func (s *RunService) Get(runId string, brief bool) (*cleve.Run, error) {
 		aggPipeline = mongo.Pipeline{matchStage, setStage, sortStage, lookupStage, unwindStage}
 	}
 
-	cursor, err := s.coll.Aggregate(context.TODO(), aggPipeline)
+	coll := db.RunCollection()
+	cursor, err := coll.Aggregate(context.TODO(), aggPipeline)
 	if err != nil {
 		return run, err
 	}
@@ -316,32 +313,32 @@ func (s *RunService) Get(runId string, brief bool) (*cleve.Run, error) {
 	return run, err
 }
 
-func (s *RunService) Create(r *cleve.Run) error {
+func (db DB) CreateRun(r *cleve.Run) error {
 	r.Created = time.Now()
 	r.ID = primitive.NewObjectID()
-	_, err := s.coll.InsertOne(context.TODO(), r)
+	_, err := db.RunCollection().InsertOne(context.TODO(), r)
 	return err
 }
 
-func (s *RunService) Delete(runId string) error {
-	res, err := s.coll.DeleteOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}})
+func (db DB) DeleteRun(runId string) error {
+	res, err := db.RunCollection().DeleteOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}})
 	if err == nil && res.DeletedCount == 0 {
 		return mongo.ErrNoDocuments
 	}
 	return err
 }
 
-func (s *RunService) SetState(runId string, state cleve.RunState) error {
+func (db DB) SetRunState(runId string, state cleve.RunState) error {
 	runState := cleve.TimedRunState{State: state, Time: time.Now()}
 	update := bson.D{{Key: "$push", Value: bson.D{{Key: "state_history", Value: runState}}}}
-	result, err := s.coll.UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
+	result, err := db.RunCollection().UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
 	if err == nil && result.MatchedCount == 0 {
 		return mongo.ErrNoDocuments
 	}
 	return err
 }
 
-func (s *RunService) SetPath(runId string, path string) error {
+func (db DB) SetRunPath(runId string, path string) error {
 	dirStat, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -352,7 +349,7 @@ func (s *RunService) SetPath(runId string, path string) error {
 	}
 
 	update := bson.D{{Key: "$set", Value: bson.D{{Key: "path", Value: path}}}}
-	result, err := s.coll.UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
+	result, err := db.RunCollection().UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
 	if err == nil && result.MatchedCount == 0 {
 		return mongo.ErrNoDocuments
 	}
@@ -360,9 +357,9 @@ func (s *RunService) SetPath(runId string, path string) error {
 	return nil
 }
 
-func (s *RunService) GetStateHistory(runId string) ([]cleve.TimedRunState, error) {
+func (db DB) GetRunStateHistory(runId string) ([]cleve.TimedRunState, error) {
 	opts := options.FindOne().SetProjection(bson.D{{Key: "state_history", Value: 1}})
-	res := s.coll.FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, opts)
+	res := db.RunCollection().FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, opts)
 
 	var stateHistory []cleve.TimedRunState
 	err := res.Decode(&stateHistory)
@@ -376,8 +373,8 @@ func (s *RunService) GetStateHistory(runId string) ([]cleve.TimedRunState, error
 	return stateHistory, nil
 }
 
-func (s *RunService) GetIndex() ([]map[string]string, error) {
-	cursor, err := s.coll.Indexes().List(context.TODO())
+func (db DB) RunIndex() ([]map[string]string, error) {
+	cursor, err := db.RunCollection().Indexes().List(context.TODO())
 	defer cursor.Close(context.TODO())
 
 	var indexes []map[string]string
@@ -401,7 +398,7 @@ func (s *RunService) GetIndex() ([]map[string]string, error) {
 	return indexes, nil
 }
 
-func (s *RunService) SetIndex() (string, error) {
+func (db DB) SetRunIndex() (string, error) {
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
 			{Key: "run_id", Value: 1},
@@ -410,13 +407,13 @@ func (s *RunService) SetIndex() (string, error) {
 	}
 
 	// TODO: do this as a transaction and roll back if anything fails
-	res, err := s.coll.Indexes().DropAll(context.TODO())
+	res, err := db.RunCollection().Indexes().DropAll(context.TODO())
 	if err != nil {
 		return "", err
 	}
 
 	log.Printf("Dropped %d indexes\n", res.Lookup("nIndexesWas").Int32())
 
-	name, err := s.coll.Indexes().CreateOne(context.TODO(), indexModel)
+	name, err := db.RunCollection().Indexes().CreateOne(context.TODO(), indexModel)
 	return name, err
 }

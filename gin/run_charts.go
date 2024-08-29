@@ -8,12 +8,12 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func RunChartsHandler(db *mongo.DB) gin.HandlerFunc {
+func RunChartsHandler(db RunQCGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		config := GetRunChartConfig(c)
 
-		qc, err := db.RunQC.Get(runId)
+		qc, err := db.RunQC(runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})

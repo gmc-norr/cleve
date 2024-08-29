@@ -17,12 +17,12 @@ func TestRunparameters(t *testing.T) {
 	}{
 		{
 			"novaseq",
-			"test_data/novaseq_full/RunParameters.xml",
+			"/home/nima18/git/cleve/test_data/novaseq_full/RunParameters.xml",
 			"1.5B",
 		},
 		{
 			"nextseq",
-			"test_data/nextseq1_full/RunParameters.xml",
+			"/home/nima18/git/cleve/test_data/nextseq1_full/RunParameters.xml",
 			"NextSeq Mid",
 		},
 	}

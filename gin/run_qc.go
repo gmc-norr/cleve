@@ -11,10 +11,29 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func RunQcHandler(db *mongo.DB) gin.HandlerFunc {
+// Interface for reading run QC data from the database.
+type RunQCGetter interface {
+	Runs(cleve.RunFilter) (cleve.RunResult, error)
+	RunQC(string) (*cleve.InteropQC, error)
+	RunQCs(cleve.QcFilter) (cleve.QcResult, error)
+}
+
+// Interface for storing run QC data in the database.
+type RunQCSetter interface {
+	Run(string, bool) (*cleve.Run, error)
+	CreateRunQC(string, *cleve.InteropQC) error
+}
+
+// Interface for both getting and storing run QC data.
+type RunQCGetterSetter interface {
+	RunQCGetter
+	RunQCSetter
+}
+
+func RunQcHandler(db RunQCGetter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		runId := ctx.Param("runId")
-		qc, err := db.RunQC.Get(runId)
+		qc, err := db.RunQC(runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				ctx.AbortWithStatusJSON(
@@ -32,14 +51,14 @@ func RunQcHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
+func AllRunQcHandler(db RunQCGetter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		filter := cleve.RunFilter{
 			Brief:    true,
 			Platform: ctx.Param("platformName"),
 			State:    cleve.Ready.String(),
 		}
-		runs, err := db.Runs.All(filter)
+		runs, err := db.Runs(filter)
 		if err != nil {
 			ctx.AbortWithStatusJSON(
 				http.StatusInternalServerError,
@@ -55,7 +74,7 @@ func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
 		qc := make([]*cleve.InteropQC, 0)
 
 		for _, r := range runIds {
-			qcSummary, err := db.RunQC.Get(r)
+			qcSummary, err := db.RunQC(r)
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					continue
@@ -68,10 +87,10 @@ func AllQcHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
+func AddRunQcHandler(db RunQCGetterSetter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		runId := ctx.Param("runId")
-		run, err := db.Runs.Get(runId, true)
+		run, err := db.Run(runId, true)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				ctx.AbortWithStatusJSON(
@@ -95,7 +114,7 @@ func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		if _, err := db.RunQC.Get(runId); err != mongo.ErrNoDocuments {
+		if _, err := db.RunQC(runId); err != mongo.ErrNoDocuments {
 			ctx.AbortWithStatusJSON(
 				http.StatusConflict,
 				gin.H{"error": fmt.Sprintf("qc data already exists for run %s", runId)},
@@ -136,7 +155,7 @@ func AddRunQcHandler(db *mongo.DB) gin.HandlerFunc {
 			TileSummary:    imaging.LaneTileSummary(),
 		}
 
-		if err := db.RunQC.Create(runId, qc); err != nil {
+		if err := db.CreateRunQC(runId, qc); err != nil {
 			if mongo.IsDuplicateKeyError(err) {
 				ctx.AbortWithStatusJSON(
 					http.StatusConflict,

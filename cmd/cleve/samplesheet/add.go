@@ -42,7 +42,7 @@ var (
 				log.Fatal(err)
 			}
 
-			_, err = db.Runs.Get(runID, true)
+			_, err = db.Run(runID, true)
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					log.Fatalf("error: run with id %q not found", runID)
@@ -50,7 +50,7 @@ var (
 				log.Fatal(err)
 			}
 
-			res, err := db.SampleSheets.Create(runID, sampleSheet)
+			res, err := db.CreateSampleSheet(runID, sampleSheet)
 			if err != nil {
 				log.Fatal(err)
 			}

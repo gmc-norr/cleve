@@ -7,7 +7,7 @@ import (
 )
 
 func TestGenerateInteropSummary(t *testing.T) {
-	rundirectory := "test_data/novaseq_full"
+	rundirectory := "/home/nima18/git/cleve/test_data/novaseq_full"
 	if _, err := os.Stat(rundirectory); errors.Is(err, os.ErrNotExist) {
 		t.Skip("test data not found, skipping")
 	}

@@ -20,7 +20,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 		// Get all results
 		filter.PageSize = 0
 
-		qc, err := db.RunQC.All(filter)
+		qc, err := db.RunQCs(filter)
 		if err != nil {
 			panic(err)
 		}

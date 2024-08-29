@@ -28,7 +28,7 @@ var (
 				log.Fatalf("error: %s", err)
 			}
 
-			if err = db.Platforms.Delete(deleteName); err != nil {
+			if err = db.DeletePlatform(deleteName); err != nil {
 				log.Fatalf("error: %s", err)
 			}
 

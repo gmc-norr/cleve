@@ -15,25 +15,25 @@ func TestReadRunCompletionStatus(t *testing.T) {
 	}{
 		{
 			"novaseq",
-			"test_data/novaseq_full/RunCompletionStatus.xml",
+			"/home/nima18/git/cleve/test_data/novaseq_full/RunCompletionStatus.xml",
 			"success",
 			"RunCompleted",
 		},
 		{
 			"nextseq1",
-			"test_data/nextseq1_full/RunCompletionStatus.xml",
+			"/home/nima18/git/cleve/test_data/nextseq1_full/RunCompletionStatus.xml",
 			"success",
 			"CompletedAsPlanned",
 		},
 		{
 			"nextseq2",
-			"test_data/nextseq2_full/RunCompletionStatus.xml",
+			"/home/nima18/git/cleve/test_data/nextseq2_full/RunCompletionStatus.xml",
 			"success",
 			"CompletedAsPlanned",
 		},
 		{
 			"nextseq_failed",
-			"test_data/230713_NB551119_0374_AHMVKTBGX/RunCompletionStatus.xml",
+			"/home/nima18/git/cleve/test_data/230713_NB551119_0374_AHMVKTBGXT/RunCompletionStatus.xml",
 			"error",
 			"Thread was being aborted. (System.Threading.ThreadAbortException)",
 		},

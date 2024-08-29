@@ -55,13 +55,7 @@ var nextseq1 *cleve.Run = &cleve.Run{
 
 func TestRunsHandler(t *testing.T) {
 	gin.SetMode("test")
-	var ks mock.APIKeyService
-	var rs mock.RunService
-
-	db := mongo.DB{
-		Keys: &ks,
-		Runs: &rs,
-	}
+	rg := mock.RunGetter{}
 
 	table := []struct {
 		Runs   cleve.RunResult
@@ -105,15 +99,15 @@ func TestRunsHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
-		rs.AllFn = func(filter cleve.RunFilter) (cleve.RunResult, error) {
+		rg.RunsFn = func(filter cleve.RunFilter) (cleve.RunResult, error) {
 			return v.Runs, v.Error
 		}
 
 		c.Params = v.Params
-		RunsHandler(&db)(c)
+		RunsHandler(&rg)(c)
 
-		if !rs.AllInvoked {
-			t.Fatal("RunService.All not invoked")
+		if !rg.RunsInvoked {
+			t.Fatal("Runs not invoked")
 		}
 
 		if w.Code != 200 {
@@ -131,13 +125,7 @@ func TestRunsHandler(t *testing.T) {
 
 func TestRunHandler(t *testing.T) {
 	gin.SetMode("test")
-	var ks mock.APIKeyService
-	var rs mock.RunService
-
-	db := mongo.DB{
-		Keys: &ks,
-		Runs: &rs,
-	}
+	rg := mock.RunGetter{}
 
 	table := []struct {
 		RunID  string
@@ -187,10 +175,12 @@ func TestRunHandler(t *testing.T) {
 	}
 
 	for _, v := range table {
+		rg.RunInvoked = false
+
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
-		rs.GetFn = func(run_id string, brief bool) (*cleve.Run, error) {
+		rg.RunFn = func(run_id string, brief bool) (*cleve.Run, error) {
 			switch run_id {
 			case "run1":
 				return novaseq1, nil
@@ -204,10 +194,10 @@ func TestRunHandler(t *testing.T) {
 		}
 
 		c.Params = v.Params
-		RunHandler(&db)(c)
+		RunHandler(&rg)(c)
 
-		if !rs.GetInvoked {
-			t.Fatal("`RunService.Get` not invoked")
+		if !rg.RunInvoked {
+			t.Fatal("Run not invoked")
 		}
 
 		if w.Code != v.Code {
@@ -260,41 +250,34 @@ func TestAddRunHandler(t *testing.T) {
 
 	for _, v := range cases {
 		t.Run(v.name, func(t *testing.T) {
-			var ks mock.APIKeyService
-			var rs mock.RunService
-			var ss mock.SampleSheetService
+			rs := mock.RunSetter{}
 
-			if _, err := os.Stat(v.runPath); errors.Is(err, os.ErrNotExist) {
+			if _, err := os.Stat(v.runPath); errors.Is(err, os.ErrNotExist) && v.name != "path missing" {
 				t.Skip("test data not found, skipping")
 			}
 
-			db := mongo.DB{
-				Keys:         &ks,
-				Runs:         &rs,
-				SampleSheets: &ss,
-			}
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
-			rs.CreateFn = func(run *cleve.Run) error {
+			rs.CreateRunFn = func(run *cleve.Run) error {
 				return nil
 			}
-			ss.CreateFn = func(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
+			rs.CreateSampleSheetFn = func(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
 				return nil, nil
 			}
 
 			c.Request = httptest.NewRequest(http.MethodPost, "/runs", bytes.NewBuffer(v.data))
-			AddRunHandler(&db)(c)
+			AddRunHandler(&rs)(c)
 
-			if rs.CreateInvoked && !v.createInvoked {
-				t.Error(`RunService.Create was invoked, but it shouldn't have been`)
-			} else if !rs.CreateInvoked && v.createInvoked {
-				t.Error(`RunService.Create was not invoked, but it should have been`)
+			if rs.CreateRunInvoked && !v.createInvoked {
+				t.Error(`CreateRun was invoked, but it shouldn't have been`)
+			} else if !rs.CreateRunInvoked && v.createInvoked {
+				t.Error(`CreateRun was not invoked, but it should have been`)
 			}
 
-			if ss.CreateInvoked && !v.hasSamplesheet {
-				t.Error(`SampleSheetService.Create was invoked, but it shouldn't have been`)
-			} else if !ss.CreateInvoked && v.hasSamplesheet {
-				t.Error(`SampleSheetService.Create was not invoked, but it should have been`)
+			if rs.CreateSampleSheetInvoked && !v.hasSamplesheet {
+				t.Error(`CreateSampleSheet was invoked, but it shouldn't have been`)
+			} else if !rs.CreateSampleSheetInvoked && v.hasSamplesheet {
+				t.Error(`CreateSampleSheet was not invoked, but it should have been`)
 			}
 
 			if w.Code != v.code {
@@ -340,19 +323,11 @@ func TestUpdateRunPathHandler(t *testing.T) {
 
 	for _, v := range cases {
 		t.Run(v.name, func(t *testing.T) {
-			var ks mock.APIKeyService
-			var rs mock.RunService
-			var ss mock.SampleSheetService
-
-			db := mongo.DB{
-				Keys:         &ks,
-				Runs:         &rs,
-				SampleSheets: &ss,
-			}
+			rs := mock.RunSetter{}
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			rs.SetPathFn = func(runId string, path string) error {
+			rs.SetRunPathFn = func(runId string, path string) error {
 				s, err := os.Stat(path)
 				if err != nil {
 					return err
@@ -362,7 +337,7 @@ func TestUpdateRunPathHandler(t *testing.T) {
 				}
 				return nil
 			}
-			ss.CreateFn = func(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
+			rs.CreateSampleSheetFn = func(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
 				return nil, nil
 			}
 
@@ -379,22 +354,18 @@ func TestUpdateRunPathHandler(t *testing.T) {
 				"/runs/run1/path",
 				bytes.NewBuffer([]byte(fmt.Sprintf(`{"run_id": "%s", "path": "%s"}`, v.runId, runDir))),
 			)
-			UpdateRunPathHandler(&db)(c)
+			UpdateRunPathHandler(&rs)(c)
 
-			if ss.CreateInvoked && !v.hasSampleSheet {
-				t.Error(`SampleSheetService.Create was invoked, but it should not have been`)
+			if rs.CreateSampleSheetInvoked && !v.hasSampleSheet {
+				t.Error(`CreateSampleSheet was invoked, but it should not have been`)
 			}
-			if !ss.CreateInvoked && v.hasSampleSheet {
-				t.Error(`SampleSheetService.Create was not invoked, but it should have been`)
+			if !rs.CreateSampleSheetInvoked && v.hasSampleSheet {
+				t.Error(`CreateSampleSheet was not invoked, but it should have been`)
 			}
 
 			if w.Code != v.code {
 				t.Errorf(`Got HTTP %d, expected %d`, w.Code, v.code)
 			}
-
-			// Reset invoked fields
-			ss.CreateInvoked = false
-			rs.SetPathInvoked = false
 		})
 	}
 }

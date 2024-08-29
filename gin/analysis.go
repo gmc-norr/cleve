@@ -12,10 +12,29 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func AnalysesHandler(db *mongo.DB) gin.HandlerFunc {
+// Interface for reading analyses from the database.
+type AnalysisGetter interface {
+	Analyses(string) ([]*cleve.Analysis, error)
+	Analysis(string, string) (*cleve.Analysis, error)
+}
+
+// Interface for storing/updating analyses in the database.
+type AnalysisSetter interface {
+	CreateAnalysis(string, *cleve.Analysis) error
+	SetAnalysisState(string, string, cleve.RunState) error
+	SetAnalysisSummary(string, string, *cleve.AnalysisSummary) error
+}
+
+// Interface for both getting and storing/updating analyses.
+type AnalysisGetterSetter interface {
+	AnalysisGetter
+	AnalysisSetter
+}
+
+func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
-		analyses, err := db.Runs.GetAnalyses(runId)
+		analyses, err := db.Analyses(runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.JSON(http.StatusNotFound, gin.H{"error": "run not found"})
@@ -28,11 +47,11 @@ func AnalysesHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AnalysisHandler(db *mongo.DB) gin.HandlerFunc {
+func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		analysisId := c.Param("analysisId")
-		analysis, err := db.Runs.GetAnalysis(runId, analysisId)
+		analysis, err := db.Analysis(runId, analysisId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(
@@ -52,7 +71,7 @@ func AnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func AddAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
+func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		var addAnalysisRequest struct {
@@ -117,7 +136,7 @@ func AddAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		// Check that the analysis doesn't already exist
-		_, err := db.Runs.GetAnalysis(runId, a.AnalysisId)
+		_, err := db.Analysis(runId, a.AnalysisId)
 		if err == nil {
 			c.AbortWithStatusJSON(
 				http.StatusConflict,
@@ -156,7 +175,7 @@ func AddAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		if err := db.Runs.CreateAnalysis(runId, &a); err != nil {
+		if err := db.CreateAnalysis(runId, &a); err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
 				gin.H{"error": err.Error(), "when": "adding analysis"},
@@ -172,7 +191,7 @@ func AddAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func UpdateAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
+func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		analysisId := c.Param("analysisId")
@@ -206,7 +225,7 @@ func UpdateAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 				return
 			}
 
-			err = db.Runs.SetAnalysisState(runId, analysisId, state)
+			err = db.SetAnalysisState(runId, analysisId, state)
 			if err != nil {
 				c.AbortWithStatusJSON(
 					http.StatusInternalServerError,
@@ -237,7 +256,7 @@ func UpdateAnalysisHandler(db *mongo.DB) gin.HandlerFunc {
 				return
 			}
 			summary, err := cleve.ParseAnalysisSummary(summaryData)
-			err = db.Runs.SetAnalysisSummary(runId, analysisId, &summary)
+			err = db.SetAnalysisSummary(runId, analysisId, &summary)
 			if err != nil {
 				c.AbortWithStatusJSON(
 					http.StatusInternalServerError,

@@ -11,14 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type SampleSheetService struct {
-	coll *mongo.Collection
-}
-
 // Add a samplesheet to the database. If a samplesheet for the run already
 // exists, it will be updated, but only if the modification time is newer than
 // the existing samplesheet.
-func (s *SampleSheetService) Create(runID string, sampleSheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
+func (db DB) CreateSampleSheet(runID string, sampleSheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
 	sampleSheet.RunID = runID
 
 	updateCond := bson.E{Key: "$gt", Value: bson.A{
@@ -26,7 +22,7 @@ func (s *SampleSheetService) Create(runID string, sampleSheet cleve.SampleSheet)
 		"$modification_time",
 	}}
 
-	return s.coll.UpdateOne(context.TODO(),
+	return db.SampleSheetCollection().UpdateOne(context.TODO(),
 		bson.D{{Key: "run_id", Value: runID}},
 		bson.A{
 			bson.D{{Key: "$set", Value: bson.D{
@@ -66,17 +62,17 @@ func (s *SampleSheetService) Create(runID string, sampleSheet cleve.SampleSheet)
 	)
 }
 
-func (s *SampleSheetService) Delete(runID string) error {
-	res, err := s.coll.DeleteOne(context.TODO(), bson.D{{Key: "run_id", Value: runID}})
+func (db DB) DeleteSampleSheet(runID string) error {
+	res, err := db.SampleSheetCollection().DeleteOne(context.TODO(), bson.D{{Key: "run_id", Value: runID}})
 	if err == nil && res.DeletedCount == 0 {
 		return mongo.ErrNoDocuments
 	}
 	return err
 }
 
-func (s *SampleSheetService) All() ([]cleve.SampleSheet, error) {
+func (db DB) SampleSheets() ([]cleve.SampleSheet, error) {
 	var sampleSheets []cleve.SampleSheet
-	cursor, err := s.coll.Find(context.TODO(), bson.D{})
+	cursor, err := db.SampleSheetCollection().Find(context.TODO(), bson.D{})
 	if err != nil {
 		return nil, err
 	}
@@ -86,14 +82,14 @@ func (s *SampleSheetService) All() ([]cleve.SampleSheet, error) {
 	return sampleSheets, nil
 }
 
-func (s *SampleSheetService) Get(runID string) (cleve.SampleSheet, error) {
+func (db DB) SampleSheet(runID string) (cleve.SampleSheet, error) {
 	var sampleSheet cleve.SampleSheet
-	err := s.coll.FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runID}}).Decode(&sampleSheet)
+	err := db.SampleSheetCollection().FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runID}}).Decode(&sampleSheet)
 	return sampleSheet, err
 }
 
-func (s *SampleSheetService) GetIndex() ([]map[string]string, error) {
-	cursor, err := s.coll.Indexes().List(context.TODO())
+func (db DB) SampleSheetIndex() ([]map[string]string, error) {
+	cursor, err := db.SampleSheetCollection().Indexes().List(context.TODO())
 	defer cursor.Close(context.TODO())
 
 	var indexes []map[string]string
@@ -117,7 +113,7 @@ func (s *SampleSheetService) GetIndex() ([]map[string]string, error) {
 	return indexes, nil
 }
 
-func (s *SampleSheetService) SetIndex() (string, error) {
+func (db DB) SetSampleSheetIndex() (string, error) {
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
 			{Key: "run_id", Value: 1},
@@ -126,13 +122,13 @@ func (s *SampleSheetService) SetIndex() (string, error) {
 	}
 
 	// TODO: do this as a transaction and roll back if anything fails
-	res, err := s.coll.Indexes().DropAll(context.TODO())
+	res, err := db.SampleSheetCollection().Indexes().DropAll(context.TODO())
 	if err != nil {
 		return "", err
 	}
 
 	log.Printf("Dropped %d indexes\n", res.Lookup("nIndexesWas").Int32())
 
-	name, err := s.coll.Indexes().CreateOne(context.TODO(), indexModel)
+	name, err := db.SampleSheetCollection().Indexes().CreateOne(context.TODO(), indexModel)
 	return name, err
 }

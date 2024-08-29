@@ -6,14 +6,6 @@ import (
 	"time"
 )
 
-type APIKeyService interface {
-	Create(*APIKey) error
-	Delete(string) error
-	Get(string) (*APIKey, error)
-	All() ([]*APIKey, error)
-	UserKey(string) (*APIKey, error)
-}
-
 type APIKey struct {
 	Key     string
 	User    string

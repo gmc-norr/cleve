@@ -9,26 +9,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type APIKeyService struct {
-	coll *mongo.Collection
-}
-
-func (s *APIKeyService) Create(k *cleve.APIKey) error {
-	_, err := s.UserKey(k.User)
+func (db DB) CreateKey(k *cleve.APIKey) error {
+	_, err := db.UserKey(k.User)
 	if err == nil {
 		return fmt.Errorf("key already exists for user %s", k.User)
 	}
 	if err != mongo.ErrNoDocuments {
 		return err
 	}
-	if _, err := s.coll.InsertOne(context.TODO(), k); err != nil {
+	if _, err := db.KeyCollection().InsertOne(context.TODO(), k); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *APIKeyService) Delete(k string) error {
-	res, err := s.coll.DeleteOne(context.TODO(), bson.D{
+func (db DB) DeleteKey(k string) error {
+	res, err := db.KeyCollection().DeleteOne(context.TODO(), bson.D{
 		{Key: "key", Value: k},
 	})
 	if res.DeletedCount == 0 {
@@ -37,15 +33,15 @@ func (s *APIKeyService) Delete(k string) error {
 	return err
 }
 
-func (s *APIKeyService) Get(k string) (*cleve.APIKey, error) {
+func (db DB) Key(k string) (*cleve.APIKey, error) {
 	var key cleve.APIKey
-	err := s.coll.FindOne(context.TODO(), bson.D{{Key: "key", Value: k}}).Decode(&key)
+	err := db.KeyCollection().FindOne(context.TODO(), bson.D{{Key: "key", Value: k}}).Decode(&key)
 	return &key, err
 }
 
-func (s *APIKeyService) All() ([]*cleve.APIKey, error) {
+func (db DB) Keys() ([]*cleve.APIKey, error) {
 	var keys []*cleve.APIKey
-	cursor, err := s.coll.Find(context.TODO(), bson.D{})
+	cursor, err := db.KeyCollection().Find(context.TODO(), bson.D{})
 	if err != nil {
 		return keys, err
 	}
@@ -55,8 +51,8 @@ func (s *APIKeyService) All() ([]*cleve.APIKey, error) {
 	return keys, nil
 }
 
-func (s *APIKeyService) UserKey(user string) (*cleve.APIKey, error) {
+func (db DB) UserKey(user string) (*cleve.APIKey, error) {
 	var key cleve.APIKey
-	err := s.coll.FindOne(context.TODO(), bson.D{{Key: "user", Value: user}}).Decode(&key)
+	err := db.KeyCollection().FindOne(context.TODO(), bson.D{{Key: "user", Value: user}}).Decode(&key)
 	return &key, err
 }

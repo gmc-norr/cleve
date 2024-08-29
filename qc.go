@@ -50,13 +50,3 @@ type QcResult struct {
 	PaginationMetadata `bson:"metadata" json:"metadata"`
 	Qc                 []QcResultItem `bson:"qc" json:"qc"`
 }
-
-type RunQcService interface {
-	Create(string, *InteropQC) error
-	All(QcFilter) (QcResult, error)
-	Get(string) (*InteropQC, error)
-	GetTotalQ30(string) (float64, error)
-	GetTotalErrorRate(string) (float64, error)
-	GetIndex() ([]map[string]string, error)
-	SetIndex() (string, error)
-}

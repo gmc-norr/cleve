@@ -9,12 +9,12 @@ import (
 )
 
 func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
-	runs, err := db.Runs.All(filter)
+	runs, err := db.Runs(filter)
 	if err != nil {
 		return gin.H{"error": err.Error()}, err
 	}
 
-	platforms, err := db.Platforms.All()
+	platforms, err := db.Platforms()
 	if err != nil {
 		return gin.H{"error": err.Error()}, err
 	}
@@ -49,7 +49,7 @@ func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
-		run, err := db.Runs.Get(runId, false)
+		run, err := db.Run(runId, false)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.HTML(http.StatusNotFound, "error404", gin.H{"error": "run not found"})
@@ -62,7 +62,7 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		hasQc := true
-		qc, err := db.RunQC.Get(runId)
+		qc, err := db.RunQC(runId)
 		if err != nil {
 			if err != mongo.ErrNoDocuments {
 				c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err.Error()})
@@ -72,7 +72,7 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 			hasQc = false
 		}
 
-		sampleSheet, err := db.SampleSheets.Get(runId)
+		sampleSheet, err := db.SampleSheet(runId)
 		if err != nil {
 			if err != mongo.ErrNoDocuments {
 				c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err.Error()})
@@ -112,13 +112,13 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		qc, err := db.RunQC.All(filter)
+		qc, err := db.RunQCs(filter)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		platforms, err := db.Platforms.All()
+		platforms, err := db.Platforms()
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

@@ -22,7 +22,7 @@ var (
 				log.Fatal(err)
 			}
 
-			platforms, err := db.Platforms.All()
+			platforms, err := db.Platforms()
 			if err != nil {
 				log.Fatalf("error: %s", err)
 			}

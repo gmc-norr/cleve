@@ -47,23 +47,6 @@ type RunResult struct {
 	Runs               []*Run `bson:"runs" json:"runs"`
 }
 
-type RunService interface {
-	All(RunFilter) (RunResult, error)
-	Create(*Run) error
-	Delete(string) error
-	Get(string, bool) (*Run, error)
-	GetAnalyses(string) ([]*Analysis, error)
-	GetAnalysis(string, string) (*Analysis, error)
-	CreateAnalysis(string, *Analysis) error
-	SetAnalysisState(string, string, RunState) error
-	SetAnalysisSummary(string, string, *AnalysisSummary) error
-	GetStateHistory(string) ([]TimedRunState, error)
-	SetState(string, RunState) error
-	SetPath(string, string) error
-	GetIndex() ([]map[string]string, error)
-	SetIndex() (string, error)
-}
-
 type Run struct {
 	ID             primitive.ObjectID `bson:"_id" json:"id"`
 	RunID          string             `bson:"run_id" json:"run_id"`

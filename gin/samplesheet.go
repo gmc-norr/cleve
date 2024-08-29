@@ -10,7 +10,17 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func AddSampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
+// Interface for reading samplesheets from the database.
+type SampleSheetGetter interface {
+	SampleSheet(string) (cleve.SampleSheet, error)
+}
+
+// Interface for storing samplesheets in the database.
+type SampleSheetSetter interface {
+	CreateSampleSheet(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
+}
+
+func AddSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runID := c.Param("runId")
 
@@ -38,7 +48,7 @@ func AddSampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
 
 		log.Printf("adding samplesheet for run %q", runID)
 
-		res, err := db.SampleSheets.Create(runID, sampleSheet)
+		res, err := db.CreateSampleSheet(runID, sampleSheet)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -65,7 +75,7 @@ func AddSampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func SampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
+func SampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runID := c.Param("runId")
 		sectionName := c.Query("section")
@@ -86,7 +96,7 @@ func SampleSheetHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		sampleSheet, err := db.SampleSheets.Get(runID)
+		sampleSheet, err := db.SampleSheet(runID)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{

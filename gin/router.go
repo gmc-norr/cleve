@@ -29,7 +29,7 @@ func authMiddleware(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		_, err := db.Keys.Get(requestKey)
+		_, err := db.Key(requestKey)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "unauthorized",
@@ -180,7 +180,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/api/runs/:runId/qc", RunQcHandler(db))
 	r.GET("/api/platforms", PlatformsHandler(db))
 	r.GET("/api/platforms/:platformName", GetPlatformHandler(db))
-	r.GET("/api/qc/:platformName", AllQcHandler(db))
+	r.GET("/api/qc/:platformName", AllRunQcHandler(db))
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))

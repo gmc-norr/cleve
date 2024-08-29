@@ -398,11 +398,11 @@ func TestReadSampleSheet(t *testing.T) {
 	}{
 		{
 			"novaseq",
-			"test_data/novaseq_full/SampleSheet.csv",
+			"/home/nima18/git/cleve/test_data/novaseq_full/SampleSheet.csv",
 		},
 		{
 			"nextseq",
-			"test_data/nextseq1_full/SampleSheet.csv",
+			"/home/nima18/git/cleve/test_data/nextseq1_full/SampleSheet.csv",
 		},
 	}
 	for _, c := range cases {

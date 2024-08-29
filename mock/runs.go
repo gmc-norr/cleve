@@ -4,103 +4,58 @@ import (
 	"github.com/gmc-norr/cleve"
 )
 
-type RunService struct {
-	AllFn                     func(cleve.RunFilter) (cleve.RunResult, error)
-	AllInvoked                bool
-	CreateFn                  func(*cleve.Run) error
-	CreateInvoked             bool
-	DeleteFn                  func(string) error
-	DeleteInvoked             bool
-	GetFn                     func(string, bool) (*cleve.Run, error)
-	GetInvoked                bool
-	GetAnalysesFn             func(string) ([]*cleve.Analysis, error)
-	GetAnalysesInvoked        bool
-	GetAnalysisFn             func(string, string) (*cleve.Analysis, error)
-	GetAnalysisInvoked        bool
-	CreateAnalysisFn          func(string, *cleve.Analysis) error
-	CreateAnalysisInvoked     bool
-	SetAnalysisStateFn        func(string, string, cleve.RunState) error
-	SetAnalysisStateInvoked   bool
-	SetAnalysisSummaryFn      func(string, string, *cleve.AnalysisSummary) error
-	SetAnalysisSummaryInvoked bool
-	GetStateHistoryFn         func(string) ([]cleve.TimedRunState, error)
-	GetStateHistoryInvoked    bool
-	SetPathFn                 func(string, string) error
-	SetPathInvoked            bool
-	SetStateFn                func(string, cleve.RunState) error
-	SetStateInvoked           bool
-	GetIndexFn                func() ([]map[string]string, error)
-	GetIndexInvoked           bool
-	SetIndexFn                func() (string, error)
-	SetIndexInvoked           bool
+// Mock implementing the gin.RunGetter interface.
+//
+// The *Fn fields are the functions that will get called in the end, and
+// the corresponding *Invoked fields register whether the function has been
+// called. The interface implementation then just wraps the *Fn functions.
+type RunGetter struct {
+	RunFn       func(string, bool) (*cleve.Run, error)
+	RunInvoked  bool
+	RunsFn      func(cleve.RunFilter) (cleve.RunResult, error)
+	RunsInvoked bool
 }
 
-func (s *RunService) All(filter cleve.RunFilter) (cleve.RunResult, error) {
-	s.AllInvoked = true
-	return s.AllFn(filter)
+func (g *RunGetter) Run(id string, brief bool) (*cleve.Run, error) {
+	g.RunInvoked = true
+	return g.RunFn(id, brief)
 }
 
-func (s *RunService) Create(r *cleve.Run) error {
-	s.CreateInvoked = true
-	return s.CreateFn(r)
+func (g *RunGetter) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
+	g.RunsInvoked = true
+	return g.RunsFn(filter)
 }
 
-func (s *RunService) Delete(id string) error {
-	s.DeleteInvoked = true
-	return s.DeleteFn(id)
+// Mock implementing the gin.RunSetter interface.
+//
+// See [mock.RunGetter] for more information.
+type RunSetter struct {
+	CreateRunFn              func(*cleve.Run) error
+	CreateRunInvoked         bool
+	CreateSampleSheetFn      func(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
+	CreateSampleSheetInvoked bool
+	SetRunStateFn            func(string, cleve.RunState) error
+	SetRunStateInvoked       bool
+	SetRunPathFn             func(string, string) error
+	SetRunPathInvoked        bool
 }
 
-func (s *RunService) Get(id string, brief bool) (*cleve.Run, error) {
-	s.GetInvoked = true
-	return s.GetFn(id, brief)
+func (s *RunSetter) CreateRun(run *cleve.Run) error {
+	s.CreateRunInvoked = true
+	return s.CreateRunFn(run)
 }
 
-func (s *RunService) GetAnalyses(id string) ([]*cleve.Analysis, error) {
-	s.GetAnalysesInvoked = true
-	return s.GetAnalysesFn(id)
+func (s *RunSetter) CreateSampleSheet(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
+	s.CreateSampleSheetInvoked = true
+	return s.CreateSampleSheetFn(runId, samplesheet)
 }
 
-func (s *RunService) GetAnalysis(run_id string, analysis_id string) (*cleve.Analysis, error) {
-	s.GetAnalysisInvoked = true
-	return s.GetAnalysisFn(run_id, analysis_id)
+func (s *RunSetter) SetRunState(runId string, state cleve.RunState) error {
+	s.SetRunStateInvoked = true
+	return s.SetRunStateFn(runId, state)
 }
 
-func (s *RunService) CreateAnalysis(run_id string, a *cleve.Analysis) error {
-	s.CreateAnalysisInvoked = true
-	return s.CreateAnalysisFn(run_id, a)
-}
-
-func (s *RunService) SetAnalysisState(run_id string, analysis_id string, state cleve.RunState) error {
-	s.SetAnalysisStateInvoked = true
-	return s.SetAnalysisStateFn(run_id, analysis_id, state)
-}
-
-func (s *RunService) SetAnalysisSummary(run_id string, analysis_id string, summary *cleve.AnalysisSummary) error {
-	s.SetAnalysisSummaryInvoked = true
-	return s.SetAnalysisSummaryFn(run_id, analysis_id, summary)
-}
-
-func (s *RunService) GetStateHistory(run_id string) ([]cleve.TimedRunState, error) {
-	s.GetStateHistoryInvoked = true
-	return s.GetStateHistoryFn(run_id)
-}
-
-func (s *RunService) SetPath(run_id string, path string) error {
-	s.SetPathInvoked = true
-	return s.SetPathFn(run_id, path)
-}
-
-func (s *RunService) SetState(run_id string, state cleve.RunState) error {
-	s.SetStateInvoked = true
-	return s.SetStateFn(run_id, state)
-}
-
-func (s *RunService) GetIndex() ([]map[string]string, error) {
-	s.GetIndexInvoked = true
-	return s.GetIndexFn()
-}
-
-func (s *RunService) SetIndex() (string, error) {
-	s.SetIndexInvoked = true
-	return s.SetIndexFn()
+func (s *RunSetter) SetRunPath(runId string, path string) error {
+	s.SetRunPathInvoked = true
+	return s.SetRunPathFn(runId, path)
 }
