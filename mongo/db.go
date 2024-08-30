@@ -74,6 +74,10 @@ func (db DB) RunQCCollection() *mongo.Collection {
 	return db.Collection("run_qc")
 }
 
+func (db DB) SampleCollection() *mongo.Collection {
+	return db.Collection("samples")
+}
+
 func (db DB) SampleSheetCollection() *mongo.Collection {
 	return db.Collection("samplesheets")
 }
