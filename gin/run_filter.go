@@ -22,8 +22,10 @@ func getRunFilter(c *gin.Context, brief bool) (cleve.RunFilter, error) {
 		RunID:    c.Query("run_id"),
 		Platform: c.Query("platform"),
 		State:    c.Query("state"),
-		Page:     page,
-		PageSize: pageSize,
+		PaginationFilter: cleve.PaginationFilter{
+			Page:     page,
+			PageSize: pageSize,
+		},
 	}
 
 	return filter, nil

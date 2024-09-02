@@ -1,46 +1,12 @@
 package cleve
 
 import (
-	"fmt"
 	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-type RunFilter struct {
-	RunID    string
-	Brief    bool
-	Platform string
-	State    string
-	From     time.Time
-	To       time.Time
-	Page     int
-	PageSize int
-}
-
-func (f RunFilter) UrlParams() string {
-	p := "?"
-	sep := ""
-	if f.RunID != "" {
-		p += fmt.Sprintf("%srun_id=%s", sep, f.RunID)
-		sep = "&"
-	}
-	if f.Platform != "" {
-		p += fmt.Sprintf("%splatform=%s", sep, f.Platform)
-		sep = "&"
-	}
-	if f.State != "" {
-		p += fmt.Sprintf("%sstate=%s", sep, f.State)
-		sep = "&"
-	}
-	if f.Page != 0 {
-		p += fmt.Sprintf("%spage=%d", sep, f.Page)
-		sep = "&"
-	}
-	return p
-}
 
 type RunResult struct {
 	PaginationMetadata `bson:"metadata" json:"metadata"`
