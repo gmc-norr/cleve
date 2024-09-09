@@ -44,3 +44,35 @@ func (f RunFilter) UrlParams() string {
 	}
 	return p
 }
+
+// Sample filtering.
+type SampleFilter struct {
+	Name     string
+	Id       string
+	RunId    string
+	Analysis string
+	PaginationFilter
+}
+
+// Convert a sample filter to URL query parameters.
+func (f SampleFilter) UrlParams() string {
+	p := "?"
+	sep := ""
+	if f.Name != "" {
+		p += fmt.Sprintf("%sname=%s", sep, f.Name)
+		sep = "&"
+	}
+	if f.Id != "" {
+		p += fmt.Sprintf("%sid=%s", sep, f.Id)
+		sep = "&"
+	}
+	if f.RunId != "" {
+		p += fmt.Sprintf("%srun_id=%s", sep, f.RunId)
+		sep = "&"
+	}
+	if f.Analysis != "" {
+		p += fmt.Sprintf("%sanalysis=%s", sep, f.Analysis)
+		sep = "&"
+	}
+	return p
+}

@@ -1,6 +1,6 @@
 package cleve
 
-// Represents a sequenced sample.
+// Sample represents a sequenced sample with associated analyses.
 type Sample struct {
 	// Sample name. If missing it should be set to the sample ID.
 	Name string `bson:"name" json:"name"`
@@ -10,6 +10,11 @@ type Sample struct {
 	Fastq []string `bson:"fastq" json:"fastq"`
 	// Analyses associated with the sample.
 	Analyses []*SampleAnalysis `bson:"analyses" json:"analyses"`
+}
+
+type SampleResult struct {
+	PaginationMetadata `bson:"metadata" json:"metadata"`
+	Samples            []Sample `bson:"samples" json:"samples"`
 }
 
 // Pipeline represents an analysis pipeline.

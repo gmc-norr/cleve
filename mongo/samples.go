@@ -2,9 +2,11 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Retrieves a single sample from the database.
@@ -17,17 +19,126 @@ func (db DB) Sample(sampleId string) (*cleve.Sample, error) {
 }
 
 // Retrieves samples from the database.
-func (db DB) Samples() ([]*cleve.Sample, error) {
-	var samples []*cleve.Sample
-	cursor, err := db.SampleCollection().Find(context.TODO(), bson.D{})
+func (db DB) Samples(filter *cleve.SampleFilter) (*cleve.SampleResult, error) {
+	var sampleResult cleve.SampleResult
+
+	var pipeline mongo.Pipeline
+
+	// Sample name filtering
+	if filter.Name != "" {
+		pipeline = append(pipeline, bson.D{
+			{
+				Key: "$match",
+				Value: bson.M{
+					"$expr": bson.M{
+						"$regexMatch": bson.M{
+							"input":   "$name",
+							"regex":   filter.Name,
+							"options": "i",
+						},
+					},
+				},
+			},
+		})
+	}
+
+	// Facetting pipeline
+	facetPipeline := mongo.Pipeline{}
+
+	if filter.Page > 0 {
+		facetPipeline = append(facetPipeline, bson.D{{
+			Key:   "$skip",
+			Value: filter.PageSize * (filter.Page - 1),
+		}})
+	}
+
+	if filter.PageSize > 0 {
+		facetPipeline = append(facetPipeline, bson.D{{
+			Key:   "$limit",
+			Value: filter.PageSize,
+		}})
+	}
+
+	// Facetting
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$facet",
+			Value: bson.M{
+				"metadata": bson.A{
+					bson.M{
+						"$count": "total_count",
+					},
+				},
+				"samples": facetPipeline,
+			},
+		},
+	})
+
+	// Projection
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$project",
+			Value: bson.M{
+				"samples": 1,
+				"metadata": bson.M{
+					"$arrayElemAt": bson.A{"$metadata", 0},
+				},
+			},
+		},
+	})
+
+	// Add more pagination metadata
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$set",
+			Value: bson.M{
+				"metadata.count": bson.M{
+					"$size": "$samples",
+				},
+				"metadata.page":      filter.Page,
+				"metadata.page_size": filter.PageSize,
+				"metadata.total_pages": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{
+							"$gt": bson.A{
+								filter.PageSize,
+								0,
+							},
+						},
+						"then": bson.M{
+							"$ceil": bson.M{
+								"$divide": bson.A{
+									"$metadata.total_count",
+									filter.PageSize,
+								},
+							},
+						},
+						"else": 1,
+					},
+				},
+			},
+		},
+	})
+
+	cursor, err := db.SampleCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return samples, err
+		return &sampleResult, err
 	}
-	err = cursor.All(context.TODO(), &samples)
-	if err == nil && samples == nil {
-		samples = make([]*cleve.Sample, 0)
+	defer cursor.Close(context.TODO())
+	if ok := cursor.Next(context.TODO()); ok {
+		err := cursor.Decode(&sampleResult)
+		if err != nil {
+			return &sampleResult, err
+		}
+		if sampleResult.PaginationMetadata.Page > sampleResult.PaginationMetadata.TotalPages {
+			return &sampleResult, fmt.Errorf(
+				"page %d is out of range, there are only %d pages",
+				sampleResult.PaginationMetadata.Page,
+				sampleResult.PaginationMetadata.TotalPages,
+			)
+		}
 	}
-	return samples, err
+	return &sampleResult, cursor.Err()
 }
 
 // Stores a sample in the database.

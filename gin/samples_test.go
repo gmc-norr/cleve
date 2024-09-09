@@ -91,8 +91,8 @@ func TestSample(t *testing.T) {
 func TestSamples(t *testing.T) {
 	t.Run("no samples", func(t *testing.T) {
 		sg := mock.SampleGetter{}
-		sg.SamplesFn = func() ([]*cleve.Sample, error) {
-			return make([]*cleve.Sample, 0), mongo.ErrNoDocuments
+		sg.SamplesFn = func(*cleve.SampleFilter) (*cleve.SampleResult, error) {
+			return &cleve.SampleResult{}, mongo.ErrNoDocuments
 		}
 
 		w := httptest.NewRecorder()

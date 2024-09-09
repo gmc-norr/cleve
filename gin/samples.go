@@ -13,7 +13,7 @@ import (
 // Interface for reading samples from the database.
 type SampleGetter interface {
 	Sample(string) (*cleve.Sample, error)
-	Samples() ([]*cleve.Sample, error)
+	Samples(filter *cleve.SampleFilter) (*cleve.SampleResult, error)
 }
 
 // Interface for storing/updating samples in the database.
@@ -39,7 +39,12 @@ func SampleHandler(db SampleGetter) gin.HandlerFunc {
 
 func SamplesHandler(db SampleGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		samples, err := db.Samples()
+		filter, err := getSampleFilter(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		samples, err := db.Samples(&filter)
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			c.JSON(http.StatusOK, samples)
 			return

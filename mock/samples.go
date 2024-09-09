@@ -8,15 +8,15 @@ import (
 //
 // See [mock.RunGetter] for more information.
 type SampleGetter struct {
-	SamplesFn      func() ([]*cleve.Sample, error)
+	SamplesFn      func(*cleve.SampleFilter) (*cleve.SampleResult, error)
 	SamplesInvoked bool
 	SampleFn       func(string) (*cleve.Sample, error)
 	SampleInvoked  bool
 }
 
-func (g *SampleGetter) Samples() ([]*cleve.Sample, error) {
+func (g *SampleGetter) Samples(filter *cleve.SampleFilter) (*cleve.SampleResult, error) {
 	g.SamplesInvoked = true
-	return g.SamplesFn()
+	return g.SamplesFn(filter)
 }
 
 func (g *SampleGetter) Sample(sampleId string) (*cleve.Sample, error) {
