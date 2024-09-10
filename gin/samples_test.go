@@ -101,17 +101,20 @@ func TestSamples(t *testing.T) {
 
 		SamplesHandler(&sg)(c)
 
+		expectedFilter := cleve.SampleFilter{
+			PaginationFilter: cleve.PaginationFilter{
+				Page:     1,
+				PageSize: 10,
+			},
+		}
+
 		filter, err := getSampleFilter(c)
 		if err != nil {
 			t.Errorf("error creating filter: %s", err.Error())
 		}
 
-		if filter.PageSize != 10 {
-			t.Errorf("expected page size 10, got %d", filter.PageSize)
-		}
-
-		if filter.Page != 1 {
-			t.Errorf("expected page 1, got %d", filter.Page)
+		if expectedFilter != filter {
+			t.Errorf("expected filter %v, got %v", expectedFilter, filter)
 		}
 
 		if !sg.SamplesInvoked {
