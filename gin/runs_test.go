@@ -2,6 +2,7 @@ package gin
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -67,7 +68,7 @@ func TestRunsHandler(t *testing.T) {
 		{
 			"no params, no results",
 			cleve.RunResult{
-				Runs: nil,
+				Runs: []*cleve.Run{},
 			},
 			nil,
 			"/api/runs",
@@ -139,6 +140,22 @@ func TestRunsHandler(t *testing.T) {
 				},
 			},
 		},
+		{
+			"filter that returns no results",
+			cleve.RunResult{
+				Runs: []*cleve.Run{},
+			},
+			nil,
+			"/api/runs?brief=true&platform=NovaSeq",
+			cleve.RunFilter{
+				Brief:    true,
+				Platform: "NovaSeq",
+				PaginationFilter: cleve.PaginationFilter{
+					Page:     1,
+					PageSize: 10,
+				},
+			},
+		},
 	}
 
 	for _, v := range table {
@@ -170,10 +187,18 @@ func TestRunsHandler(t *testing.T) {
 			}
 
 			b, _ := io.ReadAll(w.Body)
-			count := strings.Count(string(b), "experiment_name")
+			runResult := map[string]any{}
+			if err := json.Unmarshal(b, &runResult); err != nil {
+				t.Error(err)
+			}
 
-			if count != len(v.Runs.Runs) {
-				t.Fatalf("found %d runs, expected %d", count, len(v.Runs.Runs))
+			if runResult["runs"] == nil {
+				t.Error("runs is nil")
+			}
+
+			nRuns := len(runResult["runs"].([]any))
+			if nRuns != len(v.Runs.Runs) {
+				t.Fatalf("found %d runs, expected %d", nRuns, len(v.Runs.Runs))
 			}
 		})
 	}
