@@ -141,8 +141,14 @@ func (db DB) Samples(filter *cleve.SampleFilter) (*cleve.SampleResult, error) {
 	return &sampleResult, cursor.Err()
 }
 
-// Stores a sample in the database.
+// CreateSample stores a sample in the database.
 func (db DB) CreateSample(sample *cleve.Sample) error {
 	_, err := db.SampleCollection().InsertOne(context.TODO(), sample)
+	return err
+}
+
+// CreateSamples populates the database with a slice of samples.
+func (db DB) CreateSamples(samples []*cleve.Sample) error {
+	_, err := db.SampleCollection().InsertMany(context.TODO(), []any{samples})
 	return err
 }

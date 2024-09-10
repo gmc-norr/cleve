@@ -19,6 +19,7 @@ type SampleGetter interface {
 // Interface for storing/updating samples in the database.
 type SampleSetter interface {
 	CreateSample(*cleve.Sample) error
+	CreateSamples([]*cleve.Sample) error
 }
 
 func SampleHandler(db SampleGetter) gin.HandlerFunc {

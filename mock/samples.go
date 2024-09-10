@@ -28,11 +28,18 @@ func (g *SampleGetter) Sample(sampleId string) (*cleve.Sample, error) {
 //
 // See [mock.RunGetter] for more information.
 type SampleSetter struct {
-	CreateSampleFn      func(*cleve.Sample) error
-	CreateSampleInvoked bool
+	CreateSampleFn       func(*cleve.Sample) error
+	CreateSampleInvoked  bool
+	CreateSamplesFn      func([]*cleve.Sample) error
+	CreateSamplesInvoked bool
 }
 
 func (s *SampleSetter) CreateSample(sample *cleve.Sample) error {
 	s.CreateSampleInvoked = true
 	return s.CreateSampleFn(sample)
+}
+
+func (s *SampleSetter) CreateSamples(samples []*cleve.Sample) error {
+	s.CreateSamplesInvoked = true
+	return s.CreateSamplesFn(samples)
 }
