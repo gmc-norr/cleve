@@ -28,8 +28,7 @@ type RunSetter interface {
 
 func RunsHandler(db RunGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		_, brief := c.GetQuery("brief")
-		filter, err := getRunFilter(c, brief)
+		filter, err := getRunFilter(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
