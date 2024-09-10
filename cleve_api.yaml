@@ -6,6 +6,8 @@ sections:
     description: Analysis of sequencing data.
   - name: qc
     description: Quality control of sequencing data.
+  - name: samples
+    description: Sample information.
   - name: samplesheet
     description: Samplesheet information for sequencing runs.
   - name: platforms
@@ -202,6 +204,41 @@ endpoints:
         type: file
         description: analysis summary file
         required: false
+
+  - path: /samples
+    method: GET
+    section: samples
+    description: Get a list of samples
+
+  - path: /samples
+    method: POST
+    section: samples
+    description: Add a sample.
+    params:
+      - key: id
+        type: string
+        description: ID of the sample.
+        required: true
+      - key: name
+        type: string
+        description: Name of the sample. If missing, use the sample ID.
+        required: true
+      - key: fastq
+        type: array
+        description: Fastq files associated with the sample.
+      - key: analyses
+        type: array
+        description: Analyses associated with the sample.
+
+  - path: /samples/{sample_id}
+    method: GET
+    section: samples
+    description: Get a specific sample.
+    params:
+      - key: sample_id
+        type: string
+        description: ID of the sample.
+        required: true
 
   - path: /runs/{run_id}/samplesheet
     method: GET
