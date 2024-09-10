@@ -3,6 +3,7 @@ package gin
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -93,6 +94,7 @@ func TestSamples(t *testing.T) {
 		name           string
 		code           int
 		url            string
+		filterError    error
 		expectedFilter cleve.SampleFilter
 	}{
 		{
@@ -120,6 +122,42 @@ func TestSamples(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:        "illegal page number -1",
+			code:        http.StatusBadRequest,
+			url:         "/samples?page=-1&page_size=5",
+			filterError: fmt.Errorf("illegal page number -1"),
+			expectedFilter: cleve.SampleFilter{
+				PaginationFilter: cleve.PaginationFilter{
+					Page:     -1,
+					PageSize: 5,
+				},
+			},
+		},
+		{
+			name:        "illegal page number 0",
+			code:        http.StatusBadRequest,
+			url:         "/samples?page=0&page_size=5",
+			filterError: fmt.Errorf("illegal page number 0"),
+			expectedFilter: cleve.SampleFilter{
+				PaginationFilter: cleve.PaginationFilter{
+					Page:     0,
+					PageSize: 5,
+				},
+			},
+		},
+		{
+			name:        "illegal page size -1",
+			code:        http.StatusBadRequest,
+			url:         "/samples?page_size=-1",
+			filterError: fmt.Errorf("illegal page size -1"),
+			expectedFilter: cleve.SampleFilter{
+				PaginationFilter: cleve.PaginationFilter{
+					Page:     1,
+					PageSize: -1,
+				},
+			},
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -135,7 +173,12 @@ func TestSamples(t *testing.T) {
 			SamplesHandler(&sg)(ctx)
 
 			filter, err := getSampleFilter(ctx)
-			if err != nil {
+
+			if c.filterError != nil {
+				if err == nil || c.filterError.Error() != err.Error() {
+					t.Errorf("expected error %q, got %q", c.filterError, err)
+				}
+			} else if err != nil {
 				t.Errorf("error creating filter: %s", err.Error())
 			}
 
@@ -143,7 +186,7 @@ func TestSamples(t *testing.T) {
 				t.Errorf("expected filter %v, got %v", c.expectedFilter, filter)
 			}
 
-			if !sg.SamplesInvoked {
+			if c.filterError == nil && !sg.SamplesInvoked {
 				t.Errorf("Samples was not invoked")
 			}
 

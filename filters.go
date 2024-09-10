@@ -11,6 +11,16 @@ type PaginationFilter struct {
 	PageSize int `form:"page_size,default=10"`
 }
 
+func (f PaginationFilter) Validate() error {
+	if f.Page < 1 {
+		return fmt.Errorf("illegal page number %d", f.Page)
+	}
+	if f.PageSize < 0 {
+		return fmt.Errorf("illegal page size %d", f.PageSize)
+	}
+	return nil
+}
+
 // Run filtering.
 type RunFilter struct {
 	RunID            string    `form:"run_id"`
