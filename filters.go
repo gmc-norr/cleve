@@ -7,19 +7,19 @@ import (
 
 // Pagination filtering.
 type PaginationFilter struct {
-	Page     int
-	PageSize int
+	Page     int `form:"page,default=1"`
+	PageSize int `form:"page_size,default=10"`
 }
 
 // Run filtering.
 type RunFilter struct {
-	RunID    string
-	Brief    bool
-	Platform string
-	State    string
-	From     time.Time
-	To       time.Time
-	PaginationFilter
+	RunID            string    `form:"run_id"`
+	Brief            bool      `form:"brief"`
+	Platform         string    `form:"platform"`
+	State            string    `form:"state"`
+	From             time.Time `form:"from"`
+	To               time.Time `form:"to"`
+	PaginationFilter `form:",inline"`
 }
 
 // Convert a run filter to URL query parameters.
@@ -83,11 +83,11 @@ func (f QcFilter) UrlParams() string {
 
 // Sample filtering.
 type SampleFilter struct {
-	Name     string
-	Id       string
-	RunId    string
-	Analysis string
-	PaginationFilter
+	Name             string `form:"sample_name"`
+	Id               string `form:"sample_id"`
+	RunId            string `form:"run_id"`
+	Analysis         string `form:"analysis"`
+	PaginationFilter `form:",inline"`
 }
 
 // Convert a sample filter to URL query parameters.

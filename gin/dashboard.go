@@ -28,7 +28,7 @@ func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
 
 func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		filter, err := getRunFilter(c, false)
+		filter, err := getRunFilter(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -87,7 +87,7 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 
 func DashboardRunTable(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		filter, err := getRunFilter(c, false)
+		filter, err := getRunFilter(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
