@@ -97,8 +97,22 @@ func TestSamples(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/api/samples", nil)
 
 		SamplesHandler(&sg)(c)
+
+		filter, err := getSampleFilter(c)
+		if err != nil {
+			t.Errorf("error creating filter: %s", err.Error())
+		}
+
+		if filter.PageSize != 10 {
+			t.Errorf("expected page size 10, got %d", filter.PageSize)
+		}
+
+		if filter.Page != 1 {
+			t.Errorf("expected page 1, got %d", filter.Page)
+		}
 
 		if !sg.SamplesInvoked {
 			t.Errorf("Samples was not invoked")
@@ -106,6 +120,51 @@ func TestSamples(t *testing.T) {
 
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected %d, got %d", http.StatusOK, w.Code)
+		}
+	})
+	t.Run("sample filtering", func(t *testing.T) {
+		sg := mock.SampleGetter{}
+		sg.SamplesFn = func(filter *cleve.SampleFilter) (*cleve.SampleResult, error) {
+			result := cleve.SampleResult{
+				PaginationMetadata: cleve.PaginationMetadata{
+					Page:     filter.Page,
+					PageSize: filter.PageSize,
+				},
+			}
+			return &result, nil
+		}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/samples?page=2&page_size=5&sample_name=test&analysis=wgs&run_id=run1", nil)
+
+		expectedFilter := cleve.SampleFilter{
+			Name:     "test",
+			Analysis: "wgs",
+			RunId:    "run1",
+			PaginationFilter: cleve.PaginationFilter{
+				Page:     2,
+				PageSize: 5,
+			},
+		}
+
+		SamplesHandler(&sg)(c)
+
+		filter, err := getSampleFilter(c)
+		if err != nil {
+			t.Errorf("error creating filter: %s", err.Error())
+		}
+
+		if filter != expectedFilter {
+			t.Errorf("expected filter %v, got %v", expectedFilter, filter)
+		}
+
+		if !sg.SamplesInvoked {
+			t.Errorf("Samples was not invoked")
+		}
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected http status %d, got %d", http.StatusOK, w.Code)
 		}
 	})
 }

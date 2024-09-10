@@ -99,7 +99,7 @@ func (f SampleFilter) UrlParams() string {
 		sep = "&"
 	}
 	if f.Id != "" {
-		p += fmt.Sprintf("%sid=%s", sep, f.Id)
+		p += fmt.Sprintf("%ssample_id=%s", sep, f.Id)
 		sep = "&"
 	}
 	if f.RunId != "" {

@@ -58,68 +58,124 @@ func TestRunsHandler(t *testing.T) {
 	rg := mock.RunGetter{}
 
 	table := []struct {
-		Runs   cleve.RunResult
-		Error  error
-		Params gin.Params
+		Name           string
+		Runs           cleve.RunResult
+		Error          error
+		URL            string
+		ExpectedFilter cleve.RunFilter
 	}{
 		{
+			"no params, no results",
 			cleve.RunResult{
 				Runs: nil,
 			},
 			nil,
-			gin.Params{},
+			"/api/runs",
+			cleve.RunFilter{
+				PaginationFilter: cleve.PaginationFilter{
+					Page:     1,
+					PageSize: 10,
+				},
+			},
 		},
 		{
+			"no params, with results",
 			cleve.RunResult{
 				Runs: []*cleve.Run{novaseq1, novaseq2, nextseq1},
 			},
 			nil,
-			gin.Params{},
+			"/api/runs",
+			cleve.RunFilter{
+				PaginationFilter: cleve.PaginationFilter{
+					Page:     1,
+					PageSize: 10,
+				},
+			},
 		},
 		{
+			"brief",
 			cleve.RunResult{
 				Runs: []*cleve.Run{novaseq1, novaseq2, nextseq1},
 			},
 			nil,
-			gin.Params{gin.Param{Key: "brief", Value: "true"}},
+			"/api/runs?brief=true",
+			cleve.RunFilter{
+				Brief: true,
+				PaginationFilter: cleve.PaginationFilter{
+					Page:     1,
+					PageSize: 10,
+				},
+			},
 		},
 		{
+			"brief and platform filter",
 			cleve.RunResult{
 				Runs: []*cleve.Run{novaseq1, novaseq2},
 			},
 			nil,
-			gin.Params{
-				gin.Param{Key: "brief", Value: "true"},
-				gin.Param{Key: "platform", Value: "NovaSeq"},
+			"/api/runs?brief=true&platform=NovaSeq",
+			cleve.RunFilter{
+				Brief:    true,
+				Platform: "NovaSeq",
+				PaginationFilter: cleve.PaginationFilter{
+					Page:     1,
+					PageSize: 10,
+				},
+			},
+		},
+		{
+			"third page, 5 results per page",
+			cleve.RunResult{
+				Runs: []*cleve.Run{novaseq1, novaseq2},
+			},
+			nil,
+			"/api/runs?brief=true&platform=NovaSeq&page=3&page_size=5",
+			cleve.RunFilter{
+				Brief:    true,
+				Platform: "NovaSeq",
+				PaginationFilter: cleve.PaginationFilter{
+					Page:     3,
+					PageSize: 5,
+				},
 			},
 		},
 	}
 
 	for _, v := range table {
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
+		t.Run(v.Name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest("GET", v.URL, nil)
 
-		rg.RunsFn = func(filter cleve.RunFilter) (cleve.RunResult, error) {
-			return v.Runs, v.Error
-		}
+			rg.RunsFn = func(filter cleve.RunFilter) (cleve.RunResult, error) {
+				return v.Runs, v.Error
+			}
 
-		c.Params = v.Params
-		RunsHandler(&rg)(c)
+			filter, err := getRunFilter(c)
+			if err != nil {
+				t.Errorf("error parsing filter: %s", err)
+			}
+			if filter != v.ExpectedFilter {
+				t.Errorf("expected filter %v, got %v", v.ExpectedFilter, filter)
+			}
 
-		if !rg.RunsInvoked {
-			t.Fatal("Runs not invoked")
-		}
+			RunsHandler(&rg)(c)
 
-		if w.Code != 200 {
-			t.Fatalf("HTTP status %d != 200", w.Code)
-		}
+			if !rg.RunsInvoked {
+				t.Fatal("Runs not invoked")
+			}
 
-		b, _ := io.ReadAll(w.Body)
-		count := strings.Count(string(b), "experiment_name")
+			if w.Code != 200 {
+				t.Fatalf("HTTP status %d != 200", w.Code)
+			}
 
-		if count != len(v.Runs.Runs) {
-			t.Fatalf("found %d runs, expected %d", count, len(v.Runs.Runs))
-		}
+			b, _ := io.ReadAll(w.Body)
+			count := strings.Count(string(b), "experiment_name")
+
+			if count != len(v.Runs.Runs) {
+				t.Fatalf("found %d runs, expected %d", count, len(v.Runs.Runs))
+			}
+		})
 	}
 }
 
