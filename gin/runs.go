@@ -37,7 +37,7 @@ func RunsHandler(db RunGetter) gin.HandlerFunc {
 
 		runs, err := db.Runs(filter)
 
-		if errors.As(err, &mongo.PageOutOfBoundsError{}) || errors.As(err, &mongo.NoResultsError{}) {
+		if errors.As(err, &mongo.PageOutOfBoundsError{}) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}

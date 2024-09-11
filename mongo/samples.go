@@ -130,7 +130,9 @@ func (db DB) Samples(filter *cleve.SampleFilter) (*cleve.SampleResult, error) {
 			return &sampleResult, err
 		}
 		if sampleResult.TotalCount == 0 {
-			return &sampleResult, NoResultsError{}
+			// No results found. Represent this as a single page
+			// with an empty slice of samples.
+			sampleResult.TotalPages = 1
 		}
 		if sampleResult.Page > sampleResult.TotalPages {
 			return &sampleResult, PageOutOfBoundsError{

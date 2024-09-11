@@ -206,13 +206,15 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		if err != nil {
 			return cleve.RunResult{}, err
 		}
-		if r.PaginationMetadata.TotalCount == 0 {
-			return r, NoResultsError{}
+		if r.TotalCount == 0 {
+			// No results found. Represent this as a single page
+			// with an empty slice of runs.
+			r.TotalPages = 1
 		}
-		if r.PaginationMetadata.Page > r.PaginationMetadata.TotalPages {
+		if r.Page > r.TotalPages {
 			return r, PageOutOfBoundsError{
-				page:       r.PaginationMetadata.Page,
-				totalPages: r.PaginationMetadata.TotalPages,
+				page:       r.Page,
+				totalPages: r.TotalPages,
 			}
 		}
 		return r, nil
