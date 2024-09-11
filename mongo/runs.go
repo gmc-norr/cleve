@@ -15,33 +15,18 @@ import (
 )
 
 func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
-	var aggPipeline mongo.Pipeline
-	var runPipeline mongo.Pipeline
+	var pipeline mongo.Pipeline
 
 	// Sort by sequencing date
-	runPipeline = append(runPipeline, bson.D{
+	pipeline = append(pipeline, bson.D{
 		{Key: "$sort", Value: bson.D{
 			{Key: "run_info.run.date", Value: -1},
 		}},
 	})
 
-	// Skip
-	if filter.Page > 0 {
-		runPipeline = append(runPipeline, bson.D{
-			{Key: "$skip", Value: filter.PageSize * (filter.Page - 1)},
-		})
-	}
-
-	// Limit
-	if filter.PageSize > 0 {
-		runPipeline = append(runPipeline, bson.D{
-			{Key: "$limit", Value: filter.PageSize},
-		})
-	}
-
 	// Filter on run id
 	if filter.RunID != "" {
-		runIdFilter := bson.D{
+		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "$expr", Value: bson.D{
 					{Key: "$regexMatch", Value: bson.M{
@@ -51,26 +36,20 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 					}},
 				}},
 			}},
-		}
-
-		aggPipeline = append(aggPipeline, runIdFilter)
-		runPipeline = append(runPipeline, runIdFilter)
+		})
 	}
 
 	// Filter on platform
 	if filter.Platform != "" {
-		platformFilter := bson.D{
+		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "platform", Value: filter.Platform},
 			}},
-		}
-
-		aggPipeline = append(aggPipeline, platformFilter)
-		runPipeline = append(runPipeline, platformFilter)
+		})
 	}
 
 	// Sort state history chronologically
-	stateSort := bson.D{
+	pipeline = append(pipeline, bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "state_history", Value: bson.D{
 				{Key: "$sortArray", Value: bson.M{
@@ -79,14 +58,11 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 			}},
 		},
 		},
-	}
-
-	runPipeline = append(runPipeline, stateSort)
-	aggPipeline = append(aggPipeline, stateSort)
+	})
 
 	// Filter on most recent state
 	if filter.State != "" {
-		stateFilter := bson.D{
+		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "$expr", Value: bson.D{
 					{Key: "$eq", Value: bson.A{
@@ -95,14 +71,11 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 					}},
 				}},
 			}},
-		}
-
-		aggPipeline = append(aggPipeline, stateFilter)
-		runPipeline = append(runPipeline, stateFilter)
+		})
 	}
 
 	// Add samplesheet information
-	runPipeline = append(runPipeline, bson.D{
+	pipeline = append(pipeline, bson.D{
 		{Key: "$lookup", Value: bson.M{
 			"from":         "samplesheets",
 			"localField":   "run_id",
@@ -119,15 +92,8 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		}},
 	})
 
-	runPipeline = append(runPipeline, bson.D{
-		{Key: "$unwind", Value: bson.M{
-			"path":                       "$samplesheet",
-			"preserveNullAndEmptyArrays": true,
-		}},
-	})
-
 	// Count number of analyses
-	runPipeline = append(runPipeline, bson.D{
+	pipeline = append(pipeline, bson.D{
 		{Key: "$set", Value: bson.D{
 			{
 				Key: "analysis_count",
@@ -146,54 +112,89 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 
 	// Exclude run parameters and analysis
 	if filter.Brief {
-		runPipeline = append(runPipeline, bson.D{
+		pipeline = append(pipeline, bson.D{
 			{Key: "$unset", Value: bson.A{"run_parameters", "analysis"}},
 		})
 	}
 
-	aggPipeline = append(aggPipeline, bson.D{
+	pipeline = append(pipeline, bson.D{
+		{Key: "$unwind", Value: bson.M{
+			"path":                       "$samplesheet",
+			"preserveNullAndEmptyArrays": true,
+		}},
+	})
+
+	runFacet := mongo.Pipeline{}
+
+	// Skip
+	if filter.Page > 0 {
+		runFacet = append(runFacet, bson.D{
+			{Key: "$skip", Value: filter.PageSize * (filter.Page - 1)},
+		})
+	}
+
+	// Limit
+	if filter.PageSize > 0 {
+		runFacet = append(runFacet, bson.D{
+			{Key: "$limit", Value: filter.PageSize},
+		})
+	}
+
+	// Facetting
+	pipeline = append(pipeline, bson.D{
 		{Key: "$facet", Value: bson.M{
 			"metadata": bson.A{
 				bson.D{{Key: "$count", Value: "total_count"}},
 			},
-			"runs": runPipeline,
+			"runs": runFacet,
 		}},
 	})
 
-	aggPipeline = append(aggPipeline, bson.D{
-		{Key: "$unwind", Value: "$metadata"},
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$project",
+			Value: bson.M{
+				"metadata": bson.M{
+					"$arrayElemAt": bson.A{"$metadata", 0},
+				},
+				"runs": 1,
+			},
+		},
 	})
 
-	aggPipeline = append(aggPipeline, bson.D{
-		{Key: "$set", Value: bson.D{
-			{Key: "metadata.count", Value: bson.D{
-				{Key: "$size", Value: "$runs"},
-			}},
-			{Key: "metadata.page", Value: filter.Page},
-			{Key: "metadata.page_size", Value: filter.PageSize},
-		}},
-	})
-
-	if filter.PageSize > 0 {
-		aggPipeline = append(aggPipeline, bson.D{
-			{Key: "$set", Value: bson.D{
-				{Key: "metadata.total_pages", Value: bson.D{
-					{Key: "$ceil", Value: bson.D{
-						{Key: "$divide", Value: bson.A{"$metadata.total_count", filter.PageSize}}},
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$set",
+			Value: bson.M{
+				"metadata.count": bson.M{
+					"$size": "$runs",
+				},
+				"metadata.page":      filter.Page,
+				"metadata.page_size": filter.PageSize,
+				"metadata.total_pages": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{
+							"$gt": bson.A{
+								filter.PageSize,
+								0,
+							},
+						},
+						"then": bson.M{
+							"$ceil": bson.M{
+								"$divide": bson.A{
+									"$metadata.total_count",
+									filter.PageSize,
+								},
+							},
+						},
+						"else": 1,
 					},
-				}},
-			}},
-		})
-	} else {
-		aggPipeline = append(aggPipeline, bson.D{
-			{Key: "$set", Value: bson.D{
-				{Key: "metadata.total_pages", Value: 1},
-				{Key: "metadata.page_size", Value: "$metadata.total_count"},
-			}},
-		})
-	}
+				},
+			},
+		},
+	})
 
-	cursor, err := db.RunCollection().Aggregate(context.TODO(), aggPipeline)
+	cursor, err := db.RunCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return cleve.RunResult{}, err
 	}
@@ -205,12 +206,16 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		if err != nil {
 			return cleve.RunResult{}, err
 		}
-		if r.PaginationMetadata.Page > r.PaginationMetadata.TotalPages {
-			return r, fmt.Errorf(
-				"page %d is out of range, there are only %d pages",
-				r.PaginationMetadata.Page,
-				r.PaginationMetadata.TotalPages,
-			)
+		if r.TotalCount == 0 {
+			// No results found. Represent this as a single page
+			// with an empty slice of runs.
+			r.TotalPages = 1
+		}
+		if r.Page > r.TotalPages {
+			return r, PageOutOfBoundsError{
+				page:       r.Page,
+				totalPages: r.TotalPages,
+			}
 		}
 		return r, nil
 	}
