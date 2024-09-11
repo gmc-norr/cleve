@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
@@ -130,12 +129,14 @@ func (db DB) Samples(filter *cleve.SampleFilter) (*cleve.SampleResult, error) {
 		if err != nil {
 			return &sampleResult, err
 		}
-		if sampleResult.PaginationMetadata.Page > sampleResult.PaginationMetadata.TotalPages {
-			return &sampleResult, fmt.Errorf(
-				"page %d is out of range, there are only %d pages",
-				sampleResult.PaginationMetadata.Page,
-				sampleResult.PaginationMetadata.TotalPages,
-			)
+		if sampleResult.TotalCount == 0 {
+			return &sampleResult, NoResultsError{}
+		}
+		if sampleResult.Page > sampleResult.TotalPages {
+			return &sampleResult, PageOutOfBoundsError{
+				page:       sampleResult.Page,
+				totalPages: sampleResult.TotalPages,
+			}
 		}
 	}
 	return &sampleResult, cursor.Err()

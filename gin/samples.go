@@ -50,6 +50,10 @@ func SamplesHandler(db SampleGetter) gin.HandlerFunc {
 			c.JSON(http.StatusOK, samples)
 			return
 		}
+		if errors.As(err, &mongo.PageOutOfBoundsError{}) || errors.As(err, &mongo.NoResultsError{}) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
