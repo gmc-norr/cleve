@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -36,6 +37,10 @@ func RunsHandler(db RunGetter) gin.HandlerFunc {
 
 		runs, err := db.Runs(filter)
 
+		if errors.As(err, &mongo.PageOutOfBoundsError{}) || errors.As(err, &mongo.NoResultsError{}) {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

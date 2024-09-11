@@ -206,12 +206,14 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		if err != nil {
 			return cleve.RunResult{}, err
 		}
+		if r.PaginationMetadata.TotalCount == 0 {
+			return r, NoResultsError{}
+		}
 		if r.PaginationMetadata.Page > r.PaginationMetadata.TotalPages {
-			return r, fmt.Errorf(
-				"page %d is out of range, there are only %d pages",
-				r.PaginationMetadata.Page,
-				r.PaginationMetadata.TotalPages,
-			)
+			return r, PageOutOfBoundsError{
+				page:       r.PaginationMetadata.Page,
+				totalPages: r.PaginationMetadata.TotalPages,
+			}
 		}
 		return r, nil
 	}
