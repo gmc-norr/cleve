@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -97,6 +98,16 @@ func (s SampleSheet) Version() int {
 
 func (s SampleSheet) IsValid() bool {
 	return s.Section("Header") != nil && s.Section("Reads") != nil
+}
+
+func (s SampleSheet) UUID() (string, error) {
+	rd, err := s.Section("Header").Get("RunDescription")
+	if err != nil {
+		return rd, err
+	}
+
+	uuid, err := uuid.Parse(rd)
+	return uuid.String(), err
 }
 
 type Section struct {

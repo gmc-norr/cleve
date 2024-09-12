@@ -598,3 +598,60 @@ func TestMostRecentSamplesheet(t *testing.T) {
 		})
 	}
 }
+
+func TestSampleSheetUUID(t *testing.T) {
+	cases := []struct {
+		name  string
+		data  []byte
+		error bool
+	}{
+		{
+			name: "SampleSheet with UUID",
+			data: []byte(`[Header]
+FileFormatVersion,2
+RunName,TestRun
+RunDescription,91f48115-71a2-41ba-843e-a4803542ec5c
+InstrumentPlatform,NovaSeq
+InstrumentType,NovaSeq X Plus`),
+			error: false,
+		},
+		{
+			name: "SampleSheet without UUID",
+			data: []byte(`[Header]
+FileFormatVersion,2
+RunName,TestRun
+RunDescription,WGS on a number of samples
+InstrumentPlatform,NovaSeq
+InstrumentType,NovaSeq X Plus`),
+			error: true,
+		},
+		{
+			name: "SampleSheet without RunDescription",
+			data: []byte(`[Header]
+FileFormatVersion,2
+RunName,TestRun
+InstrumentPlatform,NovaSeq
+InstrumentType,NovaSeq X Plus`),
+			error: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			r := bufio.NewReader(bytes.NewReader(c.data))
+			ss, err := ParseSampleSheet(r)
+			if err != nil {
+				t.Fatal(err)
+			}
+			uuid, err := ss.UUID()
+			if c.error && err == nil {
+				t.Error("expected error, got none")
+			} else if !c.error && err != nil {
+				t.Errorf("didn't expect an error, got: %s", err.Error())
+			} else if err != nil {
+				t.Log(err.Error())
+			}
+			t.Log(uuid)
+		})
+	}
+}
