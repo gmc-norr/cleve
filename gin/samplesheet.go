@@ -150,3 +150,15 @@ func RunSampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
 		c.JSON(http.StatusOK, sampleSheet)
 	}
 }
+
+func AddSampleSheetHandler(db SampleSheetSetter) func(*gin.Context) {
+	return func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusNotImplemented)
+	}
+}
+
+func SampleSheetHandler(db SampleSheetGetter) func(*gin.Context) {
+	return func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusNotImplemented)
+	}
+}

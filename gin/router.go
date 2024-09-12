@@ -183,6 +183,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/api/qc/:platformName", AllRunQcHandler(db))
 	r.GET("/api/samples", SamplesHandler(db))
 	r.GET("/api/samples/:sampleId", SampleHandler(db))
+	r.GET("/api/samplesheets/:uuid", SampleSheetHandler(db))
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))
@@ -195,6 +196,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	authEndpoints.POST("/api/runs/:runId/qc", AddRunQcHandler(db))
 	authEndpoints.POST("/api/platforms", AddPlatformHandler(db))
 	authEndpoints.POST("/api/samples", AddSampleHandler(db))
+	authEndpoints.POST("/api/samplesheets", AddSampleSheetHandler(db))
 
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
