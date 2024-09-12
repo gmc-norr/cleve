@@ -20,7 +20,7 @@ type SampleSheetSetter interface {
 	CreateSampleSheet(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
 }
 
-func AddSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
+func AddRunSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runID := c.Param("runId")
 
@@ -75,7 +75,7 @@ func AddSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 	}
 }
 
-func SampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
+func RunSampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runID := c.Param("runId")
 		sectionName := c.Query("section")
