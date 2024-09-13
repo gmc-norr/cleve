@@ -121,6 +121,9 @@ func (s Section) Get(name string, index ...int) (string, error) {
 	case SettingsSection:
 		for _, row := range s.Rows {
 			if row[0] == name {
+				if len(row) == 1 {
+					return row[0], nil
+				}
 				return row[1], nil
 			}
 		}
@@ -375,6 +378,10 @@ func ParseSampleSheet(r *bufio.Reader) (SampleSheet, error) {
 		}
 
 		sheet.Sections = append(sheet.Sections, s)
+	}
+
+	if !sheet.IsValid() {
+		return sheet, fmt.Errorf("invalid sample sheet")
 	}
 
 	return sheet, nil

@@ -426,7 +426,11 @@ func TestUpdateRunPathHandler(t *testing.T) {
 			if v.destinationExists {
 				runDir = t.TempDir()
 				if v.hasSampleSheet {
-					os.OpenFile(filepath.Join(runDir, "SampleSheet.csv"), os.O_RDONLY|os.O_CREATE, 0644)
+					f, err := os.Create(filepath.Join(runDir, "SampleSheet.csv"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					io.WriteString(f, "[Header]\nRunName,run1\n[Reads]\n151")
 				}
 			}
 

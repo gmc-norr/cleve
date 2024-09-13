@@ -27,21 +27,26 @@ func TestSampleSheet(t *testing.T) {
 		{
 			"case 1",
 			2,
-			false,
-			[]string{"Header"},
-			[]int{4},
-			[]SectionType{SettingsSection},
+			true,
+			[]string{"Header", "Reads"},
+			[]int{4, 1},
+			[]SectionType{SettingsSection, SettingsSection},
 			[]byte(`[Header]
 FileFormatVersion,2
 RunName,TestRun
 InstrumentPlatform,NovaSeq
-InstrumentType,NovaSeq X Plus`),
+InstrumentType,NovaSeq X Plus
+[Reads]
+151`),
 			map[string]map[string]string{
 				"Header": {
 					"FileFormatVersion":  "2",
 					"RunName":            "TestRun",
 					"InstrumentPlatform": "NovaSeq",
 					"InstrumentType":     "NovaSeq X Plus",
+				},
+				"Reads": {
+					"151": "151",
 				},
 			},
 			nil,
@@ -376,6 +381,8 @@ func TestGettingNonexistentValues(t *testing.T) {
 	r := bufio.NewReader(bytes.NewReader([]byte(`[Header]
 key1,val1
 key2,val2
+[Reads]
+151
 `)))
 	s, err := ParseSampleSheet(r)
 	if err != nil {
@@ -612,8 +619,10 @@ FileFormatVersion,2
 RunName,TestRun
 RunDescription,91f48115-71a2-41ba-843e-a4803542ec5c
 InstrumentPlatform,NovaSeq
-InstrumentType,NovaSeq X Plus`),
-			error: false,
+InstrumentType,NovaSeq X Plus
+[Reads]
+151
+151`),
 		},
 		{
 			name: "SampleSheet without UUID",
@@ -622,8 +631,10 @@ FileFormatVersion,2
 RunName,TestRun
 RunDescription,WGS on a number of samples
 InstrumentPlatform,NovaSeq
-InstrumentType,NovaSeq X Plus`),
-			error: true,
+InstrumentType,NovaSeq X Plus
+[Reads]
+151
+151`),
 		},
 		{
 			name: "SampleSheet without RunDescription",
@@ -631,8 +642,10 @@ InstrumentType,NovaSeq X Plus`),
 FileFormatVersion,2
 RunName,TestRun
 InstrumentPlatform,NovaSeq
-InstrumentType,NovaSeq X Plus`),
-			error: true,
+InstrumentType,NovaSeq X Plus
+[Reads]
+151
+151`),
 		},
 	}
 
