@@ -342,7 +342,7 @@ func TestAddRunHandler(t *testing.T) {
 			rs.CreateRunFn = func(run *cleve.Run) error {
 				return nil
 			}
-			rs.CreateSampleSheetFn = func(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
+			rs.CreateSampleSheetFn = func(samplesheet cleve.SampleSheet, opts ...mongo.SampleSheetOption) (*cleve.UpdateResult, error) {
 				return nil, nil
 			}
 
@@ -418,7 +418,7 @@ func TestUpdateRunPathHandler(t *testing.T) {
 				}
 				return nil
 			}
-			rs.CreateSampleSheetFn = func(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
+			rs.CreateSampleSheetFn = func(samplesheet cleve.SampleSheet, opts ...mongo.SampleSheetOption) (*cleve.UpdateResult, error) {
 				return nil, nil
 			}
 

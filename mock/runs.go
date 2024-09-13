@@ -2,6 +2,7 @@ package mock
 
 import (
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/mongo"
 )
 
 // Mock implementing the gin.RunGetter interface.
@@ -32,7 +33,7 @@ func (g *RunGetter) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 type RunSetter struct {
 	CreateRunFn              func(*cleve.Run) error
 	CreateRunInvoked         bool
-	CreateSampleSheetFn      func(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
+	CreateSampleSheetFn      func(cleve.SampleSheet, ...mongo.SampleSheetOption) (*cleve.UpdateResult, error)
 	CreateSampleSheetInvoked bool
 	SetRunStateFn            func(string, cleve.RunState) error
 	SetRunStateInvoked       bool
@@ -45,9 +46,9 @@ func (s *RunSetter) CreateRun(run *cleve.Run) error {
 	return s.CreateRunFn(run)
 }
 
-func (s *RunSetter) CreateSampleSheet(runId string, samplesheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
+func (s *RunSetter) CreateSampleSheet(samplesheet cleve.SampleSheet, opts ...mongo.SampleSheetOption) (*cleve.UpdateResult, error) {
 	s.CreateSampleSheetInvoked = true
-	return s.CreateSampleSheetFn(runId, samplesheet)
+	return s.CreateSampleSheetFn(samplesheet, opts...)
 }
 
 func (s *RunSetter) SetRunState(runId string, state cleve.RunState) error {

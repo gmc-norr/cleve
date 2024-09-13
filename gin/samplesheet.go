@@ -12,12 +12,12 @@ import (
 
 // Interface for reading samplesheets from the database.
 type SampleSheetGetter interface {
-	SampleSheet(string) (cleve.SampleSheet, error)
+	SampleSheet(...mongo.SampleSheetOption) (cleve.SampleSheet, error)
 }
 
 // Interface for storing samplesheets in the database.
 type SampleSheetSetter interface {
-	CreateSampleSheet(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
+	CreateSampleSheet(cleve.SampleSheet, ...mongo.SampleSheetOption) (*cleve.UpdateResult, error)
 }
 
 func AddRunSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
@@ -48,7 +48,7 @@ func AddRunSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 
 		log.Printf("adding samplesheet for run %q", runID)
 
-		res, err := db.CreateSampleSheet(runID, sampleSheet)
+		res, err := db.CreateSampleSheet(sampleSheet, mongo.SampleSheetWithRunId(runID))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
@@ -96,7 +96,7 @@ func RunSampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
 			return
 		}
 
-		sampleSheet, err := db.SampleSheet(runID)
+		sampleSheet, err := db.SampleSheet(mongo.SampleSheetWithRunId(runID))
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{

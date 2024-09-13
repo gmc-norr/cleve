@@ -72,7 +72,7 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 			hasQc = false
 		}
 
-		sampleSheet, err := db.SampleSheet(runId)
+		sampleSheet, err := db.SampleSheet(mongo.SampleSheetWithRunId(runId))
 		if err != nil {
 			if err != mongo.ErrNoDocuments {
 				c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err.Error()})

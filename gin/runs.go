@@ -22,7 +22,7 @@ type RunGetter interface {
 // Interface for storing/updating runs in the database.
 type RunSetter interface {
 	CreateRun(*cleve.Run) error
-	CreateSampleSheet(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
+	CreateSampleSheet(cleve.SampleSheet, ...mongo.SampleSheetOption) (*cleve.UpdateResult, error)
 	SetRunState(string, cleve.RunState) error
 	SetRunPath(string, string) error
 }
@@ -156,7 +156,7 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading samplesheet"})
 				return
 			}
-			_, err = db.CreateSampleSheet(run.RunID, samplesheet)
+			_, err = db.CreateSampleSheet(samplesheet, mongo.SampleSheetWithRunId(run.RunID))
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "saving samplesheet"})
 				return
@@ -234,7 +234,7 @@ func UpdateRunPathHandler(db RunSetter) gin.HandlerFunc {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading samplesheet"})
 				return
 			}
-			_, err = db.CreateSampleSheet(runId, samplesheet)
+			_, err = db.CreateSampleSheet(samplesheet, mongo.SampleSheetWithRunId(runId))
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "saving samplesheet"})
 				return

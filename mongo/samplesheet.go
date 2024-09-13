@@ -6,16 +6,69 @@ import (
 	"log"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Add a samplesheet to the database. If a samplesheet for the run already
+type sampleSheetOptions struct {
+	runId *string
+	uuid  *uuid.UUID
+}
+
+type SampleSheetOption func(*sampleSheetOptions) error
+
+// SampleSheetWithRunId associates the sample sheet with a run ID.
+func SampleSheetWithRunId(runId string) SampleSheetOption {
+	return func(o *sampleSheetOptions) error {
+		if runId == "" {
+			return fmt.Errorf("run id must not be empty")
+		}
+		if len(runId) > 128 {
+			return fmt.Errorf("run id cannot be longer than 128 characters")
+		}
+		o.runId = &runId
+		return nil
+	}
+}
+
+// SampleSheetWithUuid associates the sample sheet with a UUID.
+func SampleSheetWithUuid(id string) SampleSheetOption {
+	return func(o *sampleSheetOptions) error {
+		ssUuid, err := uuid.Parse(id)
+		if err != nil {
+			return err
+		}
+		o.uuid = &ssUuid
+		return nil
+	}
+}
+
+// Add a sample sheet to the database. If the same sample sheet already
 // exists, it will be updated, but only if the modification time is newer than
-// the existing samplesheet.
-func (db DB) CreateSampleSheet(runID string, sampleSheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
-	sampleSheet.RunID = runID
+// the existing sample sheet. If no options are given, the UUID of the sample sheet
+// will be used as the key. If no UUID is found, an error will be returned, unless
+// a run ID has been passed with the options.
+func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleSheetOption) (*cleve.UpdateResult, error) {
+	var ssOptions sampleSheetOptions
+	for _, opt := range opts {
+		if err := opt(&ssOptions); err != nil {
+			return nil, err
+		}
+	}
+
+	ssUuid, uuidErr := sampleSheet.UUID()
+	if uuidErr != nil && ssOptions.runId == nil {
+		return nil, fmt.Errorf("run id not supplied, and samplesheet has no uuid")
+	}
+
+	var updateKey bson.D
+	if uuidErr != nil {
+		updateKey = bson.D{{Key: "uuid", Value: ssUuid}}
+	} else {
+		updateKey = bson.D{{Key: "run_id", Value: *ssOptions.runId}}
+	}
 
 	updateCond := bson.E{Key: "$gt", Value: bson.A{
 		sampleSheet.ModificationTime,
@@ -23,7 +76,7 @@ func (db DB) CreateSampleSheet(runID string, sampleSheet cleve.SampleSheet) (*cl
 	}}
 
 	return db.SampleSheetCollection().UpdateOne(context.TODO(),
-		bson.D{{Key: "run_id", Value: runID}},
+		updateKey,
 		bson.A{
 			bson.D{{Key: "$set", Value: bson.D{
 				{Key: "run_id", Value: bson.D{
@@ -82,9 +135,29 @@ func (db DB) SampleSheets() ([]cleve.SampleSheet, error) {
 	return sampleSheets, nil
 }
 
-func (db DB) SampleSheet(runID string) (cleve.SampleSheet, error) {
+// Get a samplesheet either by run ID or UUID, passed by options.
+func (db DB) SampleSheet(opts ...SampleSheetOption) (cleve.SampleSheet, error) {
 	var sampleSheet cleve.SampleSheet
-	err := db.SampleSheetCollection().FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runID}}).Decode(&sampleSheet)
+
+	if len(opts) == 0 {
+		return sampleSheet, fmt.Errorf("at least one option must be supplied")
+	}
+
+	var ssOptions sampleSheetOptions
+	for _, opt := range opts {
+		if err := opt(&ssOptions); err != nil {
+			return sampleSheet, err
+		}
+	}
+
+	var key bson.D
+	if ssOptions.uuid != nil {
+		key = bson.D{{Key: "uuid", Value: ssOptions.uuid.String()}}
+	} else if ssOptions.runId != nil {
+		key = bson.D{{Key: "run_id", Value: ssOptions.runId}}
+	}
+
+	err := db.SampleSheetCollection().FindOne(context.TODO(), key).Decode(&sampleSheet)
 	return sampleSheet, err
 }
 

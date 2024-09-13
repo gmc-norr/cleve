@@ -96,7 +96,7 @@ var addCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			_, err = db.CreateSampleSheet(runParams.GetRunID(), samplesheet)
+			_, err = db.CreateSampleSheet(samplesheet, mongo.SampleSheetWithRunId(runParams.GetRunID()))
 			if err != nil {
 				log.Fatal(err)
 			}
