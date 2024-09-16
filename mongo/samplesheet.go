@@ -48,8 +48,8 @@ func SampleSheetWithUuid(id string) SampleSheetOption {
 // Add a sample sheet to the database. If the same sample sheet already
 // exists, it will be updated, but only if the modification time is newer than
 // the existing sample sheet. If no options are given, the UUID of the sample sheet
-// will be used as the key. If no UUID is found, an error will be returned, unless
-// a run ID has been passed with the options.
+// will be used as the key, otherwise the run ID will be used. If neither run ID
+// nor UUID can be found, an error is returned.
 func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleSheetOption) (*cleve.UpdateResult, error) {
 	var ssOptions sampleSheetOptions
 	for _, opt := range opts {
@@ -58,16 +58,15 @@ func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleShee
 		}
 	}
 
-	ssUuid, uuidErr := sampleSheet.UUID()
-	if uuidErr != nil && ssOptions.runId == nil {
+	if sampleSheet.UUID == nil && ssOptions.runId == nil {
 		return nil, fmt.Errorf("run id not supplied, and samplesheet has no uuid")
 	}
 
 	var updateKey bson.D
-	if uuidErr != nil {
-		updateKey = bson.D{{Key: "uuid", Value: ssUuid}}
-	} else {
+	if ssOptions.runId != nil {
 		updateKey = bson.D{{Key: "run_id", Value: *ssOptions.runId}}
+	} else {
+		updateKey = bson.D{{Key: "uuid", Value: sampleSheet.UUID}}
 	}
 
 	updateCond := bson.E{Key: "$gt", Value: bson.A{
@@ -84,6 +83,14 @@ func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleShee
 						updateCond,
 						sampleSheet.RunID,
 						"$run_id",
+					}},
+				}}}}},
+			bson.D{{Key: "$set", Value: bson.D{
+				{Key: "uuid", Value: bson.D{
+					{Key: "$cond", Value: bson.A{
+						updateCond,
+						sampleSheet.UUID,
+						"$uuid",
 					}},
 				}}}}},
 			bson.D{{Key: "$set", Value: bson.D{
@@ -190,6 +197,7 @@ func (db DB) SetSampleSheetIndex() (string, error) {
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
 			{Key: "run_id", Value: 1},
+			{Key: "uuid", Value: 1},
 		},
 		Options: options.Index().SetUnique(true),
 	}
