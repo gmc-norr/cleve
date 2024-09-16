@@ -44,7 +44,7 @@ func AddRunSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 			return
 		}
 
-		sampleSheet.RunID = runID
+		sampleSheet.RunID = &runID
 
 		res, err := db.CreateSampleSheet(sampleSheet, mongo.SampleSheetWithRunId(runID))
 		if err != nil {

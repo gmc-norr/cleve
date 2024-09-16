@@ -77,7 +77,7 @@ type SampleSheetInfo struct {
 }
 
 type SampleSheet struct {
-	RunID           string     `bson:"run_id" json:"run_id"`
+	RunID           *string    `bson:"run_id" json:"run_id"`
 	UUID            *uuid.UUID `bson:"uuid" json:"uuid"`
 	SampleSheetInfo `bson:",inline" json:",inline"`
 	Sections        []Section `bson:"sections" json:"sections"`
