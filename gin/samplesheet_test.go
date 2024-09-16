@@ -92,3 +92,95 @@ func TestAddRunSampleSheet(t *testing.T) {
 		})
 	}
 }
+
+func TestAddSampleSheet(t *testing.T) {
+	cases := []struct {
+		name         string
+		filename     string
+		content      string
+		runId        string
+		code         int
+		shouldCreate bool
+		matchCount   int
+		modifyCount  int
+		upsertCount  int
+	}{
+		{
+			name:         "request without path",
+			filename:     "",
+			content:      "",
+			code:         http.StatusBadRequest,
+			shouldCreate: false,
+		},
+		{
+			name:         "samplesheet with no uuid and no run id",
+			filename:     "SampleSheet.csv",
+			content:      "[Header]\nRunDescription,description\n[Reads]\n151",
+			code:         http.StatusBadRequest,
+			shouldCreate: false,
+		},
+		{
+			name:         "samplesheet with run id and no uuid",
+			filename:     "SampleSheet.csv",
+			content:      "[Header]\nRunDescription,description\n[Reads]\n151",
+			runId:        "run1",
+			code:         http.StatusOK,
+			shouldCreate: true,
+			matchCount:   0,
+			upsertCount:  1,
+		},
+		{
+			name:         "samplesheet with uuid id and no run id",
+			filename:     "SampleSheet.csv",
+			content:      "[Header]\nRunDescription,1311f4cf-8361-494d-9f82-9b231c93c809\n[Reads]\n151",
+			code:         http.StatusOK,
+			shouldCreate: true,
+			matchCount:   0,
+			upsertCount:  1,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var sampleSheetPath *string
+			if c.filename != "" {
+				ssPath, err := mock.WriteTempFile(t, c.filename, c.content)
+				if err != nil {
+					t.Fatal(err)
+				}
+				sampleSheetPath = &ssPath
+			}
+
+			ss := mock.SampleSheetSetter{}
+			ss.CreateSampleSheetFn = func(ss cleve.SampleSheet, opts ...mongo.SampleSheetOption) (*cleve.UpdateResult, error) {
+				ur := cleve.UpdateResult{
+					MatchedCount:  int64(c.matchCount),
+					ModifiedCount: int64(c.modifyCount),
+					UpsertedCount: int64(c.upsertCount),
+				}
+				return &ur, nil
+			}
+
+			w := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(w)
+			ctx.Request = httptest.NewRequest("POST", "/api/samplesheets", nil)
+			mock.MockJSONBody(ctx, gin.H{"samplesheet": sampleSheetPath, "run_id": c.runId})
+
+			AddSampleSheetHandler(&ss)(ctx)
+
+			t.Log(w.Body)
+
+			if ss.CreateSampleSheetInvoked && !c.shouldCreate {
+				t.Error("CreateSampleSheet invoked but should not have been")
+			}
+
+			if !ss.CreateSampleSheetInvoked && c.shouldCreate {
+				t.Error("CreateSampleSheet not invoked but should have been")
+			}
+
+			if c.code != w.Code {
+				t.Errorf("expected status %d, got %d", c.code, w.Code)
+			}
+		})
+	}
+}

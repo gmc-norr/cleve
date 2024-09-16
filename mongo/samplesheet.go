@@ -47,9 +47,9 @@ func SampleSheetWithUuid(id string) SampleSheetOption {
 
 // Add a sample sheet to the database. If the same sample sheet already
 // exists, it will be updated, but only if the modification time is newer than
-// the existing sample sheet. If no options are given, the UUID of the sample sheet
-// will be used as the key, otherwise the run ID will be used. If neither run ID
-// nor UUID can be found, an error is returned.
+// the existing sample sheet. The UUID is the main identifier for the sample
+// sheet, but if that is missing, the run ID from the options is then used.
+// If neither a UUID nor a run ID can be found, an error is returned.
 func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleSheetOption) (*cleve.UpdateResult, error) {
 	var ssOptions sampleSheetOptions
 	for _, opt := range opts {
@@ -63,10 +63,10 @@ func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleShee
 	}
 
 	var updateKey bson.D
-	if ssOptions.runId != nil {
-		updateKey = bson.D{{Key: "run_id", Value: *ssOptions.runId}}
-	} else {
+	if sampleSheet.UUID != nil {
 		updateKey = bson.D{{Key: "uuid", Value: sampleSheet.UUID}}
+	} else {
+		updateKey = bson.D{{Key: "run_id", Value: ssOptions.runId}}
 	}
 
 	updateCond := bson.E{Key: "$gt", Value: bson.A{
