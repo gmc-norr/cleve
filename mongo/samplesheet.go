@@ -194,12 +194,39 @@ func (db DB) SampleSheetIndex() ([]map[string]string, error) {
 }
 
 func (db DB) SetSampleSheetIndex() (string, error) {
-	indexModel := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "run_id", Value: 1},
-			{Key: "uuid", Value: 1},
+	indexModels := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "run_id", Value: 1},
+			},
+			Options: options.Index().SetUnique(true).SetPartialFilterExpression(
+				bson.D{
+					{
+						Key: "run_id",
+						Value: bson.D{{
+							Key:   "$type",
+							Value: "string",
+						}},
+					},
+				},
+			),
 		},
-		Options: options.Index().SetUnique(true),
+		{
+			Keys: bson.D{
+				{Key: "uuid", Value: 1},
+			},
+			Options: options.Index().SetUnique(true).SetPartialFilterExpression(
+				bson.D{
+					{
+						Key: "uuid",
+						Value: bson.D{{
+							Key:   "$type",
+							Value: "binData",
+						}},
+					},
+				},
+			),
+		},
 	}
 
 	// TODO: do this as a transaction and roll back if anything fails
@@ -210,6 +237,6 @@ func (db DB) SetSampleSheetIndex() (string, error) {
 
 	log.Printf("Dropped %d indexes\n", res.Lookup("nIndexesWas").Int32())
 
-	name, err := db.SampleSheetCollection().Indexes().CreateOne(context.TODO(), indexModel)
-	return name, err
+	name, err := db.SampleSheetCollection().Indexes().CreateMany(context.TODO(), indexModels)
+	return fmt.Sprintf("%v", name), err
 }
