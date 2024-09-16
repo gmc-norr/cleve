@@ -608,9 +608,9 @@ func TestMostRecentSamplesheet(t *testing.T) {
 
 func TestSampleSheetUUID(t *testing.T) {
 	cases := []struct {
-		name  string
-		data  []byte
-		error bool
+		name    string
+		data    []byte
+		hasUuid bool
 	}{
 		{
 			name: "SampleSheet with UUID",
@@ -623,6 +623,7 @@ InstrumentType,NovaSeq X Plus
 [Reads]
 151
 151`),
+			hasUuid: true,
 		},
 		{
 			name: "SampleSheet without UUID",
@@ -635,6 +636,7 @@ InstrumentType,NovaSeq X Plus
 [Reads]
 151
 151`),
+			hasUuid: false,
 		},
 		{
 			name: "SampleSheet without RunDescription",
@@ -646,6 +648,7 @@ InstrumentType,NovaSeq X Plus
 [Reads]
 151
 151`),
+			hasUuid: false,
 		},
 	}
 
@@ -656,15 +659,12 @@ InstrumentType,NovaSeq X Plus
 			if err != nil {
 				t.Fatal(err)
 			}
-			uuid, err := ss.UUID()
-			if c.error && err == nil {
-				t.Error("expected error, got none")
-			} else if !c.error && err != nil {
-				t.Errorf("didn't expect an error, got: %s", err.Error())
-			} else if err != nil {
-				t.Log(err.Error())
+			if ss.UUID == nil && c.hasUuid {
+				t.Error("expected UUID but found nil")
 			}
-			t.Log(uuid)
+			if ss.UUID != nil && !c.hasUuid {
+				t.Error("found UUID, but expected nil")
+			}
 		})
 	}
 }

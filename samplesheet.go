@@ -77,7 +77,8 @@ type SampleSheetInfo struct {
 }
 
 type SampleSheet struct {
-	RunID           string `bson:"run_id" json:"run_id"`
+	RunID           string     `bson:"run_id" json:"run_id"`
+	UUID            *uuid.UUID `bson:"uuid" json:"uuid"`
 	SampleSheetInfo `bson:",inline" json:",inline"`
 	Sections        []Section `bson:"sections" json:"sections"`
 }
@@ -98,16 +99,6 @@ func (s SampleSheet) Version() int {
 
 func (s SampleSheet) IsValid() bool {
 	return s.Section("Header") != nil && s.Section("Reads") != nil
-}
-
-func (s SampleSheet) UUID() (string, error) {
-	rd, err := s.Section("Header").Get("RunDescription")
-	if err != nil {
-		return rd, err
-	}
-
-	uuid, err := uuid.Parse(rd)
-	return uuid.String(), err
 }
 
 type Section struct {
@@ -382,6 +373,15 @@ func ParseSampleSheet(r *bufio.Reader) (SampleSheet, error) {
 
 	if !sheet.IsValid() {
 		return sheet, fmt.Errorf("invalid sample sheet")
+	}
+
+	// Set the UUID of the sample sheet if one has been defined
+	rd, err := sheet.Section("Header").Get("RunDescription")
+	if err == nil {
+		uuid, err := uuid.Parse(rd)
+		if err == nil {
+			sheet.UUID = &uuid
+		}
 	}
 
 	return sheet, nil
