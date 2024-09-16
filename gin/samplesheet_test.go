@@ -2,11 +2,8 @@ package gin
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -18,20 +15,6 @@ import (
 
 func TestAddRunSampleSheet(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-
-	d := t.TempDir()
-	writeSampleSheet := func(filename string, content string) (string, error) {
-		path := filepath.Join(d, filename)
-		f, err := os.Create(path)
-		if err != nil {
-			return path, err
-		}
-		defer f.Close()
-		if _, err := io.WriteString(f, content); err != nil {
-			return path, err
-		}
-		return path, nil
-	}
 
 	cases := []struct {
 		name     string
@@ -68,7 +51,7 @@ func TestAddRunSampleSheet(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			ssPath, err := writeSampleSheet(c.filename, c.content)
+			ssPath, err := mock.WriteTempFile(t, c.filename, c.content)
 			if err != nil {
 				t.Fatal(err)
 			}
