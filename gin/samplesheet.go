@@ -46,8 +46,6 @@ func AddRunSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 
 		sampleSheet.RunID = runID
 
-		log.Printf("adding samplesheet for run %q", runID)
-
 		res, err := db.CreateSampleSheet(sampleSheet, mongo.SampleSheetWithRunId(runID))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
@@ -55,8 +53,6 @@ func AddRunSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 			})
 			return
 		}
-
-		fmt.Printf("%+v\n", res)
 
 		switch {
 		case res.MatchedCount == 0 && res.UpsertedCount == 1:

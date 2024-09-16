@@ -62,8 +62,6 @@ func TestSamplesSheetOptions(t *testing.T) {
 				}
 			}
 
-			t.Logf("%+v", opts)
-
 			if c.expectedRunID != "" && *opts.runId != c.expectedRunID {
 				t.Errorf("expected run id %q, got %q", c.expectedRunID, *opts.runId)
 			}
