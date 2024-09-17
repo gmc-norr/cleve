@@ -73,22 +73,34 @@ func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleShee
 		sampleSheet.RunID = ssOptions.runId
 	}
 
+	_, err := db.SampleSheet(SampleSheetWithUuid(sampleSheet.UUID.String()))
+	if err != nil && err != mongo.ErrNoDocuments {
+		// Actual error in querying existing sample sheet
+		return nil, err
+	}
+
+	// If the error above is nil, it means we found a sample sheet with this uuid.
+	uuidExists := err == nil
+
 	updateCond := bson.E{Key: "$gt", Value: bson.A{
 		sampleSheet.ModificationTime,
 		"$modification_time",
 	}}
 
-	return db.SampleSheetCollection().UpdateOne(context.TODO(),
-		updateKey,
-		bson.A{
-			bson.D{{Key: "$set", Value: bson.D{
-				{Key: "run_id", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						updateCond,
-						sampleSheet.RunID,
-						"$run_id",
-					}},
-				}}}}},
+	updatePipeline := mongo.Pipeline{
+		bson.D{{Key: "$set", Value: bson.D{
+			{Key: "run_id", Value: bson.D{
+				{Key: "$cond", Value: bson.A{
+					updateCond,
+					sampleSheet.RunID,
+					"$run_id",
+				}},
+			}}}}},
+	}
+
+	if !uuidExists {
+		// If the UUID doesn't exist, update the other parts of the sample sheet.
+		updatePipeline = append(updatePipeline,
 			bson.D{{Key: "$set", Value: bson.D{
 				{Key: "uuid", Value: bson.D{
 					{Key: "$cond", Value: bson.A{
@@ -121,7 +133,12 @@ func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleShee
 						"$sections",
 					}},
 				}}}}},
-		},
+		)
+	}
+
+	return db.SampleSheetCollection().UpdateOne(context.TODO(),
+		updateKey,
+		updatePipeline,
 		options.Update().SetUpsert(true),
 	)
 }
@@ -163,7 +180,7 @@ func (db DB) SampleSheet(opts ...SampleSheetOption) (cleve.SampleSheet, error) {
 
 	var key bson.D
 	if ssOptions.uuid != nil {
-		key = bson.D{{Key: "uuid", Value: ssOptions.uuid.String()}}
+		key = bson.D{{Key: "uuid", Value: ssOptions.uuid}}
 	} else if ssOptions.runId != nil {
 		key = bson.D{{Key: "run_id", Value: ssOptions.runId}}
 	}
