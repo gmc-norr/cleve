@@ -69,6 +69,10 @@ func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleShee
 		updateKey = bson.D{{Key: "run_id", Value: ssOptions.runId}}
 	}
 
+	if ssOptions.runId != nil {
+		sampleSheet.RunID = ssOptions.runId
+	}
+
 	updateCond := bson.E{Key: "$gt", Value: bson.A{
 		sampleSheet.ModificationTime,
 		"$modification_time",
