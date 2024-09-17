@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -99,6 +100,67 @@ func (s SampleSheet) Version() int {
 
 func (s SampleSheet) IsValid() bool {
 	return s.Section("Header") != nil && s.Section("Reads") != nil
+}
+
+// Merge two sample sheets. Merging is only allowed if the UUIDs of the sample
+// sheets are the same, and the run IDs are the same. An exception to this is if
+// the run ID of the current sample sheet is nil. If the run ID in the current
+// sample sheet is non-nil and different from the other sample sheet, or if the
+// UUIDs are different, an error is returned.
+func (s SampleSheet) Merge(other *SampleSheet) (*SampleSheet, error) {
+	// Can only merge if run IDs are the same, or if the run ID of this
+	// sample sheet is nil.
+	if s.RunID != nil && other.RunID != nil && *s.RunID != *other.RunID {
+		return nil, fmt.Errorf("cannot merge sample sheets with different run IDs")
+	}
+	if s.UUID != nil && other.UUID != nil && *s.UUID != *other.UUID {
+		return nil, fmt.Errorf("cannot merge sample sheets with different UUIDs")
+	}
+
+	otherNewer := other.ModificationTime.Compare(s.ModificationTime) == 1
+	mergedSampleSheet := SampleSheet{
+		UUID:     s.UUID,
+		Sections: make([]Section, 0),
+	}
+
+	if s.RunID == nil {
+		mergedSampleSheet.RunID = other.RunID
+	} else {
+		mergedSampleSheet.RunID = s.RunID
+	}
+
+	if otherNewer {
+		mergedSampleSheet.ModificationTime = other.ModificationTime
+	} else {
+		mergedSampleSheet.ModificationTime = s.ModificationTime
+	}
+
+	for _, section := range s.Sections {
+		if otherSection := other.Section(section.Name); otherSection != nil {
+			// Other sample sheet has this section too.
+			// Are they different? If so, use the newer one.
+			if !reflect.DeepEqual(section, *otherSection) {
+				if otherNewer {
+					mergedSampleSheet.Sections = append(mergedSampleSheet.Sections, *otherSection)
+				} else {
+					mergedSampleSheet.Sections = append(mergedSampleSheet.Sections, section)
+				}
+			} else {
+				mergedSampleSheet.Sections = append(mergedSampleSheet.Sections, section)
+			}
+		} else {
+			// Only found in this, add it.
+			mergedSampleSheet.Sections = append(mergedSampleSheet.Sections, section)
+		}
+	}
+	// Go through the sections of other and add any that are not in the current one
+	for _, section := range other.Sections {
+		if thisSection := s.Section(section.Name); thisSection == nil {
+			mergedSampleSheet.Sections = append(mergedSampleSheet.Sections, section)
+		}
+	}
+
+	return &mergedSampleSheet, nil
 }
 
 type Section struct {
