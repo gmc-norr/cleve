@@ -78,10 +78,10 @@ type SampleSheetInfo struct {
 }
 
 type SampleSheet struct {
-	RunID           *string    `bson:"run_id" json:"run_id"`
-	UUID            *uuid.UUID `bson:"uuid" json:"uuid"`
-	SampleSheetInfo `bson:",inline" json:",inline"`
-	Sections        []Section `bson:"sections" json:"sections"`
+	RunID    *string           `bson:"run_id" json:"run_id"`
+	UUID     *uuid.UUID        `bson:"uuid" json:"uuid"`
+	Files    []SampleSheetInfo `bson:"files" json:"files"`
+	Sections []Section         `bson:"sections" json:"sections"`
 }
 
 func (s SampleSheet) Section(name string) *Section {
@@ -102,6 +102,19 @@ func (s SampleSheet) IsValid() bool {
 	return s.Section("Header") != nil && s.Section("Reads") != nil
 }
 
+func (s SampleSheet) LastModified() (time.Time, error) {
+	var mostRecent time.Time
+	if s.Files == nil || len(s.Files) == 0 {
+		return mostRecent, fmt.Errorf("no modification times registered")
+	}
+	for i, f := range s.Files {
+		if i == 0 || mostRecent.Compare(f.ModificationTime) == -1 {
+			mostRecent = f.ModificationTime
+		}
+	}
+	return mostRecent, nil
+}
+
 // Merge two sample sheets. Merging is only allowed if the UUIDs of the sample
 // sheets are the same, and the run IDs are the same. An exception to this is if
 // the run ID of the current sample sheet is nil. If the run ID in the current
@@ -117,10 +130,15 @@ func (s SampleSheet) Merge(other *SampleSheet) (*SampleSheet, error) {
 		return nil, fmt.Errorf("cannot merge sample sheets with different UUIDs")
 	}
 
-	otherNewer := other.ModificationTime.Compare(s.ModificationTime) == 1
+	// Ignore errors, since the default will always be the oldest
+	modtime, _ := s.LastModified()
+	otherModtime, _ := other.LastModified()
+
+	otherNewer := otherModtime.Compare(modtime) == 1
 	mergedSampleSheet := SampleSheet{
 		UUID:     s.UUID,
 		Sections: make([]Section, 0),
+		Files:    make([]SampleSheetInfo, 0),
 	}
 
 	if s.RunID == nil {
@@ -129,10 +147,16 @@ func (s SampleSheet) Merge(other *SampleSheet) (*SampleSheet, error) {
 		mergedSampleSheet.RunID = s.RunID
 	}
 
-	if otherNewer {
-		mergedSampleSheet.ModificationTime = other.ModificationTime
-	} else {
-		mergedSampleSheet.ModificationTime = s.ModificationTime
+	if s.Files != nil {
+		for _, f := range s.Files {
+			mergedSampleSheet.Files = append(mergedSampleSheet.Files, f)
+		}
+	}
+
+	if other.Files != nil {
+		for _, f := range other.Files {
+			mergedSampleSheet.Files = append(mergedSampleSheet.Files, f)
+		}
 	}
 
 	for _, section := range s.Sections {
@@ -466,11 +490,12 @@ func ReadSampleSheet(filename string) (SampleSheet, error) {
 		return sampleSheet, err
 	}
 
-	sampleSheet.Path, err = filepath.Abs(filename)
+	sampleSheet.Files = make([]SampleSheetInfo, 1)
+	sampleSheet.Files[0].Path, err = filepath.Abs(filename)
 	if err != nil {
 		return sampleSheet, err
 	}
-	sampleSheet.ModificationTime = finfo.ModTime()
+	sampleSheet.Files[0].ModificationTime = finfo.ModTime()
 	return sampleSheet, nil
 }
 
