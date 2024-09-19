@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -169,6 +170,10 @@ func (s SampleSheet) Merge(other *SampleSheet) (*SampleSheet, error) {
 			ModificationTime: mt,
 		})
 	}
+
+	slices.SortStableFunc(mergedSampleSheet.Files, func(a, b SampleSheetInfo) int {
+		return a.ModificationTime.Compare(b.ModificationTime)
+	})
 
 	for _, section := range s.Sections {
 		if otherSection := other.Section(section.Name); otherSection != nil {
