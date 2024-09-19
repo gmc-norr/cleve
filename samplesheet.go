@@ -28,6 +28,8 @@ const (
 	DataSection
 )
 
+const SampleMetadataSection string = "cleve_data"
+
 func (s SectionType) String() string {
 	switch s {
 	case SettingsSection:
@@ -99,8 +101,39 @@ func (s SampleSheet) Version() int {
 	return v
 }
 
-func (s SampleSheet) IsValid() bool {
-	return s.Section("Header") != nil && s.Section("Reads") != nil
+// Validate a sample sheet. Returns an error if something is not
+// right, and returns nil if all is good.
+func (s SampleSheet) Validate() error {
+	metadata := s.Section(SampleMetadataSection)
+	if metadata != nil {
+		required := map[string]bool{
+			"sample_id":        false,
+			"sample_name":      false,
+			"seq_type":         false,
+			"pipeline":         false,
+			"pipeline_version": false,
+			"destination":      false,
+		}
+		for _, c := range metadata.Rows[0] {
+			if _, ok := required[c]; ok {
+				required[c] = true
+			}
+		}
+		for c, found := range required {
+			if !found {
+				return fmt.Errorf("required metadata colum not found: %q", c)
+			}
+		}
+	}
+
+	if s.Section("Header") == nil {
+		return fmt.Errorf(`required section "Header" not found`)
+	}
+	if s.Section("Reads") == nil {
+		return fmt.Errorf(`required section "Reads" not found`)
+	}
+
+	return nil
 }
 
 func (s SampleSheet) LastModified() (time.Time, error) {
@@ -473,8 +506,8 @@ func ParseSampleSheet(r *bufio.Reader) (SampleSheet, error) {
 		sheet.Sections = append(sheet.Sections, s)
 	}
 
-	if !sheet.IsValid() {
-		return sheet, fmt.Errorf("invalid sample sheet")
+	if err := sheet.Validate(); err != nil {
+		return sheet, fmt.Errorf("invalid sample sheet: %s", err.Error())
 	}
 
 	// Set the UUID of the sample sheet if one has been defined

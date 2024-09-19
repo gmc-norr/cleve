@@ -281,8 +281,10 @@ LibraryPrepkits,prepkit1;prepkit2`),
 			if len(s.Sections) != len(c.Sections) {
 				t.Errorf("expected %d sections, found %d", len(c.Sections), len(s.Sections))
 			}
-			if s.IsValid() != c.Valid {
-				t.Errorf("expected valid %t, found %t", c.Valid, s.IsValid())
+			if err := s.Validate(); err != nil && c.Valid {
+				t.Error("expected valid sample sheet, but is invalid")
+			} else if err == nil && !c.Valid {
+				t.Error("expected invalid sample sheet, but is valid")
 			}
 			for i, section := range c.Sections {
 				ssSection := s.Section(section)
@@ -1289,6 +1291,49 @@ func TestMergeSampleSheets(t *testing.T) {
 
 			if !testCase.shouldError && !reflect.DeepEqual(m, &testCase.mergedSampleSheet) {
 				t.Errorf("merging did not result in the expected samplesheet.\n\nExpected: %+v\n\nGot: %+v", &testCase.mergedSampleSheet, m)
+			}
+		})
+	}
+}
+
+func TestSampleMetadata(t *testing.T) {
+	testcases := []struct {
+		name    string
+		content string
+		valid   bool
+	}{
+		{
+			name:    "valid metadata",
+			content: "[Header]\nRunName,run1\n[Reads]\n151\n151\n[cleve_data]\nsample_id,sample_name,seq_type,pipeline,pipeline_version,destination",
+			valid:   true,
+		},
+		{
+			name:    "valid unordered metadata with extra columns",
+			content: "[Header]\nRunName,run1\n[Reads]\n151\n151\n[cleve_data]\nsample_id,reference,owner,seq_type,pipeline,pipeline_version,destination,sample_name",
+			valid:   true,
+		},
+		{
+			name:    "invalid metadata",
+			content: "[Header]\nRunName,run1\n[Reads]\n151\n151\n[cleve_data]\nsample_id,sample_name,reference",
+			valid:   false,
+		},
+	}
+
+	dir := t.TempDir()
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			sspath := filepath.Join(dir, "SampleSheet.csv")
+			err := os.WriteFile(sspath, []byte(testcase.content), 0666)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = ReadSampleSheet(sspath)
+			if err != nil && testcase.valid {
+				t.Fatalf("got error, expected nil: %s", err.Error())
+			}
+			if err == nil && !testcase.valid {
+				t.Fatal("got nil, expected error")
 			}
 		})
 	}
