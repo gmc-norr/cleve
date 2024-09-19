@@ -268,6 +268,26 @@ func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
 		}},
 	}
 
+	// Get new samplesheet information
+	lookupStage2 := bson.D{
+		{
+			Key: "$lookup",
+			Value: bson.M{
+				"from":         "samplesheets",
+				"localField":   "run_id",
+				"foreignField": "run_id",
+				"as":           "samplesheets",
+				"pipeline": bson.A{
+					bson.M{
+						"$project": bson.M{
+							"files": 1,
+						},
+					},
+				},
+			},
+		},
+	}
+
 	// Count number of analyses
 	setStage := bson.D{
 		{Key: "$set", Value: bson.D{
@@ -295,9 +315,9 @@ func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
 
 	var aggPipeline mongo.Pipeline
 	if brief {
-		aggPipeline = mongo.Pipeline{matchStage, setStage, unsetStage, sortStage, lookupStage, unwindStage}
+		aggPipeline = mongo.Pipeline{matchStage, setStage, unsetStage, sortStage, lookupStage, unwindStage, lookupStage2}
 	} else {
-		aggPipeline = mongo.Pipeline{matchStage, setStage, sortStage, lookupStage, unwindStage}
+		aggPipeline = mongo.Pipeline{matchStage, setStage, sortStage, lookupStage, unwindStage, lookupStage2}
 	}
 
 	coll := db.RunCollection()

@@ -73,74 +73,20 @@ func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleShee
 		sampleSheet.RunID = ssOptions.runId
 	}
 
-	_, err := db.SampleSheet(SampleSheetWithUuid(sampleSheet.UUID.String()))
+	existingSampleSheet, err := db.SampleSheet(SampleSheetWithUuid(sampleSheet.UUID.String()))
 	if err != nil && err != mongo.ErrNoDocuments {
-		// Actual error in querying existing sample sheet
 		return nil, err
 	}
 
-	// If the error above is nil, it means we found a sample sheet with this uuid.
-	uuidExists := err == nil
-
-	updateCond := bson.E{Key: "$gt", Value: bson.A{
-		sampleSheet.ModificationTime,
-		"$modification_time",
-	}}
-
-	updatePipeline := mongo.Pipeline{
-		bson.D{{Key: "$set", Value: bson.D{
-			{Key: "run_id", Value: bson.D{
-				{Key: "$cond", Value: bson.A{
-					updateCond,
-					sampleSheet.RunID,
-					"$run_id",
-				}},
-			}}}}},
+	updatedSampleSheet := &sampleSheet
+	if err == nil {
+		updatedSampleSheet, err = existingSampleSheet.Merge(&sampleSheet)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if !uuidExists {
-		// If the UUID doesn't exist, update the other parts of the sample sheet.
-		updatePipeline = append(updatePipeline,
-			bson.D{{Key: "$set", Value: bson.D{
-				{Key: "uuid", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						updateCond,
-						sampleSheet.UUID,
-						"$uuid",
-					}},
-				}}}}},
-			bson.D{{Key: "$set", Value: bson.D{
-				{Key: "modification_time", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						updateCond,
-						sampleSheet.ModificationTime,
-						"$modification_time",
-					}},
-				}}}}},
-			bson.D{{Key: "$set", Value: bson.D{
-				{Key: "path", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						updateCond,
-						sampleSheet.Path,
-						"$path",
-					}},
-				}}}}},
-			bson.D{{Key: "$set", Value: bson.D{
-				{Key: "sections", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						updateCond,
-						sampleSheet.Sections,
-						"$sections",
-					}},
-				}}}}},
-		)
-	}
-
-	return db.SampleSheetCollection().UpdateOne(context.TODO(),
-		updateKey,
-		updatePipeline,
-		options.Update().SetUpsert(true),
-	)
+	return db.SampleSheetCollection().ReplaceOne(context.TODO(), updateKey, updatedSampleSheet, options.Replace().SetUpsert(true))
 }
 
 func (db DB) DeleteSampleSheet(runID string) error {
