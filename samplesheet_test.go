@@ -831,11 +831,71 @@ func TestMergeSampleSheets(t *testing.T) {
 			},
 		},
 		{
+			name: "identical sections and file names, other is newer",
+			sampleSheet: SampleSheet{
+				RunID: &run1_1,
+				UUID:  &uuid1_1,
+				Files: []SampleSheetInfo{
+					{
+						Path:             path1,
+						ModificationTime: older,
+					},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_2,
+				UUID:  &uuid1_2,
+				Files: []SampleSheetInfo{
+					{
+						Path:             path1,
+						ModificationTime: newer,
+					},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				UUID:  &uuid1_1,
+				Files: []SampleSheetInfo{
+					{
+						Path:             path1,
+						ModificationTime: newer,
+					},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "other has more sections",
 			sampleSheet: SampleSheet{
 				RunID: &run1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
+					{Path: path1, ModificationTime: older},
 				},
 				Sections: []Section{
 					{
@@ -850,7 +910,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			otherSampleSheet: SampleSheet{
 				RunID: &run1_2,
 				Files: []SampleSheetInfo{
-					{ModificationTime: newer},
+					{Path: path2, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -872,8 +932,8 @@ func TestMergeSampleSheets(t *testing.T) {
 			mergedSampleSheet: SampleSheet{
 				RunID: &run1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
-					{ModificationTime: newer},
+					{Path: path1, ModificationTime: older},
+					{Path: path2, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -898,7 +958,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			sampleSheet: SampleSheet{
 				RunID: &run1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
+					{Path: path1, ModificationTime: older},
 				},
 				Sections: []Section{
 					{
@@ -920,7 +980,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			otherSampleSheet: SampleSheet{
 				RunID: &run1_2,
 				Files: []SampleSheetInfo{
-					{ModificationTime: newer},
+					{Path: path2, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -935,8 +995,8 @@ func TestMergeSampleSheets(t *testing.T) {
 			mergedSampleSheet: SampleSheet{
 				RunID: &run1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
-					{ModificationTime: newer},
+					{Path: path1, ModificationTime: older},
+					{Path: path2, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -961,7 +1021,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			sampleSheet: SampleSheet{
 				RunID: &run1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
+					{Path: path1, ModificationTime: older},
 				},
 				Sections: []Section{
 					{
@@ -976,7 +1036,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			otherSampleSheet: SampleSheet{
 				RunID: &run1_2,
 				Files: []SampleSheetInfo{
-					{ModificationTime: newer},
+					{Path: path2, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -991,8 +1051,8 @@ func TestMergeSampleSheets(t *testing.T) {
 			mergedSampleSheet: SampleSheet{
 				RunID: &run1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
-					{ModificationTime: newer},
+					{Path: path1, ModificationTime: older},
+					{Path: path2, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -1010,7 +1070,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			sampleSheet: SampleSheet{
 				RunID: &run1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: newer},
+					{Path: path1, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -1025,7 +1085,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			otherSampleSheet: SampleSheet{
 				RunID: &run1_2,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
+					{Path: path2, ModificationTime: older},
 				},
 				Sections: []Section{
 					{
@@ -1047,8 +1107,8 @@ func TestMergeSampleSheets(t *testing.T) {
 			mergedSampleSheet: SampleSheet{
 				RunID: &run1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: newer},
-					{ModificationTime: older},
+					{Path: path1, ModificationTime: newer},
+					{Path: path2, ModificationTime: older},
 				},
 				Sections: []Section{
 					{
@@ -1073,7 +1133,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			sampleSheet: SampleSheet{
 				RunID: &run1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: newer},
+					{Path: path1, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -1088,7 +1148,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			otherSampleSheet: SampleSheet{
 				RunID: &run2_2,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
+					{Path: path2, ModificationTime: older},
 				},
 				Sections: []Section{
 					{
@@ -1115,7 +1175,7 @@ func TestMergeSampleSheets(t *testing.T) {
 				RunID: &run1_1,
 				UUID:  &uuid1_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: newer},
+					{Path: path1, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -1131,7 +1191,7 @@ func TestMergeSampleSheets(t *testing.T) {
 				RunID: &run1_2,
 				UUID:  &uuid2_1,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
+					{Path: path2, ModificationTime: older},
 				},
 				Sections: []Section{
 					{
@@ -1157,7 +1217,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			sampleSheet: SampleSheet{
 				RunID: nil,
 				Files: []SampleSheetInfo{
-					{ModificationTime: newer},
+					{Path: path1, ModificationTime: newer},
 				},
 				Sections: []Section{
 					{
@@ -1172,7 +1232,7 @@ func TestMergeSampleSheets(t *testing.T) {
 			otherSampleSheet: SampleSheet{
 				RunID: &run2_2,
 				Files: []SampleSheetInfo{
-					{ModificationTime: older},
+					{Path: path2, ModificationTime: older},
 				},
 				Sections: []Section{
 					{
@@ -1194,8 +1254,8 @@ func TestMergeSampleSheets(t *testing.T) {
 			mergedSampleSheet: SampleSheet{
 				RunID: &run2_2,
 				Files: []SampleSheetInfo{
-					{ModificationTime: newer},
-					{ModificationTime: older},
+					{Path: path1, ModificationTime: newer},
+					{Path: path2, ModificationTime: older},
 				},
 				Sections: []Section{
 					{

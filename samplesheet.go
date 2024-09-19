@@ -147,16 +147,27 @@ func (s SampleSheet) Merge(other *SampleSheet) (*SampleSheet, error) {
 		mergedSampleSheet.RunID = s.RunID
 	}
 
+	sampleSheetFiles := make(map[string]time.Time)
+
 	if s.Files != nil {
-		for _, f := range s.Files {
-			mergedSampleSheet.Files = append(mergedSampleSheet.Files, f)
+		for _, f := range append(s.Files, other.Files...) {
+			if mt, ok := sampleSheetFiles[f.Path]; !ok {
+				// We haven't seen this file before, add it
+				sampleSheetFiles[f.Path] = f.ModificationTime
+			} else {
+				// We haven't seen it, update the modification time, but only if it's newer.
+				if f.ModificationTime.Compare(mt) == 1 {
+					sampleSheetFiles[f.Path] = f.ModificationTime
+				}
+			}
 		}
 	}
 
-	if other.Files != nil {
-		for _, f := range other.Files {
-			mergedSampleSheet.Files = append(mergedSampleSheet.Files, f)
-		}
+	for p, mt := range sampleSheetFiles {
+		mergedSampleSheet.Files = append(mergedSampleSheet.Files, SampleSheetInfo{
+			Path:             p,
+			ModificationTime: mt,
+		})
 	}
 
 	for _, section := range s.Sections {
