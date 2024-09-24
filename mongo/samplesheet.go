@@ -73,9 +73,13 @@ func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleShee
 		sampleSheet.RunID = ssOptions.runId
 	}
 
-	existingSampleSheet, err := db.SampleSheet(SampleSheetWithUuid(sampleSheet.UUID.String()))
-	if err != nil && err != mongo.ErrNoDocuments {
-		return nil, err
+	var existingSampleSheet cleve.SampleSheet
+	var err error
+	if sampleSheet.UUID != nil {
+		existingSampleSheet, err = db.SampleSheet(SampleSheetWithUuid(sampleSheet.UUID.String()))
+		if err != nil && err != mongo.ErrNoDocuments {
+			return nil, err
+		}
 	}
 
 	updatedSampleSheet := &sampleSheet
