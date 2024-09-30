@@ -150,16 +150,14 @@ func (s SampleSheet) Merge(other *SampleSheet) (*SampleSheet, error) {
 
 	sampleSheetFiles := make(map[string]time.Time)
 
-	if s.Files != nil {
-		for _, f := range append(s.Files, other.Files...) {
-			if mt, ok := sampleSheetFiles[f.Path]; !ok {
-				// We haven't seen this file before, add it
+	for _, f := range append(s.Files, other.Files...) {
+		if mt, ok := sampleSheetFiles[f.Path]; !ok {
+			// We haven't seen this file before, add it
+			sampleSheetFiles[f.Path] = f.ModificationTime
+		} else {
+			// We haven't seen it, update the modification time, but only if it's newer.
+			if f.ModificationTime.Compare(mt) == 1 {
 				sampleSheetFiles[f.Path] = f.ModificationTime
-			} else {
-				// We haven't seen it, update the modification time, but only if it's newer.
-				if f.ModificationTime.Compare(mt) == 1 {
-					sampleSheetFiles[f.Path] = f.ModificationTime
-				}
 			}
 		}
 	}
