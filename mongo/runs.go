@@ -92,6 +92,68 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		}},
 	})
 
+	pipeline = append(pipeline, bson.D{
+		{Key: "$unwind", Value: bson.M{
+			"path":                       "$samplesheet",
+			"preserveNullAndEmptyArrays": true,
+		}},
+	})
+
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$set",
+			Value: bson.M{
+				"samplesheet": bson.M{
+					"$cond": bson.M{
+						"if":   bson.M{"$ifNull": bson.A{"$samplesheet.path", nil}},
+						"then": "$samplesheet",
+						"else": nil,
+					},
+				},
+			},
+		},
+	})
+
+	// Add new samplesheet information
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$lookup",
+			Value: bson.M{
+				"from":         "samplesheets",
+				"localField":   "run_id",
+				"foreignField": "run_id",
+				"as":           "samplesheets",
+				"pipeline": bson.A{
+					bson.D{
+						{
+							Key: "$project",
+							Value: bson.M{
+								"files": 1,
+							},
+						},
+					},
+					bson.D{
+						{
+							Key: "$unwind",
+							Value: bson.M{
+								"path": "$files",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$set",
+			Value: bson.M{
+				"samplesheets": "$samplesheets.files",
+			},
+		},
+	})
+
 	// Count number of analyses
 	pipeline = append(pipeline, bson.D{
 		{Key: "$set", Value: bson.D{
@@ -116,13 +178,6 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 			{Key: "$unset", Value: bson.A{"run_parameters", "analysis"}},
 		})
 	}
-
-	pipeline = append(pipeline, bson.D{
-		{Key: "$unwind", Value: bson.M{
-			"path":                       "$samplesheet",
-			"preserveNullAndEmptyArrays": true,
-		}},
-	})
 
 	runFacet := mongo.Pipeline{}
 
