@@ -69,6 +69,12 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 		}
 	}
 
+	// Translate the old type of samplesheet to the new type
+	if r.SampleSheet != nil && len(r.SampleSheetFiles) == 0 {
+		r.SampleSheetFiles = append(r.SampleSheetFiles, *r.SampleSheet)
+		r.SampleSheet = nil
+	}
+
 	ra := rawData.Lookup("analysis")
 	if len(ra.Value) > 0 {
 		err = ra.Unmarshal(&r.Analysis)
