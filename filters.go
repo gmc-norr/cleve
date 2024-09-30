@@ -24,6 +24,7 @@ func (f PaginationFilter) Validate() error {
 // Run filtering.
 type RunFilter struct {
 	RunID            string    `form:"run_id"`
+	RunIdQuery       string    `form:"run_id_query"`
 	Brief            bool      `form:"brief"`
 	Platform         string    `form:"platform"`
 	State            string    `form:"state"`
@@ -38,6 +39,10 @@ func (f RunFilter) UrlParams() string {
 	sep := ""
 	if f.RunID != "" {
 		p += fmt.Sprintf("%srun_id=%s", sep, f.RunID)
+		sep = "&"
+	}
+	if f.RunIdQuery != "" {
+		p += fmt.Sprintf("%srun_id_query=%s", sep, f.RunIdQuery)
 		sep = "&"
 	}
 	if f.Platform != "" {
