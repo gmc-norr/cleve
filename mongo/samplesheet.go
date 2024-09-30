@@ -73,16 +73,22 @@ func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleShee
 		sampleSheet.RunID = ssOptions.runId
 	}
 
+	updatedSampleSheet := &sampleSheet
 	var existingSampleSheet cleve.SampleSheet
 	var err error
+	// Either UUID or RunID are non-nil, prioritise UUID for merging
 	if sampleSheet.UUID != nil {
 		existingSampleSheet, err = db.SampleSheet(SampleSheetWithUuid(sampleSheet.UUID.String()))
 		if err != nil && err != mongo.ErrNoDocuments {
 			return nil, err
 		}
+	} else {
+		existingSampleSheet, err = db.SampleSheet(SampleSheetWithRunId(*sampleSheet.RunID))
+		if err != nil && err != mongo.ErrNoDocuments {
+			return nil, err
+		}
 	}
 
-	updatedSampleSheet := &sampleSheet
 	if err == nil {
 		updatedSampleSheet, err = existingSampleSheet.Merge(&sampleSheet)
 		if err != nil {
