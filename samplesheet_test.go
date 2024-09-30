@@ -1275,6 +1275,40 @@ func TestMergeSampleSheets(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "merge empty sample sheet",
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			sampleSheet: SampleSheet{},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
