@@ -50,7 +50,7 @@ var (
 				log.Fatal(err)
 			}
 
-			res, err := db.CreateSampleSheet(runID, sampleSheet)
+			res, err := db.CreateSampleSheet(sampleSheet, mongo.SampleSheetWithRunId(runID))
 			if err != nil {
 				log.Fatal(err)
 			}

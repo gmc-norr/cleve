@@ -176,13 +176,14 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/api/runs/:runId", RunHandler(db))
 	r.GET("/api/runs/:runId/analysis", AnalysesHandler(db))
 	r.GET("/api/runs/:runId/analysis/:analysisId", AnalysisHandler(db))
-	r.GET("/api/runs/:runId/samplesheet", SampleSheetHandler(db))
+	r.GET("/api/runs/:runId/samplesheet", RunSampleSheetHandler(db))
 	r.GET("/api/runs/:runId/qc", RunQcHandler(db))
 	r.GET("/api/platforms", PlatformsHandler(db))
 	r.GET("/api/platforms/:platformName", GetPlatformHandler(db))
 	r.GET("/api/qc/:platformName", AllRunQcHandler(db))
 	r.GET("/api/samples", SamplesHandler(db))
 	r.GET("/api/samples/:sampleId", SampleHandler(db))
+	r.GET("/api/samplesheets/:uuid", SampleSheetHandler(db))
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))
@@ -191,10 +192,11 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	authEndpoints.PATCH("/api/runs/:runId/analysis/:analysisId", UpdateAnalysisHandler(db))
 	authEndpoints.PATCH("/api/runs/:runId/path", UpdateRunPathHandler(db))
 	authEndpoints.PATCH("/api/runs/:runId/state", UpdateRunStateHandler(db))
-	authEndpoints.POST("/api/runs/:runId/samplesheet", AddSampleSheetHandler(db))
+	authEndpoints.POST("/api/runs/:runId/samplesheet", AddRunSampleSheetHandler(db))
 	authEndpoints.POST("/api/runs/:runId/qc", AddRunQcHandler(db))
 	authEndpoints.POST("/api/platforms", AddPlatformHandler(db))
 	authEndpoints.POST("/api/samples", AddSampleHandler(db))
+	authEndpoints.POST("/api/samplesheets", AddSampleSheetHandler(db))
 
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path

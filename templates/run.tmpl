@@ -72,7 +72,7 @@
 <section class="my-8 border-t">
     <h3 class="text-2xl my-4">Samplesheet</h3>
 
-    {{ if eq .samplesheet.RunID "" }}
+    {{ if eq .samplesheet.RunID nil }}
     <p>No samplesheet has been imported for this run.</p>
     {{ else }}
         {{ range .samplesheet.Sections }}

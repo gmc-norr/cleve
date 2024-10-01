@@ -6,60 +6,97 @@ import (
 	"log"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Add a samplesheet to the database. If a samplesheet for the run already
+type sampleSheetOptions struct {
+	runId *string
+	uuid  *uuid.UUID
+}
+
+type SampleSheetOption func(*sampleSheetOptions) error
+
+// SampleSheetWithRunId associates the sample sheet with a run ID.
+func SampleSheetWithRunId(runId string) SampleSheetOption {
+	return func(o *sampleSheetOptions) error {
+		if runId == "" {
+			return fmt.Errorf("run id must not be empty")
+		}
+		if len(runId) > 128 {
+			return fmt.Errorf("run id cannot be longer than 128 characters")
+		}
+		o.runId = &runId
+		return nil
+	}
+}
+
+// SampleSheetWithUuid associates the sample sheet with a UUID.
+func SampleSheetWithUuid(id string) SampleSheetOption {
+	return func(o *sampleSheetOptions) error {
+		ssUuid, err := uuid.Parse(id)
+		if err != nil {
+			return err
+		}
+		o.uuid = &ssUuid
+		return nil
+	}
+}
+
+// Add a sample sheet to the database. If the same sample sheet already
 // exists, it will be updated, but only if the modification time is newer than
-// the existing samplesheet.
-func (db DB) CreateSampleSheet(runID string, sampleSheet cleve.SampleSheet) (*cleve.UpdateResult, error) {
-	sampleSheet.RunID = runID
+// the existing sample sheet. The UUID is the main identifier for the sample
+// sheet, but if that is missing, the run ID from the options is then used.
+// If neither a UUID nor a run ID can be found, an error is returned.
+func (db DB) CreateSampleSheet(sampleSheet cleve.SampleSheet, opts ...SampleSheetOption) (*cleve.UpdateResult, error) {
+	var ssOptions sampleSheetOptions
+	for _, opt := range opts {
+		if err := opt(&ssOptions); err != nil {
+			return nil, err
+		}
+	}
 
-	updateCond := bson.E{Key: "$gt", Value: bson.A{
-		sampleSheet.ModificationTime,
-		"$modification_time",
-	}}
+	if sampleSheet.UUID == nil && ssOptions.runId == nil {
+		return nil, fmt.Errorf("run id not supplied, and samplesheet has no uuid")
+	}
 
-	return db.SampleSheetCollection().UpdateOne(context.TODO(),
-		bson.D{{Key: "run_id", Value: runID}},
-		bson.A{
-			bson.D{{Key: "$set", Value: bson.D{
-				{Key: "run_id", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						updateCond,
-						sampleSheet.RunID,
-						"$run_id",
-					}},
-				}}}}},
-			bson.D{{Key: "$set", Value: bson.D{
-				{Key: "modification_time", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						updateCond,
-						sampleSheet.ModificationTime,
-						"$modification_time",
-					}},
-				}}}}},
-			bson.D{{Key: "$set", Value: bson.D{
-				{Key: "path", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						updateCond,
-						sampleSheet.Path,
-						"$path",
-					}},
-				}}}}},
-			bson.D{{Key: "$set", Value: bson.D{
-				{Key: "sections", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						updateCond,
-						sampleSheet.Sections,
-						"$sections",
-					}},
-				}}}}},
-		},
-		options.Update().SetUpsert(true),
-	)
+	var updateKey bson.D
+	if sampleSheet.UUID != nil {
+		updateKey = bson.D{{Key: "uuid", Value: sampleSheet.UUID}}
+	} else {
+		updateKey = bson.D{{Key: "run_id", Value: ssOptions.runId}}
+	}
+
+	if ssOptions.runId != nil {
+		sampleSheet.RunID = ssOptions.runId
+	}
+
+	updatedSampleSheet := &sampleSheet
+	var existingSampleSheet cleve.SampleSheet
+	var err error
+	// Either UUID or RunID are non-nil, prioritise UUID for merging
+	if sampleSheet.UUID != nil {
+		existingSampleSheet, err = db.SampleSheet(SampleSheetWithUuid(sampleSheet.UUID.String()))
+		if err != nil && err != mongo.ErrNoDocuments {
+			return nil, err
+		}
+	} else {
+		existingSampleSheet, err = db.SampleSheet(SampleSheetWithRunId(*sampleSheet.RunID))
+		if err != nil && err != mongo.ErrNoDocuments {
+			return nil, err
+		}
+	}
+
+	if err == nil {
+		updatedSampleSheet, err = existingSampleSheet.Merge(&sampleSheet)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return db.SampleSheetCollection().ReplaceOne(context.TODO(), updateKey, updatedSampleSheet, options.Replace().SetUpsert(true))
 }
 
 func (db DB) DeleteSampleSheet(runID string) error {
@@ -82,9 +119,29 @@ func (db DB) SampleSheets() ([]cleve.SampleSheet, error) {
 	return sampleSheets, nil
 }
 
-func (db DB) SampleSheet(runID string) (cleve.SampleSheet, error) {
+// Get a samplesheet either by run ID or UUID, passed by options.
+func (db DB) SampleSheet(opts ...SampleSheetOption) (cleve.SampleSheet, error) {
 	var sampleSheet cleve.SampleSheet
-	err := db.SampleSheetCollection().FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runID}}).Decode(&sampleSheet)
+
+	if len(opts) == 0 {
+		return sampleSheet, fmt.Errorf("at least one option must be supplied")
+	}
+
+	var ssOptions sampleSheetOptions
+	for _, opt := range opts {
+		if err := opt(&ssOptions); err != nil {
+			return sampleSheet, err
+		}
+	}
+
+	var key bson.D
+	if ssOptions.uuid != nil {
+		key = bson.D{{Key: "uuid", Value: ssOptions.uuid}}
+	} else if ssOptions.runId != nil {
+		key = bson.D{{Key: "run_id", Value: ssOptions.runId}}
+	}
+
+	err := db.SampleSheetCollection().FindOne(context.TODO(), key).Decode(&sampleSheet)
 	return sampleSheet, err
 }
 
@@ -114,11 +171,39 @@ func (db DB) SampleSheetIndex() ([]map[string]string, error) {
 }
 
 func (db DB) SetSampleSheetIndex() (string, error) {
-	indexModel := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "run_id", Value: 1},
+	indexModels := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "run_id", Value: 1},
+			},
+			Options: options.Index().SetUnique(true).SetPartialFilterExpression(
+				bson.D{
+					{
+						Key: "run_id",
+						Value: bson.D{{
+							Key:   "$type",
+							Value: "string",
+						}},
+					},
+				},
+			),
 		},
-		Options: options.Index().SetUnique(true),
+		{
+			Keys: bson.D{
+				{Key: "uuid", Value: 1},
+			},
+			Options: options.Index().SetUnique(true).SetPartialFilterExpression(
+				bson.D{
+					{
+						Key: "uuid",
+						Value: bson.D{{
+							Key:   "$type",
+							Value: "binData",
+						}},
+					},
+				},
+			),
+		},
 	}
 
 	// TODO: do this as a transaction and roll back if anything fails
@@ -129,6 +214,6 @@ func (db DB) SetSampleSheetIndex() (string, error) {
 
 	log.Printf("Dropped %d indexes\n", res.Lookup("nIndexesWas").Int32())
 
-	name, err := db.SampleSheetCollection().Indexes().CreateOne(context.TODO(), indexModel)
-	return name, err
+	name, err := db.SampleSheetCollection().Indexes().CreateMany(context.TODO(), indexModels)
+	return fmt.Sprintf("%v", name), err
 }

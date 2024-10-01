@@ -12,15 +12,15 @@ import (
 
 // Interface for reading samplesheets from the database.
 type SampleSheetGetter interface {
-	SampleSheet(string) (cleve.SampleSheet, error)
+	SampleSheet(...mongo.SampleSheetOption) (cleve.SampleSheet, error)
 }
 
 // Interface for storing samplesheets in the database.
 type SampleSheetSetter interface {
-	CreateSampleSheet(string, cleve.SampleSheet) (*cleve.UpdateResult, error)
+	CreateSampleSheet(cleve.SampleSheet, ...mongo.SampleSheetOption) (*cleve.UpdateResult, error)
 }
 
-func AddSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
+func AddRunSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runID := c.Param("runId")
 
@@ -44,19 +44,15 @@ func AddSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 			return
 		}
 
-		sampleSheet.RunID = runID
+		sampleSheet.RunID = &runID
 
-		log.Printf("adding samplesheet for run %q", runID)
-
-		res, err := db.CreateSampleSheet(runID, sampleSheet)
+		res, err := db.CreateSampleSheet(sampleSheet, mongo.SampleSheetWithRunId(runID))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
 			})
 			return
 		}
-
-		fmt.Printf("%+v\n", res)
 
 		switch {
 		case res.MatchedCount == 0 && res.UpsertedCount == 1:
@@ -75,7 +71,7 @@ func AddSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 	}
 }
 
-func SampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
+func RunSampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runID := c.Param("runId")
 		sectionName := c.Query("section")
@@ -96,7 +92,7 @@ func SampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
 			return
 		}
 
-		sampleSheet, err := db.SampleSheet(runID)
+		sampleSheet, err := db.SampleSheet(mongo.SampleSheetWithRunId(runID))
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
@@ -148,5 +144,53 @@ func SampleSheetHandler(db SampleSheetGetter) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, sampleSheet)
+	}
+}
+
+func AddSampleSheetHandler(db SampleSheetSetter) func(*gin.Context) {
+	return func(c *gin.Context) {
+		sampleSheetRequest := struct {
+			SampleSheetPath string  `json:"samplesheet" binding:"required"`
+			RunId           *string `json:"run_id,omitempty"`
+		}{}
+
+		if err := c.ShouldBindJSON(&sampleSheetRequest); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid request: %s", err.Error())})
+			return
+		}
+
+		sampleSheet, err := cleve.ReadSampleSheet(sampleSheetRequest.SampleSheetPath)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if (sampleSheetRequest.RunId == nil || *sampleSheetRequest.RunId == "") && sampleSheet.UUID == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "no run ID supplied, and UUID not found in samplesheet"})
+			return
+		}
+
+		sampleSheet.RunID = sampleSheetRequest.RunId
+
+		res, err := db.CreateSampleSheet(sampleSheet)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		switch {
+		case res.MatchedCount == 0 && res.UpsertedCount == 1:
+			c.JSON(http.StatusOK, gin.H{"message": "created samplesheet", "run_id": sampleSheetRequest.RunId, "uuid": sampleSheet.UUID})
+		case res.MatchedCount == 1 && res.ModifiedCount == 1:
+			c.JSON(http.StatusOK, gin.H{"message": "updated samplesheet", "run_id": sampleSheetRequest.RunId, "uuid": sampleSheet.UUID})
+		case res.MatchedCount == 1 && res.ModifiedCount == 0:
+			c.JSON(http.StatusOK, gin.H{"message": "samplesheet not updated; a more recent version already exists", "run_id": sampleSheetRequest.RunId, "uuid": sampleSheet.UUID})
+		}
+	}
+}
+
+func SampleSheetHandler(db SampleSheetGetter) func(*gin.Context) {
+	return func(c *gin.Context) {
+		c.AbortWithStatus(http.StatusNotImplemented)
 	}
 }

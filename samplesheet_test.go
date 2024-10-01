@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestSampleSheet(t *testing.T) {
@@ -27,21 +29,26 @@ func TestSampleSheet(t *testing.T) {
 		{
 			"case 1",
 			2,
-			false,
-			[]string{"Header"},
-			[]int{4},
-			[]SectionType{SettingsSection},
+			true,
+			[]string{"Header", "Reads"},
+			[]int{4, 1},
+			[]SectionType{SettingsSection, SettingsSection},
 			[]byte(`[Header]
 FileFormatVersion,2
 RunName,TestRun
 InstrumentPlatform,NovaSeq
-InstrumentType,NovaSeq X Plus`),
+InstrumentType,NovaSeq X Plus
+[Reads]
+151`),
 			map[string]map[string]string{
 				"Header": {
 					"FileFormatVersion":  "2",
 					"RunName":            "TestRun",
 					"InstrumentPlatform": "NovaSeq",
 					"InstrumentType":     "NovaSeq X Plus",
+				},
+				"Reads": {
+					"151": "151",
 				},
 			},
 			nil,
@@ -376,6 +383,8 @@ func TestGettingNonexistentValues(t *testing.T) {
 	r := bufio.NewReader(bytes.NewReader([]byte(`[Header]
 key1,val1
 key2,val2
+[Reads]
+151
 `)))
 	s, err := ParseSampleSheet(r)
 	if err != nil {
@@ -594,6 +603,726 @@ func TestMostRecentSamplesheet(t *testing.T) {
 			}
 			if len(c.filenames) > 0 && ss != filepath.Join(dir, c.filenames[0]) {
 				t.Errorf(`expected to get "%s", got "%s"`, c.filenames[0], ss)
+			}
+		})
+	}
+}
+
+func TestSampleSheetUUID(t *testing.T) {
+	cases := []struct {
+		name    string
+		data    []byte
+		hasUuid bool
+	}{
+		{
+			name: "SampleSheet with UUID",
+			data: []byte(`[Header]
+FileFormatVersion,2
+RunName,TestRun
+RunDescription,91f48115-71a2-41ba-843e-a4803542ec5c
+InstrumentPlatform,NovaSeq
+InstrumentType,NovaSeq X Plus
+[Reads]
+151
+151`),
+			hasUuid: true,
+		},
+		{
+			name: "SampleSheet without UUID",
+			data: []byte(`[Header]
+FileFormatVersion,2
+RunName,TestRun
+RunDescription,WGS on a number of samples
+InstrumentPlatform,NovaSeq
+InstrumentType,NovaSeq X Plus
+[Reads]
+151
+151`),
+			hasUuid: false,
+		},
+		{
+			name: "SampleSheet without RunDescription",
+			data: []byte(`[Header]
+FileFormatVersion,2
+RunName,TestRun
+InstrumentPlatform,NovaSeq
+InstrumentType,NovaSeq X Plus
+[Reads]
+151
+151`),
+			hasUuid: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			r := bufio.NewReader(bytes.NewReader(c.data))
+			ss, err := ParseSampleSheet(r)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ss.UUID == nil && c.hasUuid {
+				t.Error("expected UUID but found nil")
+			}
+			if ss.UUID != nil && !c.hasUuid {
+				t.Error("found UUID, but expected nil")
+			}
+		})
+	}
+}
+
+func TestLastModified(t *testing.T) {
+	testcases := []struct {
+		name        string
+		times       []time.Time
+		expected    time.Time
+		shouldError bool
+	}{
+		{
+			name: "one file",
+			times: []time.Time{
+				time.Date(2024, 9, 18, 12, 8, 0, 0, time.Local),
+			},
+			expected: time.Date(2024, 9, 18, 12, 8, 0, 0, time.Local),
+		},
+		{
+			name: "two files",
+			times: []time.Time{
+				time.Date(2024, 9, 18, 12, 8, 0, 0, time.Local),
+				time.Date(2024, 9, 18, 13, 8, 0, 0, time.Local),
+			},
+			expected: time.Date(2024, 9, 18, 13, 8, 0, 0, time.Local),
+		},
+		{
+			name: "two files reversed",
+			times: []time.Time{
+				time.Date(2024, 9, 18, 13, 8, 0, 0, time.Local),
+				time.Date(2024, 9, 18, 12, 8, 0, 0, time.Local),
+			},
+			expected: time.Date(2024, 9, 18, 13, 8, 0, 0, time.Local),
+		},
+		{
+			name:        "no files",
+			times:       []time.Time{},
+			expected:    time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC),
+			shouldError: true,
+		},
+		{
+			name:        "nil files",
+			times:       nil,
+			expected:    time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC),
+			shouldError: true,
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			ss := SampleSheet{}
+			if testcase.times != nil {
+				ss.Files = make([]SampleSheetInfo, 0)
+				for _, mt := range testcase.times {
+					ss.Files = append(ss.Files, SampleSheetInfo{
+						ModificationTime: mt,
+					})
+				}
+			}
+
+			observed, err := ss.LastModified()
+			if err != nil && !testcase.shouldError {
+				t.Fatal("got error, expected nil")
+			}
+			if err == nil && testcase.shouldError {
+				t.Fatal("expected error, got nil")
+			}
+
+			if observed != testcase.expected {
+				t.Errorf("expected %v, got %v", testcase.expected, observed)
+			}
+		})
+	}
+}
+
+func TestMergeSampleSheets(t *testing.T) {
+	run1_1 := "run1"
+	run1_2 := "run1"
+	// run2_1 := "run2"
+	run2_2 := "run2"
+
+	uuid1_1, _ := uuid.NewUUID()
+	uuid1_2, _ := uuid.Parse(uuid1_1.String())
+	uuid2_1, _ := uuid.NewUUID()
+
+	path1 := "/path/to/samplesheets/SampleSheet.csv"
+	path2 := "/path/to/run1/SampleSheet.csv"
+	// path3 := "/path/to/run2/SampleSheet.csv"
+
+	older := time.Now()
+	newer := time.Now()
+
+	testCases := []struct {
+		name              string
+		sampleSheet       SampleSheet
+		otherSampleSheet  SampleSheet
+		mergedSampleSheet SampleSheet
+		shouldError       bool
+	}{
+		{
+			name: "identical sections, other is newer",
+			sampleSheet: SampleSheet{
+				RunID: &run1_1,
+				UUID:  &uuid1_1,
+				Files: []SampleSheetInfo{
+					{
+						Path:             path1,
+						ModificationTime: older,
+					},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_2,
+				UUID:  &uuid1_2,
+				Files: []SampleSheetInfo{
+					{
+						Path:             path2,
+						ModificationTime: newer,
+					},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				UUID:  &uuid1_1,
+				Files: []SampleSheetInfo{
+					{
+						Path:             path1,
+						ModificationTime: older,
+					},
+					{
+						Path:             path2,
+						ModificationTime: newer,
+					},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "identical sections and file names, other is newer",
+			sampleSheet: SampleSheet{
+				RunID: &run1_1,
+				UUID:  &uuid1_1,
+				Files: []SampleSheetInfo{
+					{
+						Path:             path1,
+						ModificationTime: older,
+					},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_2,
+				UUID:  &uuid1_2,
+				Files: []SampleSheetInfo{
+					{
+						Path:             path1,
+						ModificationTime: newer,
+					},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				UUID:  &uuid1_1,
+				Files: []SampleSheetInfo{
+					{
+						Path:             path1,
+						ModificationTime: newer,
+					},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "other has more sections",
+			sampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: older},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_2,
+				Files: []SampleSheetInfo{
+					{Path: path2, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: older},
+					{Path: path2, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "this has more sections",
+			sampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: older},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_2,
+				Files: []SampleSheetInfo{
+					{Path: path2, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: older},
+					{Path: path2, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "section has been updated",
+			sampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: older},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_2,
+				Files: []SampleSheetInfo{
+					{Path: path2, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is a better run 1"},
+						},
+					},
+				},
+			},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: older},
+					{Path: path2, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is a better run 1"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "section has been updated this is newer",
+			sampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_2,
+				Files: []SampleSheetInfo{
+					{Path: path2, ModificationTime: older},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is a better run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path2, ModificationTime: older},
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "run ids are different",
+			sampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run2_2,
+				Files: []SampleSheetInfo{
+					{Path: path2, ModificationTime: older},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run2"},
+							{"RunDescription", "this is a better run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+			shouldError: true,
+		},
+		{
+			name: "uuids are different",
+			sampleSheet: SampleSheet{
+				RunID: &run1_1,
+				UUID:  &uuid1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_2,
+				UUID:  &uuid2_1,
+				Files: []SampleSheetInfo{
+					{Path: path2, ModificationTime: older},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run2"},
+							{"RunDescription", "this is a better run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+			shouldError: true,
+		},
+		{
+			name: "should allow merging if this run id is nil",
+			sampleSheet: SampleSheet{
+				RunID: nil,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			otherSampleSheet: SampleSheet{
+				RunID: &run2_2,
+				Files: []SampleSheetInfo{
+					{Path: path2, ModificationTime: older},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run2"},
+							{"RunDescription", "this is a better run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run2_2,
+				Files: []SampleSheetInfo{
+					{Path: path2, ModificationTime: older},
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+					{
+						Name: "Reads",
+						Rows: [][]string{
+							{"151"},
+							{"151"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "merge empty sample sheet",
+			otherSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+			sampleSheet: SampleSheet{},
+			mergedSampleSheet: SampleSheet{
+				RunID: &run1_1,
+				Files: []SampleSheetInfo{
+					{Path: path1, ModificationTime: newer},
+				},
+				Sections: []Section{
+					{
+						Name: "Header",
+						Rows: [][]string{
+							{"RunName", "run1"},
+							{"RunDescription", "this is run 1"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			m, err := testCase.sampleSheet.Merge(&testCase.otherSampleSheet)
+			if err != nil && !testCase.shouldError {
+				t.Fatalf("merging should not have errored: %s", err.Error())
+			}
+			if err == nil && testCase.shouldError {
+				t.Fatal("merging should have errored")
+			}
+
+			if !testCase.shouldError && !reflect.DeepEqual(m, &testCase.mergedSampleSheet) {
+				t.Errorf("merging did not result in the expected samplesheet.\n\nExpected: %+v\n\nGot: %+v", &testCase.mergedSampleSheet, m)
 			}
 		})
 	}

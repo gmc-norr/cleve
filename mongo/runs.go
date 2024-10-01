@@ -24,14 +24,26 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		}},
 	})
 
-	// Filter on run id
+	// Strict match on run id
 	if filter.RunID != "" {
+		pipeline = append(pipeline, bson.D{
+			{
+				Key: "$match",
+				Value: bson.M{
+					"run_id": filter.RunID,
+				},
+			},
+		})
+	}
+
+	// Regex match on run id
+	if filter.RunIdQuery != "" {
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "$expr", Value: bson.D{
 					{Key: "$regexMatch", Value: bson.M{
 						"input":   "$run_id",
-						"regex":   filter.RunID,
+						"regex":   filter.RunIdQuery,
 						"options": "i",
 					}},
 				}},
@@ -92,6 +104,68 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		}},
 	})
 
+	pipeline = append(pipeline, bson.D{
+		{Key: "$unwind", Value: bson.M{
+			"path":                       "$samplesheet",
+			"preserveNullAndEmptyArrays": true,
+		}},
+	})
+
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$set",
+			Value: bson.M{
+				"samplesheet": bson.M{
+					"$cond": bson.M{
+						"if":   bson.M{"$ifNull": bson.A{"$samplesheet.path", nil}},
+						"then": "$samplesheet",
+						"else": nil,
+					},
+				},
+			},
+		},
+	})
+
+	// Add new samplesheet information
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$lookup",
+			Value: bson.M{
+				"from":         "samplesheets",
+				"localField":   "run_id",
+				"foreignField": "run_id",
+				"as":           "samplesheets",
+				"pipeline": bson.A{
+					bson.D{
+						{
+							Key: "$project",
+							Value: bson.M{
+								"files": 1,
+							},
+						},
+					},
+					bson.D{
+						{
+							Key: "$unwind",
+							Value: bson.M{
+								"path": "$files",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$set",
+			Value: bson.M{
+				"samplesheets": "$samplesheets.files",
+			},
+		},
+	})
+
 	// Count number of analyses
 	pipeline = append(pipeline, bson.D{
 		{Key: "$set", Value: bson.D{
@@ -116,13 +190,6 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 			{Key: "$unset", Value: bson.A{"run_parameters", "analysis"}},
 		})
 	}
-
-	pipeline = append(pipeline, bson.D{
-		{Key: "$unwind", Value: bson.M{
-			"path":                       "$samplesheet",
-			"preserveNullAndEmptyArrays": true,
-		}},
-	})
 
 	runFacet := mongo.Pipeline{}
 
@@ -225,97 +292,24 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 }
 
 func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
-	var run *cleve.Run
-
-	matchStage := bson.D{
-		{Key: "$match", Value: bson.D{{Key: "run_id", Value: runId}}},
+	filter := cleve.RunFilter{
+		RunID: runId,
+		Brief: brief,
 	}
-
-	sortStage := bson.D{
-		{Key: "$set", Value: bson.D{
-			{Key: "state_history", Value: bson.D{
-				{Key: "$sortArray", Value: bson.M{
-					"input": "$state_history", "sortBy": bson.D{{Key: "time", Value: -1}},
-				}},
-			}},
-		},
-		},
-	}
-
-	// Get samplesheet information
-	lookupStage := bson.D{
-		{Key: "$lookup", Value: bson.M{
-			"from":         "samplesheets",
-			"localField":   "run_id",
-			"foreignField": "run_id",
-			"as":           "samplesheet",
-			"pipeline": bson.A{
-				bson.M{
-					"$project": bson.M{
-						"path":              1,
-						"modification_time": 1,
-					},
-				},
-			},
-		}},
-	}
-
-	// Unwind array of samplesheets
-	unwindStage := bson.D{
-		{Key: "$unwind", Value: bson.M{
-			"path":                       "$samplesheet",
-			"preserveNullAndEmptyArrays": true,
-		}},
-	}
-
-	// Count number of analyses
-	setStage := bson.D{
-		{Key: "$set", Value: bson.D{
-			{
-				Key: "analysis_count",
-				Value: bson.D{
-					{Key: "$cond", Value: bson.M{
-						"if": bson.D{
-							{Key: "$isArray", Value: "$analysis"},
-						}, "then": bson.D{
-							{Key: "$size", Value: "$analysis"},
-						}, "else": 0,
-					}},
-				},
-			},
-		}},
-	}
-
-	unsetStage := bson.D{
-		{Key: "$unset", Value: bson.A{
-			"run_parameters",
-			"analysis",
-		}},
-	}
-
-	var aggPipeline mongo.Pipeline
-	if brief {
-		aggPipeline = mongo.Pipeline{matchStage, setStage, unsetStage, sortStage, lookupStage, unwindStage}
-	} else {
-		aggPipeline = mongo.Pipeline{matchStage, setStage, sortStage, lookupStage, unwindStage}
-	}
-
-	coll := db.RunCollection()
-	cursor, err := coll.Aggregate(context.TODO(), aggPipeline)
+	runs, err := db.Runs(filter)
 	if err != nil {
-		return run, err
+		return nil, err
 	}
 
-	ok := cursor.Next(context.TODO())
-	if !ok {
-		return run, mongo.ErrNoDocuments
+	if runs.Count == 0 {
+		return nil, fmt.Errorf("run not found")
+	}
+	if runs.Count > 1 {
+		// We don't expect more than one matching run when filtering on run ID.
+		return nil, fmt.Errorf("found more than one matching run")
 	}
 
-	if err = cursor.Decode(&run); err != nil {
-		return run, err
-	}
-	err = cursor.Decode(&run)
-	return run, err
+	return runs.Runs[0], nil
 }
 
 func (db DB) CreateRun(r *cleve.Run) error {
