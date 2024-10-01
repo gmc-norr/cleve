@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0](https://github.com/gmc-norr/cleve/compare/v0.2.0...v0.3.0) (2024-10-01)
+
+This release adds a basic sample collection to the cleve database.
+This is not yet fully featured, and work on this will continue.
+
+One breaking change is an update to how sample sheets are handled.
+When updating a sample sheet, instead of replacing it completely, they are instead merged.
+Support for UUIDs has also been added.
+If a UUID is identified in the RunDescription field in the header of the sample sheet, then this is used as the main identifier if no run ID is associated with the sample sheet.
+
+### Features
+
+* add a basic sample collection to the database ([#22](https://github.com/gmc-norr/cleve/issues/22)) ([37530eb](https://github.com/gmc-norr/cleve/commit/37530ebb0a7d194fce1ae20c3601cd6bc2217701))
+* implement custom page out of bounds error ([2663301](https://github.com/gmc-norr/cleve/commit/2663301139b8998c6ff36805ec90f3707f76160d))
+* manage sample sheets with UUIDs ([#28](https://github.com/gmc-norr/cleve/issues/28)) ([0c522d9](https://github.com/gmc-norr/cleve/commit/0c522d9e6af7d0a2c957e466bbbb8247bea06817))
+
 ## [0.2.0](https://github.com/gmc-norr/cleve/compare/v0.1.0...v0.2.0) (2024-08-22)
 
 
