@@ -2,6 +2,13 @@
 
 ## [0.3.0](https://github.com/gmc-norr/cleve/compare/v0.2.0...v0.3.0) (2024-10-01)
 
+This release adds a basic sample collection to the cleve database.
+This is not yet fully featured, and work on this will continue.
+
+One breaking change is an update to how sample sheets are handled.
+When updating a sample sheet, instead of replacing it completely, they are instead merged.
+Support for UUIDs has also been added.
+If a UUID is identified in the RunDescription field in the header of the sample sheet, then this is used as the main identifier if no run ID is associated with the sample sheet.
 
 ### Features
 
