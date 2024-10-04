@@ -266,14 +266,70 @@ LibraryPrepkits,prepkit1;prepkit2`),
 				},
 			},
 		},
+		{
+			Name:         "custom standalone section",
+			Version:      2,
+			Valid:        true,
+			Sections:     []string{"Header", "Reads", "CustomStuff"},
+			SectionRows:  []int{4, 1, 3},
+			SectionTypes: []SectionType{SettingsSection, SettingsSection, SettingsSection},
+			Data: []byte(`[Header]
+FileFormatVersion,2
+RunName,TestRun
+InstrumentPlatform,NovaSeq
+InstrumentType,NovaSeq X Plus
+[Reads]
+151
+[CustomStuff]
+key1,value1
+key2,value2
+key3,value3`),
+			ExpectedSettingValues: map[string]map[string]string{
+				"Header": {
+					"FileFormatVersion":  "2",
+					"RunName":            "TestRun",
+					"InstrumentPlatform": "NovaSeq",
+					"InstrumentType":     "NovaSeq X Plus",
+				},
+				"Reads": {
+					"151": "151",
+				},
+				"CustomStuff": {
+					"key1": "value1",
+					"key2": "value2",
+					"key3": "value3",
+				},
+			},
+			ExpectedDataValues: nil,
+		},
+		{
+			Name:  "invalid data section",
+			Valid: false,
+			Data: []byte(`[Header]
+FileFormatVersion,2
+RunName,TestRun
+InstrumentPlatform,NovaSeq
+InstrumentType,NovaSeq X Plus
+[Reads]
+151
+[CustomStuff]
+col1,col2,col3
+val1,val2,val3
+val4,val5,val6`),
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
 			r := bufio.NewReader(bytes.NewReader(c.Data))
 			s, err := ParseSampleSheet(r)
-			if err != nil {
+			if err == nil && !c.Valid {
+				t.Fatalf("expected invalid samplesheet but got no error")
+			} else if err != nil && c.Valid {
 				t.Fatalf("%s", err)
+			} else if err != nil {
+				// We got an error and expected an error, so pass
+				return
 			}
 			if s.Version() != c.Version {
 				t.Errorf("expected version %d, found %d", c.Version, s.Version())
