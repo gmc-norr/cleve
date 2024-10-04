@@ -349,7 +349,7 @@ func (p *sampleSheetParser) ParseHeader() (string, SectionType, error) {
 	case strings.HasSuffix(strings.ToLower(name), "settings"):
 		sectionType = SettingsSection
 	default:
-		return name, UnknownSection, fmt.Errorf("unknown section type: %s", name)
+		return name, SettingsSection, nil
 	}
 	return name, sectionType, nil
 }
