@@ -52,7 +52,7 @@
 
     <form id="qc-table-form"
         hx-get="/qc"
-        hx-trigger="keyup delay:300ms from:input[name=run_id], change from:select[name=platform]"
+        hx-trigger="keyup delay:300ms from:input[name=run_id_query], change from:select[name=platform]"
         hx-select="#qc-table-body"
         hx-target="#qc-table-body"
         hx-select-oob="#table-counts,#table-nav"
@@ -72,7 +72,7 @@
                     <th>Cycle 1 intensity</th>
                 </tr>
                 <tr>
-                    <th><input class="w-full border border-slate-300" type="text" name="run_id" placeholder="Run ID filter" value="{{ $filter.RunID }}"></input></th>
+                    <th><input class="w-full border border-slate-300" type="text" name="run_id_query" placeholder="Run ID filter" value="{{ $filter.RunIdQuery }}"></input></th>
                     <th></th>
                     <th>
                         <select name="platform">

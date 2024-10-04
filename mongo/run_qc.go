@@ -45,13 +45,13 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	}
 
 	// Run ID filter
-	if filter.RunID != "" {
+	if filter.RunIdQuery != "" {
 		runIdFilter := bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "$expr", Value: bson.D{
 					{Key: "$regexMatch", Value: bson.M{
 						"input":   "$run_id",
-						"regex":   filter.RunID,
+						"regex":   filter.RunIdQuery,
 						"options": "i",
 					}},
 				}},
