@@ -97,6 +97,8 @@ cleve serve
 
 In a production environment, it is highly recommended to set this up with a reverse proxy.
 
+Once everything is up and running, the API documentation can be found at `<cleve-host>:<cleve-port>/api`.
+
 ## Development
 
 ### Requirements
