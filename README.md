@@ -109,13 +109,8 @@ Once everything is up and running, the API documentation can be found at `<cleve
 
 In addition to the general requirments, the following are recommended in a development environment:
 
-- tailwindcss: for web development
-- pre-commit
-
-### pre-commit
-
-This project makes use of pre-commit hooks.
-The current setup requires [pre-commit](https://pre-commit.com/) and [golangci-lint](https://github.com/golangci/golangci-lint) to be installed.
+- [tailwindcss](https://tailwindcss.com/): for web development (the [standalone CLI](https://tailwindcss.com/blog/standalone-cli) is recommended)
+- [pre-commit](https://pre-commit.com): if pre-commit is used, [golangci-lint](https://github.com/golangci/golangci-lint) is also a requirement
 
 ## Where does the name come from?
 
