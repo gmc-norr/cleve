@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/gmc-norr/cleve/compare/v0.3.0...v0.3.1) (2024-11-14)
+
+
+### Bug Fixes
+
+* correct filtering for QC data ([#34](https://github.com/gmc-norr/cleve/issues/34)) ([683054e](https://github.com/gmc-norr/cleve/commit/683054eddfec613ecf8930a1f331801dce52ed3b))
+* treat sections without suffix as settings ([#32](https://github.com/gmc-norr/cleve/issues/32)) ([787b1fd](https://github.com/gmc-norr/cleve/commit/787b1fd3f5ded294e3ef158fa848580e1ece8eff))
+
 ## [0.3.0](https://github.com/gmc-norr/cleve/compare/v0.2.0...v0.3.0) (2024-10-01)
 
 This release adds a basic sample collection to the cleve database.
