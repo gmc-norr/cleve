@@ -101,7 +101,10 @@ In a production environment, it is highly recommended to set this up with a reve
 
 ### Requirements
 
+In addition to the general requirments, the following are recommended in a development environment:
+
 - tailwindcss: for web development
+- pre-commit
 
 ### pre-commit
 
