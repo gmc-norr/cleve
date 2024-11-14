@@ -1,4 +1,4 @@
-# cleve &mdash; sequencing run database
+# Cleve &mdash; sequencing run database
 
 ![go build and test](https://github.com/gmc-norr/cleve/actions/workflows/go.yaml/badge.svg)
 ![golangci-lint](https://github.com/gmc-norr/cleve/actions/workflows/golangci-lint.yaml/badge.svg)
@@ -8,9 +8,10 @@
 Cleve is a database mainly for sequencing data, with an accompanying CLI, API and web-based dashboard.
 The goal of Cleve is to make management of sequencing runs with their associated samples and metadata effortless.
 This is achieved by storing metadata for the sequencing runs, including QC data.
-Visualisations of various parameters is included in the dashboard, albeit rudementary at the moment.
-These provide quick visual access in order to evaluate the state of a sequencing run.
-In essence, this provides some of the same features as Illumina Sequence Analysis Viewer, but the difference is that it is much faster, and there is also the possibility to visualise QC parameters over time.
+
+Interactive visualisations of various parameters are included in the dashboard, albeit rudimentary at the moment.
+In essence, this provides some of the same features as Illumina Sequencing Analysis Viewer, but the difference is that it is much faster, and there is also the possibility to visualise QC parameters across runs.
+These visualisations provide a quick way of visually evaluate the state of a sequencing run.
 
 ## Requirements
 
@@ -63,6 +64,8 @@ port: 8080
 The only part that doesn't have decent defaults is the database.
 If any required values are undefined the application will exit with an error.
 
+In addition to the yaml configuration, the environment variable `INTEROP_BIN` should point to the directory where the Illumina InterOp binaries are kept.
+
 ## CLI
 
 ```
@@ -111,6 +114,10 @@ In addition to the general requirments, the following are recommended in a devel
 
 - [tailwindcss](https://tailwindcss.com/): for web development (the [standalone CLI](https://tailwindcss.com/blog/standalone-cli) is recommended)
 - [pre-commit](https://pre-commit.com): if pre-commit is used, [golangci-lint](https://github.com/golangci/golangci-lint) is also a requirement
+
+### Testing
+
+Unit tests can be run with `go test ./...`.
 
 ## Where does the name come from?
 
