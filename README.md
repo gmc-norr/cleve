@@ -8,9 +8,10 @@
 Cleve is a database mainly for sequencing data, with an accompanying CLI, API and web-based dashboard.
 The goal of Cleve is to make management of sequencing runs with their associated samples and metadata effortless.
 This is achieved by storing metadata for the sequencing runs, including QC data.
-Visualisations of various parameters is included in the dashboard, albeit rudementary at the moment.
+
+Interactive visualisations of various parameters are included in the dashboard, albeit rudimentary at the moment.
 These provide quick visual access in order to evaluate the state of a sequencing run.
-In essence, this provides some of the same features as Illumina Sequence Analysis Viewer, but the difference is that it is much faster, and there is also the possibility to visualise QC parameters over time.
+In essence, this provides some of the same features as Illumina Sequencing Analysis Viewer, but the difference is that it is much faster, and there is also the possibility to visualise QC parameters over time.
 
 ## Requirements
 
