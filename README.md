@@ -115,6 +115,10 @@ In addition to the general requirments, the following are recommended in a devel
 - [tailwindcss](https://tailwindcss.com/): for web development (the [standalone CLI](https://tailwindcss.com/blog/standalone-cli) is recommended)
 - [pre-commit](https://pre-commit.com): if pre-commit is used, [golangci-lint](https://github.com/golangci/golangci-lint) is also a requirement
 
+### Testing
+
+Unit tests can be run with `go test ./...`.
+
 ## Where does the name come from?
 
 The name cleve is a tribute to what many consider to be the first female librarian in Sweden, [Cecilia Cleve](https://en.wikipedia.org/wiki/Cecilia_Cleve).
