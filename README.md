@@ -1,4 +1,4 @@
-# cleve &mdash; sequencing run database
+# Cleve &mdash; sequencing run database
 
 ![go build and test](https://github.com/gmc-norr/cleve/actions/workflows/go.yaml/badge.svg)
 ![golangci-lint](https://github.com/gmc-norr/cleve/actions/workflows/golangci-lint.yaml/badge.svg)
