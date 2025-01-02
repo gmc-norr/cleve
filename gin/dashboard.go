@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -37,8 +38,14 @@ func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 		dashboardData, err := getDashboardData(db, filter)
 		dashboardData["version"] = cleve.GetVersion()
 
+		var oobError mongo.PageOutOfBoundsError
+		if errors.As(err, &oobError) {
+			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError})
+			return
+		}
 		if err != nil {
 			c.HTML(http.StatusInternalServerError, "error500", dashboardData)
+			return
 		}
 
 		c.Header("Hx-Push-Url", filter.UrlParams())
@@ -94,8 +101,14 @@ func DashboardRunTable(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		dashboardData, err := getDashboardData(db, filter)
+		var oobError mongo.PageOutOfBoundsError
+		if errors.As(err, &oobError) {
+			c.HTML(http.StatusNotFound, "error404", dashboardData)
+			return
+		}
 		if err != nil {
 			c.HTML(http.StatusInternalServerError, "error500", dashboardData)
+			return
 		}
 
 		c.Header("Hx-Push-Url", filter.UrlParams())
@@ -113,6 +126,11 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		qc, err := db.RunQCs(filter)
+		var oobError mongo.PageOutOfBoundsError
+		if errors.As(err, &oobError) {
+			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError.Error()})
+			return
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

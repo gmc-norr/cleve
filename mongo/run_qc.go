@@ -130,9 +130,19 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	}
 
 	if cursor.Next(context.TODO()) {
-		var qc cleve.QcResult
 		err = cursor.Decode(&qc)
-		return qc, err
+		if err != nil {
+			return qc, err
+		}
+		if qc.TotalCount == 0 {
+			qc.TotalPages = 1
+		}
+		if qc.Page > qc.TotalPages {
+			return qc, PageOutOfBoundsError{
+				page:       qc.Page,
+				totalPages: qc.TotalPages,
+			}
+		}
 	}
 
 	return qc, cursor.Err()
