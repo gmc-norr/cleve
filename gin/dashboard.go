@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -113,6 +114,11 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		qc, err := db.RunQCs(filter)
+		var oobError mongo.PageOutOfBoundsError
+		if errors.As(err, &oobError) {
+			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError.Error()})
+			return
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
