@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/gmc-norr/cleve/compare/v0.3.0...v0.4.0) (2025-01-03)
+
+
+### Features
+
+* add pagination for QC API endpoint ([#47](https://github.com/gmc-norr/cleve/issues/47)) ([033c264](https://github.com/gmc-norr/cleve/commit/033c2648cc768697c0cc3d8d37ba30c3fceb9000))
+
+
+### Bug Fixes
+
+* better handling of errors in table pagination ([#45](https://github.com/gmc-norr/cleve/issues/45)) ([1f44f11](https://github.com/gmc-norr/cleve/commit/1f44f11ce8fd10cd999ab76fc55163d85809c807))
+* correct filtering for QC data ([#34](https://github.com/gmc-norr/cleve/issues/34)) ([683054e](https://github.com/gmc-norr/cleve/commit/683054eddfec613ecf8930a1f331801dce52ed3b))
+* treat sections without suffix as settings ([#32](https://github.com/gmc-norr/cleve/issues/32)) ([787b1fd](https://github.com/gmc-norr/cleve/commit/787b1fd3f5ded294e3ef158fa848580e1ece8eff))
+
 ## [0.3.0](https://github.com/gmc-norr/cleve/compare/v0.2.0...v0.3.0) (2024-10-01)
 
 This release adds a basic sample collection to the cleve database.
