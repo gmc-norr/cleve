@@ -1,8 +1,8 @@
 package gin
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -53,36 +53,24 @@ func RunQcHandler(db RunQCGetter) gin.HandlerFunc {
 
 func AllRunQcHandler(db RunQCGetter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		filter := cleve.RunFilter{
-			Brief:    true,
-			Platform: ctx.Param("platformName"),
-			State:    cleve.Ready.String(),
-		}
-		runs, err := db.Runs(filter)
+		filter, err := getQcFilter(ctx)
 		if err != nil {
-			ctx.AbortWithStatusJSON(
-				http.StatusInternalServerError,
-				gin.H{"error": err.Error()},
-			)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		filter.Platform = ctx.Param("platformName")
+
+		qc, err := db.RunQCs(filter)
+		var oobError mongo.PageOutOfBoundsError
+		if errors.As(err, &oobError) {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": oobError.Error()})
+			return
+		}
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 
-		runIds := make([]string, 0)
-		for _, r := range runs.Runs {
-			runIds = append(runIds, r.RunID)
-		}
-
-		qc := make([]*cleve.InteropQC, 0)
-
-		for _, r := range runIds {
-			qcSummary, err := db.RunQC(r)
-			if err != nil {
-				if err == mongo.ErrNoDocuments {
-					continue
-				}
-				log.Printf("warning: qc for run %s could not be fetched: %s", r, err.Error())
-			}
-			qc = append(qc, qcSummary)
-		}
 		ctx.JSON(http.StatusOK, qc)
 	}
 }
