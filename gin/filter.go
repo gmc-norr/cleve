@@ -6,7 +6,6 @@ import (
 )
 
 func getRunFilter(c *gin.Context) (cleve.RunFilter, error) {
-	// Set filter defaults
 	filter := cleve.NewRunFilter()
 	if err := c.BindQuery(&filter); err != nil {
 		return filter, err
@@ -15,7 +14,6 @@ func getRunFilter(c *gin.Context) (cleve.RunFilter, error) {
 }
 
 func getSampleFilter(c *gin.Context) (cleve.SampleFilter, error) {
-	// Set filter defaults
 	filter := cleve.NewSampleFilter()
 	if err := c.BindQuery(&filter); err != nil {
 		return filter, err
@@ -24,7 +22,6 @@ func getSampleFilter(c *gin.Context) (cleve.SampleFilter, error) {
 }
 
 func getQcFilter(c *gin.Context) (cleve.QcFilter, error) {
-	// Set filter defaults
 	filter := cleve.NewQcFilter()
 	if err := c.BindQuery(&filter); err != nil {
 		return filter, err
