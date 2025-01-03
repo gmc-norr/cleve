@@ -8,7 +8,7 @@ import (
 // Pagination filtering.
 type PaginationFilter struct {
 	Page     int `form:"page,default=1"`
-	PageSize int `form:"page_size,default=10"`
+	PageSize int `form:"page_size"`
 }
 
 func (f PaginationFilter) Validate() error {
@@ -31,6 +31,14 @@ type RunFilter struct {
 	From             time.Time `form:"from"`
 	To               time.Time `form:"to"`
 	PaginationFilter `form:",inline"`
+}
+
+func NewRunFilter() RunFilter {
+	return RunFilter{
+		PaginationFilter: PaginationFilter{
+			PageSize: 10,
+		},
+	}
 }
 
 // Convert a run filter to URL query parameters.
@@ -68,6 +76,14 @@ type QcFilter struct {
 	PaginationFilter
 }
 
+func NewQcFilter() QcFilter {
+	return QcFilter{
+		PaginationFilter: PaginationFilter{
+			PageSize: 5,
+		},
+	}
+}
+
 func (f QcFilter) UrlParams() string {
 	s := "?"
 	sep := ""
@@ -101,6 +117,14 @@ type SampleFilter struct {
 	RunId            string `form:"run_id"`
 	Analysis         string `form:"analysis"`
 	PaginationFilter `form:",inline"`
+}
+
+func NewSampleFilter() SampleFilter {
+	return SampleFilter{
+		PaginationFilter: PaginationFilter{
+			PageSize: 10,
+		},
+	}
 }
 
 // Convert a sample filter to URL query parameters.
