@@ -298,6 +298,18 @@ endpoints:
         examples:
           - NovaSeq
           - NextSeq
+    query_params:
+      - key: page
+        type: integer
+        description: page number to get
+        default: 1
+      - key: page_size
+        type: integer
+        description: number of items per page
+        default: 10
+      - key: run_id_query
+        type: string
+        description: Run ID regular expression
 
   - path: /runs/{run_id}/qc
     method: GET
