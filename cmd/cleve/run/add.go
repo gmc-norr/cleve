@@ -13,8 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var runPath string
-
 func parseRunParameters(runParametersFile string) (cleve.RunParameters, error) {
 	var runParams cleve.RunParameters
 	runParamFile, err := os.Open(runParametersFile)

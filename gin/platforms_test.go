@@ -119,7 +119,9 @@ func TestGetPlatformHandler(t *testing.T) {
 		if w.Code == 200 {
 			b, _ := io.ReadAll(w.Body)
 			var p cleve.Platform
-			json.Unmarshal(b, &p)
+			if err := json.Unmarshal(b, &p); err != nil {
+				t.Fatal(err)
+			}
 			if p != *v.Platform {
 				fmt.Printf("%#v != %#v", p, v.Platform)
 				t.Fatalf("Incorrect response body for %s", k)

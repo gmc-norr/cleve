@@ -10,9 +10,7 @@ func init() {
 	KeyCmd.AddCommand(deleteCmd)
 }
 
-var (
-	KeyCmd = &cobra.Command{
-		Use:   "key",
-		Short: "API key management",
-	}
-)
+var KeyCmd = &cobra.Command{
+	Use:   "key",
+	Short: "API key management",
+}

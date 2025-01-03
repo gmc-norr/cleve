@@ -55,7 +55,6 @@ func (f RunFilter) UrlParams() string {
 	}
 	if f.Page != 0 {
 		p += fmt.Sprintf("%spage=%d", sep, f.Page)
-		sep = "&"
 	}
 	return p
 }
@@ -90,7 +89,6 @@ func (f QcFilter) UrlParams() string {
 
 	if f.PageSize != 0 {
 		s = fmt.Sprintf("%s%spage_size=%d", s, sep, f.PageSize)
-		sep = "&"
 	}
 
 	return s
@@ -123,7 +121,6 @@ func (f SampleFilter) UrlParams() string {
 	}
 	if f.Analysis != "" {
 		p += fmt.Sprintf("%sanalysis=%s", sep, f.Analysis)
-		sep = "&"
 	}
 	return p
 }

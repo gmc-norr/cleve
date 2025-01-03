@@ -62,13 +62,14 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 
 	// Sort state history chronologically
 	pipeline = append(pipeline, bson.D{
-		{Key: "$set", Value: bson.D{
-			{Key: "state_history", Value: bson.D{
-				{Key: "$sortArray", Value: bson.M{
-					"input": "$state_history", "sortBy": bson.D{{Key: "time", Value: -1}},
+		{
+			Key: "$set", Value: bson.D{
+				{Key: "state_history", Value: bson.D{
+					{Key: "$sortArray", Value: bson.M{
+						"input": "$state_history", "sortBy": bson.D{{Key: "time", Value: -1}},
+					}},
 				}},
-			}},
-		},
+			},
 		},
 	})
 
@@ -267,28 +268,25 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 	}
 	defer cursor.Close(context.TODO())
 
-	for cursor.Next(context.TODO()) {
-		var r cleve.RunResult
-		err := cursor.Decode(&r)
-		if err != nil {
-			return cleve.RunResult{}, err
+	cursor.Next(context.TODO())
+	var r cleve.RunResult
+	err = cursor.Decode(&r)
+	if err != nil {
+		return cleve.RunResult{}, err
+	}
+	if r.TotalCount == 0 {
+		// No results found. Represent this as a single page
+		// with an empty slice of runs.
+		r.TotalPages = 1
+	}
+	if r.Page > r.TotalPages {
+		return r, PageOutOfBoundsError{
+			page:       r.Page,
+			totalPages: r.TotalPages,
 		}
-		if r.TotalCount == 0 {
-			// No results found. Represent this as a single page
-			// with an empty slice of runs.
-			r.TotalPages = 1
-		}
-		if r.Page > r.TotalPages {
-			return r, PageOutOfBoundsError{
-				page:       r.Page,
-				totalPages: r.TotalPages,
-			}
-		}
-		return r, nil
 	}
 
-	err = cursor.Err()
-	return cleve.RunResult{}, err
+	return r, nil
 }
 
 func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
@@ -374,12 +372,12 @@ func (db DB) GetRunStateHistory(runId string) ([]cleve.TimedRunState, error) {
 
 func (db DB) RunIndex() ([]map[string]string, error) {
 	cursor, err := db.RunCollection().Indexes().List(context.TODO())
-	defer cursor.Close(context.TODO())
-
-	var indexes []map[string]string
 	if err != nil {
 		return []map[string]string{}, err
 	}
+	defer cursor.Close(context.TODO())
+
+	var indexes []map[string]string
 
 	var result []bson.M
 	if err = cursor.All(context.TODO(), &result); err != nil {

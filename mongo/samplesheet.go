@@ -147,12 +147,12 @@ func (db DB) SampleSheet(opts ...SampleSheetOption) (cleve.SampleSheet, error) {
 
 func (db DB) SampleSheetIndex() ([]map[string]string, error) {
 	cursor, err := db.SampleSheetCollection().Indexes().List(context.TODO())
-	defer cursor.Close(context.TODO())
-
-	var indexes []map[string]string
 	if err != nil {
 		return []map[string]string{}, err
 	}
+	defer cursor.Close(context.TODO())
+
+	var indexes []map[string]string
 
 	var result []bson.M
 	if err = cursor.All(context.TODO(), &result); err != nil {

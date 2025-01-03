@@ -430,7 +430,9 @@ func TestUpdateRunPathHandler(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					io.WriteString(f, "[Header]\nRunName,run1\n[Reads]\n151")
+					if _, err := io.WriteString(f, "[Header]\nRunName,run1\n[Reads]\n151"); err != nil {
+						t.Fatal(err)
+					}
 				}
 			}
 

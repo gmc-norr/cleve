@@ -13,12 +13,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-var configFile string
-var rootCmd = &cobra.Command{
-	Use:     "cleve",
-	Short:   "Interact with the sequencing database",
-	Version: cleve.GetVersion(),
-}
+var (
+	configFile string
+	rootCmd    = &cobra.Command{
+		Use:     "cleve",
+		Short:   "Interact with the sequencing database",
+		Version: cleve.GetVersion(),
+	}
+)
 
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -50,6 +52,8 @@ func initConfig() {
 		log.Fatalf("error: %s", err)
 	}
 
+	log.Printf("Using config file: %s", viper.ConfigFileUsed())
+
 	// Basic validation
 	dbConfig := viper.GetStringMap("database")
 	if dbConfig == nil {
@@ -70,8 +74,6 @@ func initConfig() {
 	if dbConfig["name"] == nil {
 		log.Fatal("missing database name")
 	}
-
-	log.Printf("Using config file: %s", viper.ConfigFileUsed())
 }
 
 func main() {

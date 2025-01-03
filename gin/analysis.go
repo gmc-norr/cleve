@@ -256,6 +256,13 @@ func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 				return
 			}
 			summary, err := cleve.ParseAnalysisSummary(summaryData)
+			if err != nil {
+				c.AbortWithStatusJSON(
+					http.StatusInternalServerError,
+					gin.H{"error": err.Error(), "when": "parsing analysis summary"},
+				)
+				return
+			}
 			err = db.SetAnalysisSummary(runId, analysisId, &summary)
 			if err != nil {
 				c.AbortWithStatusJSON(

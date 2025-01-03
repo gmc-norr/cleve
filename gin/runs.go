@@ -55,7 +55,6 @@ func RunHandler(db RunGetter) gin.HandlerFunc {
 		runId := c.Param("runId")
 		_, brief := c.GetQuery("brief")
 		run, err := db.Run(runId, brief)
-
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.JSON(http.StatusNotFound, gin.H{"error": "run not found"})
@@ -84,11 +83,11 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 
 		paramsFilename := filepath.Join(addRunRequest.Path, "RunParameters.xml")
 		paramsFile, err := os.Open(paramsFilename)
-		defer paramsFile.Close()
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "opening run parameters file"})
 			return
 		}
+		defer paramsFile.Close()
 
 		paramsData, err := io.ReadAll(paramsFile)
 		if err != nil {
@@ -98,7 +97,6 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 
 		var runParams cleve.RunParameters
 		runParams, err = cleve.ParseRunParameters(paramsData)
-
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid run parameters"})
 			return
@@ -106,11 +104,11 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 
 		infoFilename := filepath.Join(addRunRequest.Path, "RunInfo.xml")
 		infoFile, err := os.Open(infoFilename)
-		defer infoFile.Close()
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "opening run info file"})
 			return
 		}
+		defer infoFile.Close()
 
 		infoData, err := io.ReadAll(infoFile)
 		if err != nil {

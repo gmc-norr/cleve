@@ -74,7 +74,10 @@ func RunChartsHandler(db RunQCGetter) gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			p.Render(c.Writer)
+			if err := p.Render(c.Writer); err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 		}
 	}
 }

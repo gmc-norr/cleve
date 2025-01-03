@@ -49,8 +49,10 @@ type InteropRecordHolder interface {
 type Tile interface {
 	Parse(io.Reader) error
 }
-type Tile16 uint16
-type Tile32 uint32
+type (
+	Tile16 uint16
+	Tile32 uint32
+)
 
 func (t *Tile16) Parse(r io.Reader) error {
 	return binary.Read(r, binary.LittleEndian, t)
@@ -81,6 +83,8 @@ func (r ReadConfig) CycleToRead(cycle int) int {
 	return -1
 }
 
-type StatsMap1 = map[int]*RunningSummary[float64]
-type StatsMap2 = map[int]map[int]*RunningSummary[float64]
-type StatsMap3 = map[int]map[int]map[int]*RunningSummary[float64]
+type (
+	StatsMap1 = map[int]*RunningSummary[float64]
+	StatsMap2 = map[int]map[int]*RunningSummary[float64]
+	StatsMap3 = map[int]map[int]map[int]*RunningSummary[float64]
+)

@@ -28,7 +28,6 @@ func AddRunSampleSheetHandler(db SampleSheetSetter) gin.HandlerFunc {
 			SampleSheetPath string `json:"samplesheet" binding:"required"`
 		}
 		err := c.BindJSON(&createRequest)
-
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),

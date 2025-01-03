@@ -32,7 +32,7 @@ var (
 				if err != nil {
 					log.Fatalf("error: %s", err)
 				}
-				fmt.Printf(string(jsonString))
+				fmt.Println(string(jsonString))
 			} else {
 				w := tabwriter.NewWriter(os.Stdout, 2, 4, 2, ' ', 0)
 				fmt.Fprint(w, "name\tserial tag\tserial prefix\tready marker\n")
