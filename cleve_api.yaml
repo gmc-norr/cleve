@@ -306,7 +306,7 @@ endpoints:
       - key: page_size
         type: integer
         description: number of items per page
-        default: 10
+        default: 5
       - key: run_id_query
         type: string
         description: Run ID regular expression
