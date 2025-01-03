@@ -5,6 +5,9 @@ import (
 	"github.com/gmc-norr/cleve"
 )
 
+// TODO: find a better way of setting the defaults for the various filters.
+// Possibly use a constructor for them.
+
 func getRunFilter(c *gin.Context) (cleve.RunFilter, error) {
 	// Set filter defaults
 	filter := cleve.RunFilter{}
@@ -16,7 +19,9 @@ func getRunFilter(c *gin.Context) (cleve.RunFilter, error) {
 }
 
 func getSampleFilter(c *gin.Context) (cleve.SampleFilter, error) {
-	var filter cleve.SampleFilter
+	// Set filter defaults
+	filter := cleve.SampleFilter{}
+	filter.PageSize = 10
 	if err := c.BindQuery(&filter); err != nil {
 		return filter, err
 	}
