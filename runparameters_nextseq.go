@@ -2,7 +2,6 @@ package cleve
 
 import (
 	"encoding/xml"
-	"fmt"
 	"log"
 )
 
@@ -59,7 +58,7 @@ type NextSeqParameters struct {
 	Chemistry                             string `xml:"Chemistry"`
 	ChemistryVersion                      string `xml:"ChemistryVersion"`
 	SelectedTiles                         struct {
-		Tile []string `xml:"Tile,text"`
+		Tile []string `xml:"Tile"`
 	} `xml:"SelectedTiles"`
 	RunFolder                        string `xml:"RunFolder"`
 	RTALogsFolder                    string `xml:"RTALogsFolder"`
@@ -106,10 +105,7 @@ type NextSeqParameters struct {
 }
 
 func (p NextSeqParameters) IsValid() bool {
-	if p.InstrumentID == "" {
-		return false
-	}
-	return true
+	return p.InstrumentID != ""
 }
 
 func (p NextSeqParameters) GetExperimentName() string {
@@ -125,7 +121,7 @@ func (p NextSeqParameters) Platform() string {
 }
 
 func (p NextSeqParameters) Flowcell() string {
-	return fmt.Sprintf("%s", p.Chemistry)
+	return p.Chemistry
 }
 
 func ParseNextSeqRunParameters(d []byte) NextSeqParameters {

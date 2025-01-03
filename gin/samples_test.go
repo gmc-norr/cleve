@@ -63,7 +63,7 @@ func TestSample(t *testing.T) {
 
 		body, err := io.ReadAll(w.Body)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Error(err.Error())
 		}
 
 		var sample cleve.Sample

@@ -109,8 +109,10 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 		aggPipeline = append(aggPipeline, bson.D{
 			{Key: "$set", Value: bson.D{
 				{Key: "metadata.total_pages", Value: bson.D{
-					{Key: "$ceil", Value: bson.D{
-						{Key: "$divide", Value: bson.A{"$metadata.total_count", filter.PageSize}}},
+					{
+						Key: "$ceil", Value: bson.D{
+							{Key: "$divide", Value: bson.A{"$metadata.total_count", filter.PageSize}},
+						},
 					},
 				}},
 			}},
@@ -172,12 +174,12 @@ func (db DB) RunTotalErrorRate(runId string) (float64, error) {
 
 func (db DB) RunQCIndex() ([]map[string]string, error) {
 	cursor, err := db.RunQCCollection().Indexes().List(context.TODO())
-	defer cursor.Close(context.TODO())
-
-	var indexes []map[string]string
 	if err != nil {
 		return []map[string]string{}, err
 	}
+	defer cursor.Close(context.TODO())
+
+	var indexes []map[string]string
 
 	var result []bson.M
 	if err = cursor.All(context.TODO(), &result); err != nil {

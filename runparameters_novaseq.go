@@ -2,7 +2,6 @@ package cleve
 
 import (
 	"encoding/xml"
-	"fmt"
 	"log"
 )
 
@@ -47,10 +46,7 @@ type NovaSeqParameters struct {
 }
 
 func (p NovaSeqParameters) IsValid() bool {
-	if p.Side == "" {
-		return false
-	}
-	return true
+	return p.Side != ""
 }
 
 func (p NovaSeqParameters) GetExperimentName() string {
@@ -69,9 +65,9 @@ func (p NovaSeqParameters) Flowcell() string {
 	for _, ci := range p.ConsumableInfo {
 		if ci.Type == "FlowCell" {
 			if ci.Name == "" {
-				return fmt.Sprintf("%s", ci.Mode)
+				return ci.Mode
 			} else {
-				return fmt.Sprintf("%s", ci.Name)
+				return ci.Name
 			}
 		}
 	}

@@ -60,7 +60,9 @@ func TestRunStateSet(t *testing.T) {
 		t.Errorf("invalid state should return an error")
 	}
 
-	err = s.Set("new")
+	if err := s.Set("new"); err != nil {
+		t.Fatalf("error setting state to new: %s", err)
+	}
 	actual := s.String()
 	expected := "new"
 	if actual != expected {

@@ -14,7 +14,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 		config := GetChartConfig(c)
 		filter, err := getQcFilter(c)
 		if err != nil {
-			panic(err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
 		// Get all results
@@ -22,7 +22,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 
 		qc, err := db.RunQCs(filter)
 		if err != nil {
-			panic(err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
 		switch config.ChartData {
@@ -47,7 +47,10 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			p.Render(c.Writer)
+			if err := p.Render(c.Writer); err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 		case "error_rate":
 			plotData := charts.RunStats[float64]{
 				Data:  make([]charts.RunStat[float64], 0),
@@ -69,7 +72,10 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			p.Render(c.Writer)
+			if err := p.Render(c.Writer); err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 		}
 	}
 }

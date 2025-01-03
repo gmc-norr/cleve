@@ -19,8 +19,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type UpdateResult = mongo.UpdateResult
-type SectionType int
+type (
+	UpdateResult = mongo.UpdateResult
+	SectionType  int
+)
 
 const (
 	UnknownSection SectionType = iota
@@ -105,7 +107,7 @@ func (s SampleSheet) IsValid() bool {
 
 func (s SampleSheet) LastModified() (time.Time, error) {
 	var mostRecent time.Time
-	if s.Files == nil || len(s.Files) == 0 {
+	if len(s.Files) == 0 {
 		return mostRecent, fmt.Errorf("no modification times registered")
 	}
 	for i, f := range s.Files {
@@ -232,7 +234,7 @@ func (s Section) Get(name string, index ...int) (string, error) {
 			return "", fmt.Errorf("column %s not found in section %s", name, s.Name)
 		}
 
-		rowIndex := -1
+		var rowIndex int
 		if len(index) > 0 {
 			rowIndex = index[0]
 		} else {
@@ -292,8 +294,10 @@ type sampleSheetParser struct {
 
 func (p *sampleSheetParser) Peek() (rune, error) {
 	r, _, err := p.reader.ReadRune()
-	p.reader.UnreadRune()
-	return r, err
+	if err != nil {
+		return r, err
+	}
+	return r, p.reader.UnreadRune()
 }
 
 func (p *sampleSheetParser) ParseHeader() (string, SectionType, error) {

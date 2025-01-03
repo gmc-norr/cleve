@@ -39,7 +39,13 @@ func init() {
 	serveCmd.Flags().StringVar(&host, "host", "localhost", "host")
 	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "port")
 	serveCmd.Flags().StringVar(&logfile, "logfile", "", "file to write logs in")
-	viper.BindPFlag("host", serveCmd.Flags().Lookup("host"))
-	viper.BindPFlag("port", serveCmd.Flags().Lookup("port"))
-	viper.BindPFlag("logfile", serveCmd.Flags().Lookup("logfile"))
+	if err := viper.BindPFlag("host", serveCmd.Flags().Lookup("host")); err != nil {
+		log.Fatal(err)
+	}
+	if err := viper.BindPFlag("port", serveCmd.Flags().Lookup("port")); err != nil {
+		log.Fatal(err)
+	}
+	if err := viper.BindPFlag("logfile", serveCmd.Flags().Lookup("logfile")); err != nil {
+		log.Fatal(err)
+	}
 }

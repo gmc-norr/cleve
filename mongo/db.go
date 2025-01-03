@@ -12,15 +12,17 @@ import (
 )
 
 // Some exports that will be useful in route handling and testing
-var ErrNoDocuments = mongo.ErrNoDocuments
-var IsDuplicateKeyError = mongo.IsDuplicateKeyError
-var GenericDuplicateKeyError = mongo.WriteException{
-	WriteErrors: mongo.WriteErrors{
-		mongo.WriteError{
-			Code: 11000,
+var (
+	ErrNoDocuments           = mongo.ErrNoDocuments
+	IsDuplicateKeyError      = mongo.IsDuplicateKeyError
+	GenericDuplicateKeyError = mongo.WriteException{
+		WriteErrors: mongo.WriteErrors{
+			mongo.WriteError{
+				Code: 11000,
+			},
 		},
-	},
-}
+	}
+)
 
 type DB struct {
 	*mongo.Database
@@ -44,7 +46,6 @@ func Connect() (*DB, error) {
 		Password: mongo_password,
 	})
 	client, err := mongo.Connect(ctx, opts)
-
 	if err != nil {
 		return nil, fmt.Errorf("mongo.Connect() failed: %s\n", err)
 	}
@@ -126,7 +127,7 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 		return nil, err
 	}
 
-	var indexes = make(map[string][]map[string]string)
+	indexes := make(map[string][]map[string]string)
 	indexes["runs"] = runIndex
 	indexes["run_qc"] = runQcIndex
 	indexes["samplesheets"] = sampleSheetIndex

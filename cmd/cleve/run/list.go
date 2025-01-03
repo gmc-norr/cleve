@@ -12,39 +12,41 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var csvOutput, jsonOutput, brief bool
-var platform, state string
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List sequencing runs",
-	PreRun: func(cmd *cobra.Command, args []string) {
-		if csvOutput && jsonOutput {
-			log.Fatal("Cannot specify both --csv and --json")
-		}
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		db, err := mongo.Connect()
-		if err != nil {
-			log.Fatal(err)
-		}
-		filter := cleve.RunFilter{
-			Brief:    brief,
-			Platform: platform,
-			State:    state,
-		}
-		runs, err := db.Runs(filter)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if csvOutput {
-			printCSV(runs.Runs)
-		} else if jsonOutput {
-			printJSON(runs.Runs)
-		} else {
-			printTable(runs.Runs)
-		}
-	},
-}
+var (
+	csvOutput, jsonOutput, brief bool
+	platform, state              string
+	listCmd                      = &cobra.Command{
+		Use:   "list",
+		Short: "List sequencing runs",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if csvOutput && jsonOutput {
+				log.Fatal("Cannot specify both --csv and --json")
+			}
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			db, err := mongo.Connect()
+			if err != nil {
+				log.Fatal(err)
+			}
+			filter := cleve.RunFilter{
+				Brief:    brief,
+				Platform: platform,
+				State:    state,
+			}
+			runs, err := db.Runs(filter)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if csvOutput {
+				printCSV(runs.Runs)
+			} else if jsonOutput {
+				printJSON(runs.Runs)
+			} else {
+				printTable(runs.Runs)
+			}
+		},
+	}
+)
 
 func init() {
 	listCmd.Flags().BoolVar(&csvOutput, "csv", false, "Output in CSV format")
@@ -80,5 +82,7 @@ func printCSV(runs []*cleve.Run) {
 }
 
 func printJSON(runs []*cleve.Run) {
-	json.NewEncoder(os.Stdout).Encode(runs)
+	if err := json.NewEncoder(os.Stdout).Encode(runs); err != nil {
+		log.Fatalf("json encoding failed: %s", err.Error())
+	}
 }

@@ -19,7 +19,9 @@ func (c *CustomTime) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error 
 	const customLayout3 = "2006-01-02"
 	const customLayout4 = "060102"
 	var v string
-	d.DecodeElement(&v, &start)
+	if err := d.DecodeElement(&v, &start); err != nil {
+		return err
+	}
 	t, err := time.Parse(time.RFC3339, v)
 	if err != nil {
 		t, err = time.Parse(customLayout1, v)
