@@ -8,7 +8,7 @@ import (
 // Pagination filtering.
 type PaginationFilter struct {
 	Page     int `form:"page,default=1"`
-	PageSize int `form:"page_size,default=10"`
+	PageSize int `form:"page_size"`
 }
 
 func (f PaginationFilter) Validate() error {
