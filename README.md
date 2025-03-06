@@ -112,7 +112,7 @@ Once everything is up and running, the API documentation can be found at `<cleve
 
 In addition to the general requirments, the following are recommended in a development environment:
 
-- [tailwindcss](https://tailwindcss.com/): for web development (the [standalone CLI](https://tailwindcss.com/blog/standalone-cli) is recommended)
+- [tailwindcss 4](https://tailwindcss.com/): for web development (the [standalone CLI](https://tailwindcss.com/blog/standalone-cli) is recommended)
 - [pre-commit](https://pre-commit.com): if pre-commit is used, [golangci-lint](https://github.com/golangci/golangci-lint) is also a requirement
 
 ### Testing
