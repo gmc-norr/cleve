@@ -1,5 +1,5 @@
 root = "."
-testdata_dir = "test_data"
+testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
@@ -7,7 +7,7 @@ tmp_dir = "tmp"
   bin = "./bin/cleve serve"
   cmd = "make cleve"
   delay = 1000
-  exclude_dir = ["bin", "test_data"]
+  exclude_dir = ["bin", "testdata"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
