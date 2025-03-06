@@ -20,9 +20,17 @@ These visualisations provide a quick way of visually evaluate the state of a seq
 
 ## Installation
 
+The easiest way to build Cleve is to use make:
+
 ```bash
 git clone https://github.com/gmc-norr/cleve
 cd cleve
+make
+```
+
+The manual steps required are:
+
+```bash
 go generate ./...
 go build -o ./bin/cleve ./cmd/cleve
 ```
@@ -117,7 +125,7 @@ In addition to the general requirments, the following are recommended in a devel
 
 ### Testing
 
-Unit tests can be run with `go test ./...`.
+Unit tests can be run with `make test` or `go test ./...`.
 
 ## Where does the name come from?
 
