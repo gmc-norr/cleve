@@ -52,7 +52,7 @@ func TestReadRunParameters(t *testing.T) {
 		{
 			name:           "nextseq",
 			experimentName: "250210_Archer_VP_Fusion nypan",
-			path:           "./test/250210_NB551119_0457_AHL3Y2AFX7/RunParameters.xml",
+			path:           "./testdata/250210_NB551119_0457_AHL3Y2AFX7/RunParameters.xml",
 			reads: []read{
 				{
 					Name:   "Read 1",
@@ -101,7 +101,7 @@ func TestReadRunParameters(t *testing.T) {
 		},
 		{
 			name:           "miseq",
-			path:           "./test/250207_M00568_0665_000000000-LMWPP/RunParameters.xml",
+			path:           "./testdata/250207_M00568_0665_000000000-LMWPP/RunParameters.xml",
 			experimentName: "LymphoTrack_AL25.317",
 			reads: []read{
 				{
@@ -145,7 +145,7 @@ func TestReadRunParameters(t *testing.T) {
 		},
 		{
 			name:           "miseq old",
-			path:           "./test/160122_M00568_0146_000000000-ALYCY/runParameters.xml",
+			path:           "./testdata/160122_M00568_0146_000000000-ALYCY/runParameters.xml",
 			experimentName: "160111 HaloPlex Run2",
 			reads: []read{
 				{
@@ -186,7 +186,7 @@ func TestReadRunParameters(t *testing.T) {
 		},
 		{
 			name:           "novaseq",
-			path:           "./test/20250123_LH00352_0033_A225H35LT1/RunParameters.xml",
+			path:           "./testdata/20250123_LH00352_0033_A225H35LT1/RunParameters.xml",
 			experimentName: "250123_PoN_16samples",
 			side:           "A",
 			reads: []read{

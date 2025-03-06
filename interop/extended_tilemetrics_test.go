@@ -17,7 +17,7 @@ func TestExtendedReadTileMetrics(t *testing.T) {
 	}{
 		{
 			name:    "novaseq",
-			path:    "./test/20250123_LH00352_0033_A225H35LT1/InterOp/ExtendedTileMetricsOut.bin",
+			path:    "./testdata/20250123_LH00352_0033_A225H35LT1/InterOp/ExtendedTileMetricsOut.bin",
 			version: 3,
 			nTiles:  560,
 			expected: map[int]map[int]float64{
@@ -31,7 +31,7 @@ func TestExtendedReadTileMetrics(t *testing.T) {
 		},
 		{
 			name:    "nextseq",
-			path:    "./test/250210_NB551119_0457_AHL3Y2AFX7/InterOp/ExtendedTileMetricsOut.bin",
+			path:    "./testdata/250210_NB551119_0457_AHL3Y2AFX7/InterOp/ExtendedTileMetricsOut.bin",
 			version: 1,
 			nTiles:  288,
 			expected: map[int]map[int]float64{

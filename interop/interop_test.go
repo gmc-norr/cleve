@@ -16,7 +16,7 @@ func TestInteropYield(t *testing.T) {
 	}{
 		{
 			name:       "novaseq",
-			path:       "./test/20250123_LH00352_0033_A225H35LT1",
+			path:       "./testdata/20250123_LH00352_0033_A225H35LT1",
 			totalYield: 675.83,
 			laneYield: map[int]float64{
 				1: 337.09,
@@ -25,7 +25,7 @@ func TestInteropYield(t *testing.T) {
 		},
 		{
 			name:       "nextseq",
-			path:       "./test/250210_NB551119_0457_AHL3Y2AFX7",
+			path:       "./testdata/250210_NB551119_0457_AHL3Y2AFX7",
 			totalYield: 42.30,
 			laneYield: map[int]float64{
 				1: 10.79,
@@ -36,7 +36,7 @@ func TestInteropYield(t *testing.T) {
 		},
 		{
 			name:       "miseq",
-			path:       "./test/250207_M00568_0665_000000000-LMWPP",
+			path:       "./testdata/250207_M00568_0665_000000000-LMWPP",
 			totalYield: 10.97,
 			laneYield: map[int]float64{
 				1: 10.97,
@@ -44,7 +44,7 @@ func TestInteropYield(t *testing.T) {
 		},
 		{
 			name:       "miseq_old",
-			path:       "./test/160122_M00568_0146_000000000-ALYCY",
+			path:       "./testdata/160122_M00568_0146_000000000-ALYCY",
 			totalYield: 6.60,
 			laneYield: map[int]float64{
 				1: 6.60,
@@ -93,19 +93,19 @@ func TestTileCount(t *testing.T) {
 	}{
 		{
 			name: "novaseq",
-			path: "./test/20250123_LH00352_0033_A225H35LT1",
+			path: "./testdata/20250123_LH00352_0033_A225H35LT1",
 		},
 		{
 			name: "nextseq",
-			path: "./test/250210_NB551119_0457_AHL3Y2AFX7",
+			path: "./testdata/250210_NB551119_0457_AHL3Y2AFX7",
 		},
 		{
 			name: "miseq",
-			path: "./test/250207_M00568_0665_000000000-LMWPP",
+			path: "./testdata/250207_M00568_0665_000000000-LMWPP",
 		},
 		{
 			name: "miseq_old",
-			path: "./test/160122_M00568_0146_000000000-ALYCY",
+			path: "./testdata/160122_M00568_0146_000000000-ALYCY",
 		},
 	}
 
@@ -149,7 +149,7 @@ func TestOccupancy(t *testing.T) {
 	}{
 		{
 			name:          "novaseq",
-			path:          "./test/20250123_LH00352_0033_A225H35LT1",
+			path:          "./testdata/20250123_LH00352_0033_A225H35LT1",
 			expectedTotal: 97.13,
 			expectedLane: map[int]float64{
 				1: 97.03,
@@ -158,7 +158,7 @@ func TestOccupancy(t *testing.T) {
 		},
 		{
 			name:          "nextseq",
-			path:          "./test/250210_NB551119_0457_AHL3Y2AFX7",
+			path:          "./testdata/250210_NB551119_0457_AHL3Y2AFX7",
 			expectedTotal: 99.73,
 			expectedLane: map[int]float64{
 				1: 99.70,
@@ -169,11 +169,11 @@ func TestOccupancy(t *testing.T) {
 		},
 		{
 			name: "miseq",
-			path: "./test/250207_M00568_0665_000000000-LMWPP",
+			path: "./testdata/250207_M00568_0665_000000000-LMWPP",
 		},
 		{
 			name: "miseq_old",
-			path: "./test/160122_M00568_0146_000000000-ALYCY",
+			path: "./testdata/160122_M00568_0146_000000000-ALYCY",
 		},
 	}
 
@@ -214,7 +214,7 @@ func TestLaneErrorRate(t *testing.T) {
 	}{
 		{
 			name: "novaseq missing",
-			path: "./test/20250123_LH00352_0033_A225H35LT1",
+			path: "./testdata/20250123_LH00352_0033_A225H35LT1",
 			laneErrors: map[int]map[int]float64{
 				1: {
 					1: 0,
@@ -236,7 +236,7 @@ func TestLaneErrorRate(t *testing.T) {
 		},
 		{
 			name: "novaseq",
-			path: "./test/20250115_LH00352_0031_A225HMVLT1",
+			path: "./testdata/20250115_LH00352_0031_A225HMVLT1",
 			laneErrors: map[int]map[int]float64{
 				1: {
 					1: 0.16,
@@ -258,7 +258,7 @@ func TestLaneErrorRate(t *testing.T) {
 		},
 		{
 			name: "nextseq",
-			path: "./test/250210_NB551119_0457_AHL3Y2AFX7",
+			path: "./testdata/250210_NB551119_0457_AHL3Y2AFX7",
 			laneErrors: map[int]map[int]float64{
 				1: {
 					1: 0.62,

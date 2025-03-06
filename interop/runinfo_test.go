@@ -18,7 +18,7 @@ func TestReadRunInfo(t *testing.T) {
 	}{
 		{
 			name:    "miseq",
-			path:    "./test/250207_M00568_0665_000000000-LMWPP/RunInfo.xml",
+			path:    "./testdata/250207_M00568_0665_000000000-LMWPP/RunInfo.xml",
 			version: 2,
 			// 250207
 			date:       time.Date(2025, 2, 7, 0, 0, 0, 0, time.UTC),
@@ -31,7 +31,7 @@ func TestReadRunInfo(t *testing.T) {
 		},
 		{
 			name:    "miseq old",
-			path:    "./test/160122_M00568_0146_000000000-ALYCY/RunInfo.xml",
+			path:    "./testdata/160122_M00568_0146_000000000-ALYCY/RunInfo.xml",
 			version: 2,
 			// 160122
 			date:       time.Date(2016, 1, 22, 0, 0, 0, 0, time.UTC),
@@ -44,7 +44,7 @@ func TestReadRunInfo(t *testing.T) {
 		},
 		{
 			name:    "nextseq",
-			path:    "./test/250210_NB551119_0457_AHL3Y2AFX7/RunInfo.xml",
+			path:    "./testdata/250210_NB551119_0457_AHL3Y2AFX7/RunInfo.xml",
 			version: 4,
 			// 250210
 			date:       time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC),
@@ -58,7 +58,7 @@ func TestReadRunInfo(t *testing.T) {
 		},
 		{
 			name:    "novaseq",
-			path:    "./test/20250123_LH00352_0033_A225H35LT1/RunInfo.xml",
+			path:    "./testdata/20250123_LH00352_0033_A225H35LT1/RunInfo.xml",
 			version: 6,
 			// 2025-01-23T19:07:33Z
 			date:       time.Date(2025, 1, 23, 19, 7, 33, 0, time.UTC),

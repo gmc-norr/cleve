@@ -25,7 +25,7 @@ func TestReadTileMetrics(t *testing.T) {
 	}{
 		{
 			name:    "novaseq",
-			path:    "./test/20250123_LH00352_0033_A225H35LT1/InterOp/TileMetricsOut.bin",
+			path:    "./testdata/20250123_LH00352_0033_A225H35LT1/InterOp/TileMetricsOut.bin",
 			version: 3,
 			lanes:   2,
 			percPf:  77.99,
@@ -47,7 +47,7 @@ func TestReadTileMetrics(t *testing.T) {
 		},
 		{
 			name:    "nextseq",
-			path:    "./test/250210_NB551119_0457_AHL3Y2AFX7/InterOp/TileMetricsOut.bin",
+			path:    "./testdata/250210_NB551119_0457_AHL3Y2AFX7/InterOp/TileMetricsOut.bin",
 			version: 2,
 			lanes:   4,
 			percPf:  92.24,
@@ -81,7 +81,7 @@ func TestReadTileMetrics(t *testing.T) {
 		},
 		{
 			name:    "miseq",
-			path:    "./test/250207_M00568_0665_000000000-LMWPP/InterOp/TileMetricsOut.bin",
+			path:    "./testdata/250207_M00568_0665_000000000-LMWPP/InterOp/TileMetricsOut.bin",
 			version: 2,
 			lanes:   1,
 			percPf:  79.31,
@@ -96,7 +96,7 @@ func TestReadTileMetrics(t *testing.T) {
 		},
 		{
 			name:    "miseq old",
-			path:    "./test/160122_M00568_0146_000000000-ALYCY/InterOp/TileMetricsOut.bin",
+			path:    "./testdata/160122_M00568_0146_000000000-ALYCY/InterOp/TileMetricsOut.bin",
 			version: 2,
 			lanes:   1,
 			percPf:  79.73,

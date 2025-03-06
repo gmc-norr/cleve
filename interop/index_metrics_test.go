@@ -19,7 +19,7 @@ func TestReadIndexMetrics(t *testing.T) {
 	}{
 		{
 			name:       "novaseq 1",
-			path:       "./test/20250123_LH00352_0033_A225H35LT1/InterOp/IndexMetricsOut.bin",
+			path:       "./testdata/20250123_LH00352_0033_A225H35LT1/InterOp/IndexMetricsOut.bin",
 			version:    2,
 			pfClusters: 4_346_424_164,
 			samplePerc: map[string]float64{
@@ -43,7 +43,7 @@ func TestReadIndexMetrics(t *testing.T) {
 		},
 		{
 			name:       "novaseq 2",
-			path:       "./test/20250115_LH00352_0031_A225HMVLT1/InterOp/IndexMetricsOut.bin",
+			path:       "./testdata/20250115_LH00352_0031_A225HMVLT1/InterOp/IndexMetricsOut.bin",
 			version:    2,
 			pfClusters: 4_240_295_482,
 			samplePerc: map[string]float64{
@@ -99,7 +99,7 @@ func TestReadIndexMetrics(t *testing.T) {
 		},
 		{
 			name:       "nextseq",
-			path:       "./test/250210_NB551119_0457_AHL3Y2AFX7/InterOp/IndexMetricsOut.bin",
+			path:       "./testdata/250210_NB551119_0457_AHL3Y2AFX7/InterOp/IndexMetricsOut.bin",
 			version:    2,
 			pfClusters: 269_272_238,
 			samplePerc: map[string]float64{
@@ -124,7 +124,7 @@ func TestReadIndexMetrics(t *testing.T) {
 		},
 		{
 			name:       "miseq",
-			path:       "./test/250207_M00568_0665_000000000-LMWPP/InterOp/IndexMetricsOut.bin",
+			path:       "./testdata/250207_M00568_0665_000000000-LMWPP/InterOp/IndexMetricsOut.bin",
 			version:    1,
 			pfClusters: 18125806,
 			samplePerc: map[string]float64{
@@ -140,7 +140,7 @@ func TestReadIndexMetrics(t *testing.T) {
 		},
 		{
 			name:       "miseq old",
-			path:       "./test/160122_M00568_0146_000000000-ALYCY/InterOp/IndexMetricsOut.bin",
+			path:       "./testdata/160122_M00568_0146_000000000-ALYCY/InterOp/IndexMetricsOut.bin",
 			version:    1,
 			pfClusters: 21511012,
 			samplePerc: map[string]float64{
