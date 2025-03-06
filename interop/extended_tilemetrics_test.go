@@ -1,7 +1,9 @@
 package interop
 
 import (
+	"errors"
 	"math"
+	"os"
 	"testing"
 )
 
@@ -46,6 +48,9 @@ func TestExtendedReadTileMetrics(t *testing.T) {
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			tm, err := ReadExtendedTileMetrics(c.path)
 			if err != nil {
 				t.Errorf("failed to read extended tile metrics: %s", err)

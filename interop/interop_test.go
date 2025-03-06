@@ -1,7 +1,9 @@
 package interop
 
 import (
+	"errors"
 	"math"
+	"os"
 	"testing"
 )
 
@@ -52,6 +54,9 @@ func TestInteropYield(t *testing.T) {
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			i, err := InteropFromDir(c.path)
 			if err != nil {
 				t.Fatal(err)
@@ -106,6 +111,9 @@ func TestTileCount(t *testing.T) {
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			i, err := InteropFromDir(c.path)
 			if err != nil {
 				t.Fatal(err)
@@ -171,6 +179,9 @@ func TestOccupancy(t *testing.T) {
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			i, err := InteropFromDir(c.path)
 			if err != nil {
 				t.Fatal(err)
@@ -279,6 +290,9 @@ func TestLaneErrorRate(t *testing.T) {
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			i, err := InteropFromDir(c.path)
 			if err != nil {
 				t.Fatal(err)

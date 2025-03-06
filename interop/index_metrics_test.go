@@ -1,7 +1,9 @@
 package interop
 
 import (
+	"errors"
 	"math"
+	"os"
 	"testing"
 )
 
@@ -154,6 +156,9 @@ func TestReadIndexMetrics(t *testing.T) {
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			im, err := ReadIndexMetrics(c.path)
 			if err != nil && !c.shouldError {
 				t.Fatal(err)

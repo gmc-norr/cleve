@@ -1,6 +1,8 @@
 package interop
 
 import (
+	"errors"
+	"os"
 	"testing"
 )
 
@@ -29,6 +31,9 @@ func TestReadQMetrics(t *testing.T) {
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
 			_, err := ReadQMetrics(c.path)
 			if err != nil {
 				t.Fatal(err)
