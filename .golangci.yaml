@@ -9,3 +9,5 @@ linters:
     - staticcheck
     - unused
     - goimports
+issues:
+  fix: true
