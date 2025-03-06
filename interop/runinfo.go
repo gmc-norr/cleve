@@ -3,6 +3,7 @@ package interop
 import (
 	"encoding/xml"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 )
@@ -60,8 +61,7 @@ type RunInfo struct {
 	}
 }
 
-// ReadRunInfo reads an Illumina RunInfo.xml file.
-func ReadRunInfo(filename string) (ri RunInfo, err error) {
+func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 	var payload struct {
 		XMLName xml.Name `xml:"RunInfo"`
 		Version int      `xml:"Version,attr"`
@@ -81,12 +81,7 @@ func ReadRunInfo(filename string) (ri RunInfo, err error) {
 		} `xml:"Run"`
 	}
 
-	f, err := os.Open(filename)
-	if err != nil {
-		return ri, err
-	}
-	defer f.Close()
-	decoder := xml.NewDecoder(f)
+	decoder := xml.NewDecoder(r)
 	err = decoder.Decode(&payload)
 	if err != nil {
 		return ri, err
@@ -111,12 +106,22 @@ func ReadRunInfo(filename string) (ri RunInfo, err error) {
 	ri.Platform = identifyPlatform(ri.InstrumentId)
 	ri.FlowcellName = identifyFlowcell(ri.FlowcellId)
 
-	switch payload.Version {
+	switch ri.Version {
 	case 2, 4, 6:
 		return ri, nil
 	default:
 		return ri, fmt.Errorf("unsupported run info version: %d", ri.Version)
 	}
+}
+
+// ReadRunInfo reads an Illumina RunInfo.xml file.
+func ReadRunInfo(filename string) (ri RunInfo, err error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return ri, err
+	}
+	defer f.Close()
+	return ParseRunInfo(f)
 }
 
 // TileCount returns the number of tiles represented on the flow cell.
