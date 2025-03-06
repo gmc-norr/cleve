@@ -9,13 +9,15 @@ import (
 
 func TestReadRunInfo(t *testing.T) {
 	testcases := []struct {
-		name       string
-		path       string
-		version    int
-		runId      string
-		date       time.Time
-		instrument string
-		reads      []read
+		name         string
+		path         string
+		version      int
+		runId        string
+		date         time.Time
+		instrumentId string
+		platform     string
+		flowcell     string
+		reads        []read
 	}{
 		{
 			name:    "miseq",
@@ -23,8 +25,10 @@ func TestReadRunInfo(t *testing.T) {
 			version: 2,
 			runId:   "250207_M00568_0665_000000000-LMWPP",
 			// 250207
-			date:       time.Date(2025, 2, 7, 0, 0, 0, 0, time.UTC),
-			instrument: "M00568",
+			date:         time.Date(2025, 2, 7, 0, 0, 0, 0, time.UTC),
+			instrumentId: "M00568",
+			platform:     "MiSeq",
+			flowcell:     "Standard",
 			reads: []read{
 				{},
 				{},
@@ -37,8 +41,10 @@ func TestReadRunInfo(t *testing.T) {
 			version: 2,
 			runId:   "160122_M00568_0146_000000000-ALYCY",
 			// 160122
-			date:       time.Date(2016, 1, 22, 0, 0, 0, 0, time.UTC),
-			instrument: "M00568",
+			date:         time.Date(2016, 1, 22, 0, 0, 0, 0, time.UTC),
+			instrumentId: "M00568",
+			platform:     "MiSeq",
+			flowcell:     "Standard",
 			reads: []read{
 				{},
 				{},
@@ -51,8 +57,10 @@ func TestReadRunInfo(t *testing.T) {
 			version: 4,
 			runId:   "250210_NB551119_0457_AHL3Y2AFX7",
 			// 250210
-			date:       time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC),
-			instrument: "NB551119",
+			date:         time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC),
+			instrumentId: "NB551119",
+			platform:     "NextSeq 5x0",
+			flowcell:     "Mid",
 			reads: []read{
 				{},
 				{},
@@ -66,8 +74,10 @@ func TestReadRunInfo(t *testing.T) {
 			version: 6,
 			runId:   "20250123_LH00352_0033_A225H35LT1",
 			// 2025-01-23T19:07:33Z
-			date:       time.Date(2025, 1, 23, 19, 7, 33, 0, time.UTC),
-			instrument: "LH00352",
+			date:         time.Date(2025, 1, 23, 19, 7, 33, 0, time.UTC),
+			instrumentId: "LH00352",
+			platform:     "NovaSeq X Plus",
+			flowcell:     "1.5B",
 			reads: []read{
 				{},
 				{},
@@ -95,8 +105,16 @@ func TestReadRunInfo(t *testing.T) {
 				t.Errorf("expected date %s, found %s", c.date, ri.Date)
 			}
 
-			if ri.Instrument != c.instrument {
-				t.Errorf("expected instrument %q, found %q", c.instrument, ri.Instrument)
+			if ri.InstrumentId != c.instrumentId {
+				t.Errorf("expected instrument ID %q, found %q", c.instrumentId, ri.InstrumentId)
+			}
+
+			if ri.Platform != c.platform {
+				t.Errorf("expected platform %q, found %q", c.platform, ri.Platform)
+			}
+
+			if ri.FlowcellName != c.flowcell {
+				t.Errorf("expected flowcell %q, found %q", c.flowcell, ri.FlowcellName)
 			}
 
 			if len(ri.Reads) != len(c.reads) {
