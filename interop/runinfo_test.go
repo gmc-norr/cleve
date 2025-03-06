@@ -12,6 +12,7 @@ func TestReadRunInfo(t *testing.T) {
 		name       string
 		path       string
 		version    int
+		runId      string
 		date       time.Time
 		instrument string
 		reads      []read
@@ -20,6 +21,7 @@ func TestReadRunInfo(t *testing.T) {
 			name:    "miseq",
 			path:    "./testdata/250207_M00568_0665_000000000-LMWPP/RunInfo.xml",
 			version: 2,
+			runId:   "250207_M00568_0665_000000000-LMWPP",
 			// 250207
 			date:       time.Date(2025, 2, 7, 0, 0, 0, 0, time.UTC),
 			instrument: "M00568",
@@ -33,6 +35,7 @@ func TestReadRunInfo(t *testing.T) {
 			name:    "miseq old",
 			path:    "./testdata/160122_M00568_0146_000000000-ALYCY/RunInfo.xml",
 			version: 2,
+			runId:   "160122_M00568_0146_000000000-ALYCY",
 			// 160122
 			date:       time.Date(2016, 1, 22, 0, 0, 0, 0, time.UTC),
 			instrument: "M00568",
@@ -46,6 +49,7 @@ func TestReadRunInfo(t *testing.T) {
 			name:    "nextseq",
 			path:    "./testdata/250210_NB551119_0457_AHL3Y2AFX7/RunInfo.xml",
 			version: 4,
+			runId:   "250210_NB551119_0457_AHL3Y2AFX7",
 			// 250210
 			date:       time.Date(2025, 2, 10, 0, 0, 0, 0, time.UTC),
 			instrument: "NB551119",
@@ -60,6 +64,7 @@ func TestReadRunInfo(t *testing.T) {
 			name:    "novaseq",
 			path:    "./testdata/20250123_LH00352_0033_A225H35LT1/RunInfo.xml",
 			version: 6,
+			runId:   "20250123_LH00352_0033_A225H35LT1",
 			// 2025-01-23T19:07:33Z
 			date:       time.Date(2025, 1, 23, 19, 7, 33, 0, time.UTC),
 			instrument: "LH00352",
@@ -96,6 +101,10 @@ func TestReadRunInfo(t *testing.T) {
 
 			if len(ri.Reads) != len(c.reads) {
 				t.Errorf("expected %d reads, found %d", len(c.reads), len(ri.Reads))
+			}
+
+			if ri.RunId != c.runId {
+				t.Errorf("expected run ID %q, got %q", c.runId, ri.RunId)
 			}
 			//
 			// if ri.Flowcell.Lanes != 2 {
