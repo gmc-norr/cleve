@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func testConsumable(t *testing.T, c consumable, ec consumable) {
+func testConsumable(t *testing.T, c Consumable, ec Consumable) {
 	if c.Type != ec.Type {
 		t.Errorf("expected type %s, found %s", ec.Type, c.Type)
 	}
@@ -46,8 +46,8 @@ func TestReadRunParameters(t *testing.T) {
 		side           string
 		experimentName string
 		reads          []read
-		flowcell       consumable
-		consumables    []consumable
+		flowcell       Consumable
+		consumables    []Consumable
 	}{
 		{
 			name:           "nextseq",
@@ -71,7 +71,7 @@ func TestReadRunParameters(t *testing.T) {
 					Cycles: 151,
 				},
 			},
-			flowcell: consumable{
+			flowcell: Consumable{
 				Type:         "FlowCell",
 				Name:         "NextSeq Mid",
 				SerialNumber: "HL3Y2AFX7",
@@ -80,7 +80,7 @@ func TestReadRunParameters(t *testing.T) {
 				// 2026-10-07T00:00:00
 				ExpirationDate: time.Date(2026, 10, 7, 0, 0, 0, 0, time.UTC),
 			},
-			consumables: []consumable{
+			consumables: []Consumable{
 				{
 					Type:         "Buffer",
 					SerialNumber: "NS6436487-BUFFR",
@@ -117,7 +117,7 @@ func TestReadRunParameters(t *testing.T) {
 					Cycles: 301,
 				},
 			},
-			flowcell: consumable{
+			flowcell: Consumable{
 				Type:         "FlowCell",
 				SerialNumber: "000000000-LMWPP",
 				PartNumber:   "15028382",
@@ -125,7 +125,7 @@ func TestReadRunParameters(t *testing.T) {
 				// 2025-05-19T00:00:00
 				ExpirationDate: time.Date(2025, 5, 19, 0, 0, 0, 0, time.UTC),
 			},
-			consumables: []consumable{
+			consumables: []Consumable{
 				{
 					Type:         "Buffer",
 					SerialNumber: "MS1233468-00PR2",
@@ -161,14 +161,14 @@ func TestReadRunParameters(t *testing.T) {
 					Cycles: 151,
 				},
 			},
-			flowcell: consumable{
+			flowcell: Consumable{
 				Type:         "FlowCell",
 				SerialNumber: "000000000-ALYCY",
 				PartNumber:   "15028382",
 				// 2016-12-09T00:00:00
 				ExpirationDate: time.Date(2016, 12, 9, 0, 0, 0, 0, time.UTC),
 			},
-			consumables: []consumable{
+			consumables: []Consumable{
 				{
 					Type:         "Buffer",
 					SerialNumber: "MS2633925-00PR2",
@@ -207,7 +207,7 @@ func TestReadRunParameters(t *testing.T) {
 					Cycles: 151,
 				},
 			},
-			flowcell: consumable{
+			flowcell: Consumable{
 				Type:         "FlowCell",
 				Name:         "1.5B",
 				Version:      "1.0",
@@ -218,7 +218,7 @@ func TestReadRunParameters(t *testing.T) {
 				ExpirationDate: time.Date(2026, 3, 26, 0, 0, 0, 0, CET),
 				Mode:           1,
 			},
-			consumables: []consumable{
+			consumables: []Consumable{
 				{
 					Type:         "Reagent",
 					Name:         "1.5B 300c",

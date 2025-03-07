@@ -63,7 +63,7 @@ type read struct {
 	Cycles int
 }
 
-type consumable struct {
+type Consumable struct {
 	Type           string
 	Name           string
 	Version        string
@@ -78,8 +78,8 @@ type RunParameters struct {
 	ExperimentName string
 	Side           string `json:"side,omitempty"`
 	Reads          []read
-	Flowcell       consumable
-	Consumables    []consumable
+	Flowcell       Consumable
+	Consumables    []Consumable
 }
 
 type runParametersNovaSeq struct {
@@ -282,10 +282,10 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			})
 		}
 
-		rp.Consumables = make([]consumable, 0, len(novaseq.Consumables))
+		rp.Consumables = make([]Consumable, 0, len(novaseq.Consumables))
 		for _, c := range novaseq.Consumables {
 			if c.Type == "FlowCell" {
-				rp.Flowcell = consumable{
+				rp.Flowcell = Consumable{
 					Type:           c.Type,
 					Name:           c.Name,
 					Version:        c.Version,
@@ -297,7 +297,7 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 				}
 				continue
 			}
-			rp.Consumables = append(rp.Consumables, consumable{
+			rp.Consumables = append(rp.Consumables, Consumable{
 				Type:           c.Type,
 				Name:           c.Name,
 				Version:        c.Version,
@@ -333,7 +333,7 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 				Cycles: nextseq.Setup.Read2,
 			},
 		}
-		rp.Flowcell = consumable{
+		rp.Flowcell = Consumable{
 			Type:           "FlowCell",
 			Name:           nextseq.Chemistry,
 			SerialNumber:   nextseq.Flowcell.SerialNumber,
@@ -342,8 +342,8 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			ExpirationDate: nextseq.Flowcell.ExpirationDate.Time,
 		}
 
-		rp.Consumables = make([]consumable, 2)
-		rp.Consumables[0] = consumable{
+		rp.Consumables = make([]Consumable, 2)
+		rp.Consumables[0] = Consumable{
 			Type:           "Buffer",
 			SerialNumber:   nextseq.Buffer.SerialNumber,
 			PartNumber:     nextseq.Buffer.PartNumber,
@@ -351,7 +351,7 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			ExpirationDate: nextseq.Buffer.ExpirationDate.Time,
 		}
 
-		rp.Consumables[1] = consumable{
+		rp.Consumables[1] = Consumable{
 			Type:           "Reagent",
 			SerialNumber:   nextseq.ReagentKit.SerialNumber,
 			PartNumber:     nextseq.ReagentKit.PartNumber,
@@ -375,15 +375,15 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 				Cycles: r.Cycles,
 			})
 		}
-		rp.Flowcell = consumable{
+		rp.Flowcell = Consumable{
 			Type:           "FlowCell",
 			SerialNumber:   miseq.Flowcell.SerialNumber,
 			PartNumber:     miseq.Flowcell.PartNumber,
 			LotNumber:      miseq.Flowcell.LotNumber,
 			ExpirationDate: miseq.Flowcell.ExpirationDate.Time,
 		}
-		rp.Consumables = make([]consumable, 2)
-		rp.Consumables[0] = consumable{
+		rp.Consumables = make([]Consumable, 2)
+		rp.Consumables[0] = Consumable{
 			Type:           "Buffer",
 			SerialNumber:   miseq.Buffer.SerialNumber,
 			PartNumber:     miseq.Buffer.PartNumber,
@@ -391,7 +391,7 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			ExpirationDate: miseq.Buffer.ExpirationDate.Time,
 		}
 
-		rp.Consumables[1] = consumable{
+		rp.Consumables[1] = Consumable{
 			Type:           "Reagent",
 			SerialNumber:   miseq.ReagentKit.SerialNumber,
 			PartNumber:     miseq.ReagentKit.PartNumber,
