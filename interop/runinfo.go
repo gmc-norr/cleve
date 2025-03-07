@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"time"
 )
 
 // Current sequencers that we use and support
@@ -46,7 +47,7 @@ type ReadInfo struct {
 type RunInfo struct {
 	Version      int
 	RunId        string
-	Date         interopTime
+	Date         time.Time
 	Platform     string
 	FlowcellName string
 	InstrumentId string
@@ -90,7 +91,7 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 	ri = RunInfo{
 		Version:      payload.Version,
 		RunId:        payload.Run.Id,
-		Date:         payload.Run.Date,
+		Date:         payload.Run.Date.Time,
 		InstrumentId: payload.Run.InstrumentId,
 		FlowcellId:   payload.Run.FlowcellId,
 		Reads:        payload.Run.Reads,
