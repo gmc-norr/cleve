@@ -50,12 +50,12 @@ type rawReadInfo struct {
 	IsRevComp interopBool `xml:"IsReverseComplemented,attr" bson:"is_revcomp" json:"is_revcomp"`
 }
 
-type flowcellInfo struct {
+type FlowcellInfo struct {
 	Lanes          int `xml:"LaneCount,attr" bson:"lanes" json:"lanes"`
 	Swaths         int `xml:"SwathCount,attr" bson:"swaths" json:"swaths"`
 	Tiles          int `xml:"TileCount,attr" bson:"tiles" json:"tiles"`
 	Surfaces       int `xml:"SurfaceCount,attr" bson:"surfaces" json:"surfaces"`
-	SectionPerLane int `xml:"SectionPerLane,attr,omitempty" bson:"section_per_lane" json:"section_per_lane"`
+	SectionPerLane int `xml:"SectionPerLane,attr,omitempty" bson:"section_per_lane,omitzero" json:"section_per_lane,omitzero"`
 }
 
 // RunInfo is the representation of an Illumina RunInfo.xml file.
@@ -68,7 +68,7 @@ type RunInfo struct {
 	InstrumentId string       `bson:"instrument_id" json:"instrument_id"`
 	FlowcellId   string       `bson:"flowcell_id" json:"flowcell_id"`
 	Reads        []ReadInfo   `bson:"reads" json:"reads"`
-	Flowcell     flowcellInfo `bson:"flowcell" json:"flowcell"`
+	Flowcell     FlowcellInfo `bson:"flowcell" json:"flowcell"`
 }
 
 func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
@@ -81,7 +81,7 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 			InstrumentId string        `xml:"Instrument"`
 			FlowcellId   string        `xml:"Flowcell"`
 			Reads        []rawReadInfo `xml:"Reads>Read"`
-			Flowcell     flowcellInfo  `xml:"FlowcellLayout"`
+			Flowcell     FlowcellInfo  `xml:"FlowcellLayout"`
 		} `xml:"Run"`
 	}
 
