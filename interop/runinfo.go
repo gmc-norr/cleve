@@ -37,6 +37,13 @@ var flowcellIds = map[*regexp.Regexp]string{
 }
 
 type ReadInfo struct {
+	Number    int  `xml:"Number,attr" bson:"number" json:"number"`
+	Cycles    int  `xml:"NumCycles,attr" bson:"cycles" json:"cycles"`
+	IsIndex   bool `xml:"IsIndexedRead,attr" bson:"is_index" json:"is_index"`
+	IsRevComp bool `xml:"IsReverseComplemented,attr" bson:"is_revcomp" json:"is_revcomp"`
+}
+
+type rawReadInfo struct {
 	Number    int         `xml:"Number,attr" bson:"number" json:"number"`
 	Cycles    int         `xml:"NumCycles,attr" bson:"cycles" json:"cycles"`
 	IsIndex   interopBool `xml:"IsIndexedRead,attr" bson:"is_index" json:"is_index"`
@@ -69,12 +76,12 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 		XMLName xml.Name `xml:"RunInfo"`
 		Version int      `xml:"Version,attr"`
 		Run     struct {
-			Id           string       `xml:",attr"`
-			Date         interopTime  `xml:"Date"`
-			InstrumentId string       `xml:"Instrument"`
-			FlowcellId   string       `xml:"Flowcell"`
-			Reads        []ReadInfo   `xml:"Reads>Read"`
-			Flowcell     flowcellInfo `xml:"FlowcellLayout"`
+			Id           string        `xml:",attr"`
+			Date         interopTime   `xml:"Date"`
+			InstrumentId string        `xml:"Instrument"`
+			FlowcellId   string        `xml:"Flowcell"`
+			Reads        []rawReadInfo `xml:"Reads>Read"`
+			Flowcell     flowcellInfo  `xml:"FlowcellLayout"`
 		} `xml:"Run"`
 	}
 
@@ -90,8 +97,16 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 		Date:         payload.Run.Date.Time,
 		InstrumentId: payload.Run.InstrumentId,
 		FlowcellId:   payload.Run.FlowcellId,
-		Reads:        payload.Run.Reads,
 		Flowcell:     payload.Run.Flowcell,
+	}
+
+	for _, read := range payload.Run.Reads {
+		ri.Reads = append(ri.Reads, ReadInfo{
+			Number:    read.Number,
+			Cycles:    read.Cycles,
+			IsIndex:   bool(read.IsIndex),
+			IsRevComp: bool(read.IsRevComp),
+		})
 	}
 
 	ri.Platform = identifyPlatform(ri.InstrumentId)
