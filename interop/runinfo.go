@@ -37,29 +37,31 @@ var flowcellIds = map[*regexp.Regexp]string{
 }
 
 type ReadInfo struct {
-	Number    int         `xml:"Number,attr"`
-	Cycles    int         `xml:"NumCycles,attr"`
-	IsIndex   interopBool `xml:"IsIndexedRead,attr"`
-	IsRevComp interopBool `xml:"IsReverseComplemented,attr"`
+	Number    int         `xml:"Number,attr" bson:"number" json:"number"`
+	Cycles    int         `xml:"NumCycles,attr" bson:"cycles" json:"cycles"`
+	IsIndex   interopBool `xml:"IsIndexedRead,attr" bson:"is_index" json:"is_index"`
+	IsRevComp interopBool `xml:"IsReverseComplemented,attr" bson:"is_revcomp" json:"is_revcomp"`
+}
+
+type flowcellInfo struct {
+	Lanes          int `xml:"LaneCount,attr" bson:"lanes" json:"lanes"`
+	Swaths         int `xml:"SwathCount,attr" bson:"swaths" json:"swaths"`
+	Tiles          int `xml:"TileCount,attr" bson:"tiles" json:"tiles"`
+	Surfaces       int `xml:"SurfaceCount,attr" bson:"surfaces" json:"surfaces"`
+	SectionPerLane int `xml:"SectionPerLane,attr,omitempty" bson:"section_per_lane" json:"section_per_lane"`
 }
 
 // RunInfo is the representation of an Illumina RunInfo.xml file.
 type RunInfo struct {
-	Version      int
-	RunId        string
-	Date         time.Time
-	Platform     string
-	FlowcellName string
-	InstrumentId string
-	FlowcellId   string
-	Reads        []ReadInfo
-	Flowcell     struct {
-		Lanes          int
-		Swaths         int
-		Tiles          int
-		Surfaces       int
-		SectionPerLane int
-	}
+	Version      int          `bson:"version" json:"version"`
+	RunId        string       `bson:"run_id" json:"run_id"`
+	Date         time.Time    `bson:"date" json:"date"`
+	Platform     string       `bson:"platform" json:"platform"`
+	FlowcellName string       `bson:"flowcell_name" json:"flowcell_name"`
+	InstrumentId string       `bson:"instrument_id" json:"instrument_id"`
+	FlowcellId   string       `bson:"flowcell_id" json:"flowcell_id"`
+	Reads        []ReadInfo   `bson:"reads" json:"reads"`
+	Flowcell     flowcellInfo `bson:"flowcell" json:"flowcell"`
 }
 
 func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
@@ -67,18 +69,12 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 		XMLName xml.Name `xml:"RunInfo"`
 		Version int      `xml:"Version,attr"`
 		Run     struct {
-			Id           string      `xml:",attr"`
-			Date         interopTime `xml:"Date"`
-			InstrumentId string      `xml:"Instrument"`
-			FlowcellId   string      `xml:"Flowcell"`
-			Reads        []ReadInfo  `xml:"Reads>Read"`
-			Flowcell     struct {
-				Lanes          int `xml:"LaneCount,attr"`
-				Swaths         int `xml:"SwathCount,attr"`
-				Tiles          int `xml:"TileCount,attr"`
-				Surfaces       int `xml:"SurfaceCount,attr"`
-				SectionPerLane int `xml:"SectionPerLane,attr,omitempty"`
-			} `xml:"FlowcellLayout"`
+			Id           string       `xml:",attr"`
+			Date         interopTime  `xml:"Date"`
+			InstrumentId string       `xml:"Instrument"`
+			FlowcellId   string       `xml:"Flowcell"`
+			Reads        []ReadInfo   `xml:"Reads>Read"`
+			Flowcell     flowcellInfo `xml:"FlowcellLayout"`
 		} `xml:"Run"`
 	}
 
@@ -95,13 +91,7 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 		InstrumentId: payload.Run.InstrumentId,
 		FlowcellId:   payload.Run.FlowcellId,
 		Reads:        payload.Run.Reads,
-		Flowcell: struct {
-			Lanes          int
-			Swaths         int
-			Tiles          int
-			Surfaces       int
-			SectionPerLane int
-		}(payload.Run.Flowcell),
+		Flowcell:     payload.Run.Flowcell,
 	}
 
 	ri.Platform = identifyPlatform(ri.InstrumentId)

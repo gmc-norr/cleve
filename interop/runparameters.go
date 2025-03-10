@@ -59,27 +59,27 @@ func (b *interopBool) UnmarshalXMLAttr(attr xml.Attr) error {
 }
 
 type read struct {
-	Name   string
-	Cycles int
+	Name   string `bson:"name" json:"name"`
+	Cycles int    `bson:"cycles" json:"cycles"`
 }
 
 type Consumable struct {
-	Type           string
-	Name           string
-	Version        string
-	Mode           int
-	SerialNumber   string
-	PartNumber     string
-	LotNumber      string
-	ExpirationDate time.Time
+	Type           string    `bson:"type" json:"type"`
+	Name           string    `bson:"name,omitzero" json:"name,omitzero"`
+	Version        string    `bson:"version,omitzero" json:"version,omitzero"`
+	Mode           int       `bson:"mode,omitzero" json:"mode,omitzero"`
+	SerialNumber   string    `bson:"serial_number" json:"serial_number"`
+	PartNumber     string    `bson:"part_number" json:"part_number"`
+	LotNumber      string    `bson:"lot_number" json:"lot_number"`
+	ExpirationDate time.Time `bson:"expiration_date" json:"expiration_date"`
 }
 
 type RunParameters struct {
-	ExperimentName string
-	Side           string `json:"side,omitempty"`
-	Reads          []read
-	Flowcell       Consumable
-	Consumables    []Consumable
+	ExperimentName string       `bson:"experiment_name" json:"experiment_name"`
+	Side           string       `bson:"side,omitzero" json:"side,omitzero"`
+	Reads          []read       `bson:"reads" json:"reads"`
+	Flowcell       Consumable   `bson:"flowcell" json:"flowcell"`
+	Consumables    []Consumable `bson:"consumables" json:"consumables"`
 }
 
 type runParametersNovaSeq struct {
