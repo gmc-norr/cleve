@@ -109,8 +109,8 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 		})
 	}
 
-	ri.Platform = identifyPlatform(ri.InstrumentId)
-	ri.FlowcellName = identifyFlowcell(ri.FlowcellId)
+	ri.Platform = IdentifyPlatform(ri.InstrumentId)
+	ri.FlowcellName = IdentifyFlowcell(ri.FlowcellId)
 
 	switch ri.Version {
 	case 2, 4, 6:
@@ -143,7 +143,7 @@ func (i RunInfo) TileCount() int {
 }
 
 // Get the platform name from the sequencer ID.
-func identifyPlatform(iid string) string {
+func IdentifyPlatform(iid string) string {
 	for re, platform := range instrumentIds {
 		if re.Match([]byte(iid)) {
 			return platform
@@ -153,7 +153,7 @@ func identifyPlatform(iid string) string {
 }
 
 // Get the flowcell name from the flowcell ID.
-func identifyFlowcell(fcid string) string {
+func IdentifyFlowcell(fcid string) string {
 	for re, flowcell := range flowcellIds {
 		if re.Match([]byte(fcid)) {
 			return flowcell
