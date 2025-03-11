@@ -9,7 +9,6 @@ import (
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -312,7 +311,6 @@ func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
 
 func (db DB) CreateRun(r *cleve.Run) error {
 	r.Created = time.Now()
-	r.ID = primitive.NewObjectID()
 	_, err := db.RunCollection().InsertOne(context.TODO(), r)
 	return err
 }

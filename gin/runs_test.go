@@ -16,42 +16,39 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mock"
 	"github.com/gmc-norr/cleve/mongo"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var novaseq1 *cleve.Run = &cleve.Run{
-	ID:             primitive.NewObjectID(),
 	RunID:          "run1",
 	ExperimentName: "experiment 1",
 	Path:           "/path/to/run1",
 	Platform:       "NovaSeq",
 	Created:        time.Now(),
 	StateHistory:   nil,
-	RunParameters:  &cleve.NovaSeqParameters{},
+	RunParameters:  interop.RunParameters{},
 }
 
 var novaseq2 *cleve.Run = &cleve.Run{
-	ID:             primitive.NewObjectID(),
 	RunID:          "run3",
 	ExperimentName: "experiment 3",
 	Path:           "/path/to/run3",
 	Platform:       "NovaSeq",
 	Created:        time.Now(),
 	StateHistory:   nil,
-	RunParameters:  &cleve.NovaSeqParameters{},
+	RunParameters:  interop.RunParameters{},
 }
 
 var nextseq1 *cleve.Run = &cleve.Run{
-	ID:             primitive.NewObjectID(),
 	RunID:          "run2",
 	ExperimentName: "experiment 2",
 	Path:           "/path/to/run2",
 	Platform:       "NextSeq",
 	Created:        time.Now(),
 	StateHistory:   nil,
-	RunParameters:  &cleve.NextSeqParameters{},
+	RunParameters:  interop.RunParameters{},
 }
 
 func TestRunsHandler(t *testing.T) {

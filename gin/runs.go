@@ -2,14 +2,12 @@ package gin
 
 import (
 	"errors"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 )
 
@@ -81,45 +79,9 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 			return
 		}
 
-		paramsFilename := filepath.Join(addRunRequest.Path, "RunParameters.xml")
-		paramsFile, err := os.Open(paramsFilename)
+		interopData, err := interop.InteropFromDir(addRunRequest.Path)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "opening run parameters file"})
-			return
-		}
-		defer paramsFile.Close()
-
-		paramsData, err := io.ReadAll(paramsFile)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading run parameters file"})
-			return
-		}
-
-		var runParams cleve.RunParameters
-		runParams, err = cleve.ParseRunParameters(paramsData)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid run parameters"})
-			return
-		}
-
-		infoFilename := filepath.Join(addRunRequest.Path, "RunInfo.xml")
-		infoFile, err := os.Open(infoFilename)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "opening run info file"})
-			return
-		}
-		defer infoFile.Close()
-
-		infoData, err := io.ReadAll(infoFile)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading run info file"})
-			return
-		}
-
-		var runInfo cleve.RunInfo
-		runInfo, err = cleve.ParseRunInfo(infoData)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid run info"})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading run information"})
 			return
 		}
 
@@ -130,12 +92,13 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 		}
 
 		run := cleve.Run{
-			RunID:          runParams.GetRunID(),
-			ExperimentName: runParams.GetExperimentName(),
+			SchemaVersion:  2,
+			RunID:          interopData.RunInfo.RunId,
+			ExperimentName: interopData.RunParameters.ExperimentName,
 			Path:           addRunRequest.Path,
-			Platform:       runParams.Platform(),
-			RunParameters:  runParams,
-			RunInfo:        runInfo,
+			Platform:       interopData.RunInfo.Platform,
+			RunParameters:  interopData.RunParameters,
+			RunInfo:        interopData.RunInfo,
 			StateHistory:   []cleve.TimedRunState{{State: state, Time: time.Now()}},
 			Analysis:       []*cleve.Analysis{},
 		}

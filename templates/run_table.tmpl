@@ -79,8 +79,8 @@
                 <tr class="hover:bg-accent-100">
                     <td><a class="text-accent-900" href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
                     <td>{{ .Platform }}</td>
-                    <td>{{ .RunParameters.Flowcell }}</td>
-                    <td>{{ .RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
+                    <td>{{ .RunInfo.FlowcellName }}</td>
+                    <td>{{ .RunInfo.Date.Local.Format "2006-01-02" }}</td>
                     <td>{{ (index .StateHistory 0).State.String | title }}</td>
                     <td>{{ (index .StateHistory 0).Time.Local.Format "2006-01-02 15:04:05 MST" }}</td>
                     <td><code>{{ .Path }}</code></td>

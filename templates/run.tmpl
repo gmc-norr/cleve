@@ -11,15 +11,15 @@
     <table class="bg-accent-100 my-4">
         <tr>
             <th class="bg-accent-900 text-accent-100 text-right px-2">Sequencing date</th>
-            <td class="px-2">{{ .run.RunInfo.Run.Date.Local.Format "2006-01-02" }}</td>
+            <td class="px-2">{{ .run.RunInfo.Date.Local.Format "2006-01-02" }}</td>
         </tr>
         <tr>
             <th class="bg-accent-900 text-accent-100 text-right px-2">Platform</th>
-            <td class="px-2">{{ .run.Platform }}</td>
+            <td class="px-2">{{ .run.RunInfo.Platform }}</td>
         </tr>
         <tr>
             <th class="bg-accent-900 text-accent-100 text-right px-2">Flowcell</th>
-            <td class="px-2">{{ .run.RunParameters.Flowcell }}</td>
+            <td class="px-2">{{ .run.RunInfo.FlowcellName }}</td>
         </tr>
         <tr>
             <th class="bg-accent-900 text-accent-100 text-right px-2">Path</th>

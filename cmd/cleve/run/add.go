@@ -2,46 +2,15 @@ package run
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 )
-
-func parseRunParameters(runParametersFile string) (cleve.RunParameters, error) {
-	var runParams cleve.RunParameters
-	runParamFile, err := os.Open(runParametersFile)
-	if err != nil {
-		return runParams, err
-	}
-	defer runParamFile.Close()
-	runParamData, err := io.ReadAll(runParamFile)
-	if err != nil {
-		return runParams, err
-	}
-
-	return cleve.ParseRunParameters(runParamData)
-}
-
-func parseRunInfo(runInfoFilename string) (cleve.RunInfo, error) {
-	var runInfo cleve.RunInfo
-	runInfoFile, err := os.Open(runInfoFilename)
-	if err != nil {
-		return runInfo, err
-	}
-	defer runInfoFile.Close()
-	runInfoData, err := io.ReadAll(runInfoFile)
-	if err != nil {
-		return runInfo, err
-	}
-
-	return cleve.ParseRunInfo(runInfoData)
-}
 
 var addCmd = &cobra.Command{
 	Use:   "add [flags] run_directory",
@@ -62,8 +31,12 @@ var addCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		runParametersFile := filepath.Join(runDir, "RunParameters.xml")
-		runInfoFile := filepath.Join(runDir, "RunInfo.xml")
+
+		interopData, err := interop.InteropFromDir(runDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		sampleSheetFile, err := cleve.MostRecentSamplesheet(runDir)
 		if err != nil {
 			if err.Error() == "no samplesheet found" {
@@ -71,16 +44,6 @@ var addCmd = &cobra.Command{
 			} else {
 				log.Fatal(err)
 			}
-		}
-
-		runParams, err := parseRunParameters(runParametersFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		runInfo, err := parseRunInfo(runInfoFile)
-		if err != nil {
-			log.Fatal(err)
 		}
 
 		var state cleve.RunState
@@ -94,19 +57,20 @@ var addCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			_, err = db.CreateSampleSheet(samplesheet, mongo.SampleSheetWithRunId(runParams.GetRunID()))
+			_, err = db.CreateSampleSheet(samplesheet, mongo.SampleSheetWithRunId(interopData.RunInfo.RunId))
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
 		run := cleve.Run{
-			RunID:          runParams.GetRunID(),
-			ExperimentName: runParams.GetExperimentName(),
+			SchemaVersion:  2,
+			RunID:          interopData.RunInfo.RunId,
+			ExperimentName: interopData.RunParameters.ExperimentName,
 			Path:           runDir,
-			Platform:       runParams.Platform(),
-			RunParameters:  runParams,
-			RunInfo:        runInfo,
+			Platform:       interopData.RunInfo.Platform,
+			RunParameters:  interopData.RunParameters,
+			RunInfo:        interopData.RunInfo,
 			StateHistory:   []cleve.TimedRunState{{State: state, Time: time.Now()}},
 			Analysis:       []*cleve.Analysis{},
 		}
@@ -115,6 +79,6 @@ var addCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		log.Printf("Added run %s as %s", run.RunID, run.ID.Hex())
+		log.Printf("Successfully added run %s", run.RunID)
 	},
 }
