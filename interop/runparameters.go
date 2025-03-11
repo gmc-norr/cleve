@@ -77,7 +77,6 @@ type Consumable struct {
 type RunParameters struct {
 	ExperimentName string       `bson:"experiment_name" json:"experiment_name"`
 	Side           string       `bson:"side,omitzero" json:"side,omitzero"`
-	Reads          []ReadInfo   `bson:"reads" json:"reads"`
 	Flowcell       Consumable   `bson:"flowcell" json:"flowcell"`
 	Consumables    []Consumable `bson:"consumables" json:"consumables"`
 }
@@ -86,11 +85,7 @@ type runParametersNovaSeq struct {
 	XMLName        xml.Name `xml:"RunParameters"`
 	ExperimentName string   `xml:"ExperimentName"`
 	Side           string   `xml:"Side"`
-	Reads          []struct {
-		Name   string `xml:"ReadName,attr"`
-		Cycles int    `xml:"Cycles,attr"`
-	} `xml:"PlannedReads>Read"`
-	Consumables []struct {
+	Consumables    []struct {
 		Type           string      `xml:"Type"`
 		Name           string      `xml:"Name"`
 		SerialNumber   string      `xml:"SerialNumber"`
@@ -135,12 +130,7 @@ type runParametersNextSeq struct {
 type runParametersMiSeq struct {
 	XMLName        xml.Name `xml:"RunParameters"`
 	ExperimentName string   `xml:"ExperimentName"`
-	Reads          []struct {
-		Number  int         `xml:"Number,attr"`
-		Cycles  int         `xml:"NumCycles,attr"`
-		IsIndex interopBool `xml:"IsIndexedRead,attr"`
-	} `xml:"Reads>RunInfoRead"`
-	Flowcell struct {
+	Flowcell       struct {
 		SerialNumber   string      `xml:"SerialNumber"`
 		PartNumber     string      `xml:"PartNumber"`
 		LotNumber      string      `xml:"LotNumber"`
@@ -275,12 +265,6 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 		}
 		rp.Side = novaseq.Side
 		rp.ExperimentName = novaseq.ExperimentName
-		for _, r := range novaseq.Reads {
-			rp.Reads = append(rp.Reads, ReadInfo{
-				Name:   r.Name,
-				Cycles: r.Cycles,
-			})
-		}
 
 		rp.Consumables = make([]Consumable, 0, len(novaseq.Consumables))
 		for _, c := range novaseq.Consumables {
@@ -315,26 +299,6 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			return rp, err
 		}
 		rp.ExperimentName = nextseq.ExperimentName
-		rp.Reads = []ReadInfo{
-			{
-				Name:   "Read1",
-				Cycles: nextseq.Setup.Read1,
-			},
-			{
-				Name:    "Index1",
-				Cycles:  nextseq.Setup.Index1,
-				IsIndex: true,
-			},
-			{
-				Name:    "Index2",
-				Cycles:  nextseq.Setup.Index2,
-				IsIndex: true,
-			},
-			{
-				Name:   "Read2",
-				Cycles: nextseq.Setup.Read2,
-			},
-		}
 		rp.Flowcell = Consumable{
 			Type:           "FlowCell",
 			Name:           nextseq.Chemistry,
@@ -367,17 +331,6 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			return rp, err
 		}
 		rp.ExperimentName = miseq.ExperimentName
-		for _, r := range miseq.Reads {
-			readName := fmt.Sprintf("Read %d", r.Number)
-			if r.IsIndex {
-				readName = fmt.Sprintf("%s (I)", readName)
-			}
-			rp.Reads = append(rp.Reads, ReadInfo{
-				Name:    readName,
-				Cycles:  r.Cycles,
-				IsIndex: bool(r.IsIndex),
-			})
-		}
 		rp.Flowcell = Consumable{
 			Type:           "FlowCell",
 			SerialNumber:   miseq.Flowcell.SerialNumber,

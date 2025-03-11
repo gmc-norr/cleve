@@ -45,7 +45,6 @@ func TestReadRunParameters(t *testing.T) {
 		path           string
 		side           string
 		experimentName string
-		reads          []read
 		flowcell       Consumable
 		consumables    []Consumable
 	}{
@@ -53,24 +52,6 @@ func TestReadRunParameters(t *testing.T) {
 			name:           "nextseq",
 			experimentName: "250210_Archer_VP_Fusion nypan",
 			path:           "./testdata/250210_NB551119_0457_AHL3Y2AFX7/RunParameters.xml",
-			reads: []read{
-				{
-					Name:   "Read 1",
-					Cycles: 151,
-				},
-				{
-					Name:   "Read 2 (I)",
-					Cycles: 8,
-				},
-				{
-					Name:   "Read 3 (I)",
-					Cycles: 8,
-				},
-				{
-					Name:   "Read 3",
-					Cycles: 151,
-				},
-			},
 			flowcell: Consumable{
 				Type:         "FlowCell",
 				Name:         "NextSeq Mid",
@@ -103,20 +84,6 @@ func TestReadRunParameters(t *testing.T) {
 			name:           "miseq",
 			path:           "./testdata/250207_M00568_0665_000000000-LMWPP/RunParameters.xml",
 			experimentName: "LymphoTrack_AL25.317",
-			reads: []read{
-				{
-					Name:   "Read 1",
-					Cycles: 301,
-				},
-				{
-					Name:   "Read 2 (I)",
-					Cycles: 6,
-				},
-				{
-					Name:   "Read 3",
-					Cycles: 301,
-				},
-			},
 			flowcell: Consumable{
 				Type:         "FlowCell",
 				SerialNumber: "000000000-LMWPP",
@@ -147,20 +114,6 @@ func TestReadRunParameters(t *testing.T) {
 			name:           "miseq old",
 			path:           "./testdata/160122_M00568_0146_000000000-ALYCY/runParameters.xml",
 			experimentName: "160111 HaloPlex Run2",
-			reads: []read{
-				{
-					Name:   "Read 1",
-					Cycles: 151,
-				},
-				{
-					Name:   "Read 2 (I)",
-					Cycles: 6,
-				},
-				{
-					Name:   "Read 3",
-					Cycles: 151,
-				},
-			},
 			flowcell: Consumable{
 				Type:         "FlowCell",
 				SerialNumber: "000000000-ALYCY",
@@ -189,24 +142,6 @@ func TestReadRunParameters(t *testing.T) {
 			path:           "./testdata/20250123_LH00352_0033_A225H35LT1/RunParameters.xml",
 			experimentName: "250123_PoN_16samples",
 			side:           "A",
-			reads: []read{
-				{
-					Name:   "Read 1",
-					Cycles: 151,
-				},
-				{
-					Name:   "Read 2 (I)",
-					Cycles: 8,
-				},
-				{
-					Name:   "Read 3 (I)",
-					Cycles: 8,
-				},
-				{
-					Name:   "Read 3",
-					Cycles: 151,
-				},
-			},
 			flowcell: Consumable{
 				Type:         "FlowCell",
 				Name:         "1.5B",
@@ -283,10 +218,6 @@ func TestReadRunParameters(t *testing.T) {
 
 			if rp.Side != c.side {
 				t.Errorf("expected side %q, found %q", c.side, rp.Side)
-			}
-
-			if len(rp.Reads) != len(c.reads) {
-				t.Errorf("expected %d reads, found %d", len(c.reads), len(rp.Reads))
 			}
 
 			testConsumable(t, rp.Flowcell, c.flowcell)
