@@ -37,10 +37,11 @@ var flowcellIds = map[*regexp.Regexp]string{
 }
 
 type ReadInfo struct {
-	Number    int  `xml:"Number,attr" bson:"number" json:"number"`
-	Cycles    int  `xml:"NumCycles,attr" bson:"cycles" json:"cycles"`
-	IsIndex   bool `xml:"IsIndexedRead,attr" bson:"is_index" json:"is_index"`
-	IsRevComp bool `xml:"IsReverseComplemented,attr" bson:"is_revcomp" json:"is_revcomp"`
+	Name      string `bson:"name,omitzero" json:"name,omitzero"`
+	Number    int    `xml:"Number,attr" bson:"number,omitzero" json:"number,omitzero"`
+	Cycles    int    `xml:"NumCycles,attr" bson:"cycles" json:"cycles"`
+	IsIndex   bool   `xml:"IsIndexedRead,attr" bson:"is_index" json:"is_index"`
+	IsRevComp bool   `xml:"IsReverseComplemented,attr" bson:"is_revcomp" json:"is_revcomp"`
 }
 
 type rawReadInfo struct {
@@ -101,7 +102,12 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 	}
 
 	for _, read := range payload.Run.Reads {
+		readName := fmt.Sprintf("Read %d", read.Number)
+		if read.IsIndex {
+			readName += " (I)"
+		}
 		ri.Reads = append(ri.Reads, ReadInfo{
+			Name:      readName,
 			Number:    read.Number,
 			Cycles:    read.Cycles,
 			IsIndex:   bool(read.IsIndex),

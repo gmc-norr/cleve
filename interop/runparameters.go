@@ -77,7 +77,7 @@ type Consumable struct {
 type RunParameters struct {
 	ExperimentName string       `bson:"experiment_name" json:"experiment_name"`
 	Side           string       `bson:"side,omitzero" json:"side,omitzero"`
-	Reads          []read       `bson:"reads" json:"reads"`
+	Reads          []ReadInfo   `bson:"reads" json:"reads"`
 	Flowcell       Consumable   `bson:"flowcell" json:"flowcell"`
 	Consumables    []Consumable `bson:"consumables" json:"consumables"`
 }
@@ -276,7 +276,7 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 		rp.Side = novaseq.Side
 		rp.ExperimentName = novaseq.ExperimentName
 		for _, r := range novaseq.Reads {
-			rp.Reads = append(rp.Reads, read{
+			rp.Reads = append(rp.Reads, ReadInfo{
 				Name:   r.Name,
 				Cycles: r.Cycles,
 			})
@@ -315,18 +315,20 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			return rp, err
 		}
 		rp.ExperimentName = nextseq.ExperimentName
-		rp.Reads = []read{
+		rp.Reads = []ReadInfo{
 			{
 				Name:   "Read1",
 				Cycles: nextseq.Setup.Read1,
 			},
 			{
-				Name:   "Index1",
-				Cycles: nextseq.Setup.Index1,
+				Name:    "Index1",
+				Cycles:  nextseq.Setup.Index1,
+				IsIndex: true,
 			},
 			{
-				Name:   "Index2",
-				Cycles: nextseq.Setup.Index2,
+				Name:    "Index2",
+				Cycles:  nextseq.Setup.Index2,
+				IsIndex: true,
 			},
 			{
 				Name:   "Read2",
@@ -370,9 +372,10 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			if r.IsIndex {
 				readName = fmt.Sprintf("%s (I)", readName)
 			}
-			rp.Reads = append(rp.Reads, read{
-				Name:   readName,
-				Cycles: r.Cycles,
+			rp.Reads = append(rp.Reads, ReadInfo{
+				Name:    readName,
+				Cycles:  r.Cycles,
+				IsIndex: bool(r.IsIndex),
 			})
 		}
 		rp.Flowcell = Consumable{
