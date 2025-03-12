@@ -137,3 +137,26 @@ func TestReadRunInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestIdentifyFlowcell(t *testing.T) {
+	testcases := []struct {
+		name         string
+		flowcellID   string
+		flowcellName string
+	}{
+		{
+			name:         "nextseq high",
+			flowcellID:   "H2WCGBGYW",
+			flowcellName: "High",
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			name := IdentifyFlowcell(c.flowcellID)
+			if name != c.flowcellName {
+				t.Errorf("expected flowcell name %q, got %q", c.flowcellName, name)
+			}
+		})
+	}
+}

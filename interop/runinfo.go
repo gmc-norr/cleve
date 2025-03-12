@@ -9,31 +9,40 @@ import (
 	"time"
 )
 
+type idMatcher struct {
+	idPattern *regexp.Regexp
+	name      string
+}
+
+func (m idMatcher) match(id string) bool {
+	return m.idPattern.Match([]byte(id))
+}
+
 // Current sequencers that we use and support
-var instrumentIds = map[*regexp.Regexp]string{
-	regexp.MustCompile(`^LH\d{5}$`): "NovaSeq X Plus",
-	regexp.MustCompile(`^NB\d{6}$`): "NextSeq 5x0",
-	regexp.MustCompile(`^M\d{5}$`):  "MiSeq",
+var instrumentIds = []idMatcher{
+	{idPattern: regexp.MustCompile(`^LH\d{5}$`), name: "NovaSeq X Plus"},
+	{idPattern: regexp.MustCompile(`^NB\d{6}$`), name: "NextSeq 5x0"},
+	{idPattern: regexp.MustCompile(`^M\d{5}$`), name: "MiSeq"},
 }
 
 // Current flowcells that we use and support
-var flowcellIds = map[*regexp.Regexp]string{
-	regexp.MustCompile(`D[A-Z0-9]{4}$`):              "Nano",     // MiSeq
-	regexp.MustCompile(`G[A-Z0-9]{4}$`):              "Micro",    // MiSeq
-	regexp.MustCompile(`A[A-Z0-9]{4}$`):              "Standard", // MiSeq
-	regexp.MustCompile(`B[A-Z0-9]{4}$`):              "Standard", // MiSeq
-	regexp.MustCompile(`C[A-Z0-9]{4}$`):              "Standard", // MiSeq
-	regexp.MustCompile(`J[A-Z0-9]{4}$`):              "Standard", // MiSeq
-	regexp.MustCompile(`K[A-Z0-9]{4}$`):              "Standard", // MiSeq
-	regexp.MustCompile(`L[A-Z0-9]{4}$`):              "Standard", // MiSeq
-	regexp.MustCompile(`^[A-Z0-9]{5}AF[A-Z0-9]{2}$`): "Mid",      // NextSeq 500/550
-	regexp.MustCompile(`^[A-Z0-9]{5}AG[A-Z0-9]{2}$`): "High",     // NextSeq 500/550
-	regexp.MustCompile(`^[A-Z0-9]{5}BG[A-Z0-9]{2}$`): "High",     // NextSeq 500/550
-	regexp.MustCompile(`^H[A-Z0-9]{4}BGXX`):          "High",     // NextSeq
-	regexp.MustCompile(`^H[A-Z0-9]{4}BGXY`):          "High",     // NextSeq
-	regexp.MustCompile(`^[A-Z0-9]{6}LT1$`):           "1.5B",     // NovaSeq X Plus
-	regexp.MustCompile(`^[A-Z0-9]{6}LT3$`):           "10B",      // NovaSeq X Plus
-	regexp.MustCompile(`^[A-Z0-9]{6}LT4$`):           "25B",      // NovaSeq X Plus
+var flowcellIds = []idMatcher{
+	{idPattern: regexp.MustCompile(`^[A-Z0-9]{5}AF[A-Z0-9]{2}$`), name: "Mid"},  // NextSeq 500/550
+	{idPattern: regexp.MustCompile(`^[A-Z0-9]{5}AG[A-Z0-9]{2}$`), name: "High"}, // NextSeq 500/550
+	{idPattern: regexp.MustCompile(`^[A-Z0-9]{5}BG[A-Z0-9]{2}$`), name: "High"}, // NextSeq 500/550
+	{idPattern: regexp.MustCompile(`^H[A-Z0-9]{4}BGXX`), name: "High"},          // NextSeq
+	{idPattern: regexp.MustCompile(`^H[A-Z0-9]{4}BGXY`), name: "High"},          // NextSeq
+	{idPattern: regexp.MustCompile(`^[A-Z0-9]{6}LT1$`), name: "1.5B"},           // NovaSeq X Plus
+	{idPattern: regexp.MustCompile(`^[A-Z0-9]{6}LT3$`), name: "10B"},            // NovaSeq X Plus
+	{idPattern: regexp.MustCompile(`^[A-Z0-9]{6}LT4$`), name: "25B"},            // NovaSeq X Plus
+	{idPattern: regexp.MustCompile(`D[A-Z0-9]{4}$`), name: "Nano"},              // MiSeq
+	{idPattern: regexp.MustCompile(`G[A-Z0-9]{4}$`), name: "Micro"},             // MiSeq
+	{idPattern: regexp.MustCompile(`A[A-Z0-9]{4}$`), name: "Standard"},          // MiSeq
+	{idPattern: regexp.MustCompile(`B[A-Z0-9]{4}$`), name: "Standard"},          // MiSeq
+	{idPattern: regexp.MustCompile(`C[A-Z0-9]{4}$`), name: "Standard"},          // MiSeq
+	{idPattern: regexp.MustCompile(`J[A-Z0-9]{4}$`), name: "Standard"},          // MiSeq
+	{idPattern: regexp.MustCompile(`K[A-Z0-9]{4}$`), name: "Standard"},          // MiSeq
+	{idPattern: regexp.MustCompile(`L[A-Z0-9]{4}$`), name: "Standard"},          // MiSeq
 }
 
 type ReadInfo struct {
@@ -150,9 +159,9 @@ func (i RunInfo) TileCount() int {
 
 // Get the platform name from the sequencer ID.
 func IdentifyPlatform(iid string) string {
-	for re, platform := range instrumentIds {
-		if re.Match([]byte(iid)) {
-			return platform
+	for _, pm := range instrumentIds {
+		if pm.match(iid) {
+			return pm.name
 		}
 	}
 	return "unknown"
@@ -160,9 +169,9 @@ func IdentifyPlatform(iid string) string {
 
 // Get the flowcell name from the flowcell ID.
 func IdentifyFlowcell(fcid string) string {
-	for re, flowcell := range flowcellIds {
-		if re.Match([]byte(fcid)) {
-			return flowcell
+	for _, pm := range flowcellIds {
+		if pm.match(fcid) {
+			return pm.name
 		}
 	}
 	return "unknown"
