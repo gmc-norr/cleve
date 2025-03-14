@@ -1,11 +1,11 @@
 package gin
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -15,27 +15,17 @@ import (
 )
 
 var platformNovaSeq = &cleve.Platform{
-	Name:         "NovaSeq",
-	SerialTag:    "InstrumentSerialNumber",
-	SerialPrefix: "LH",
-	ReadyMarker:  "CopyComplete.txt",
+	Name:        "NovaSeq",
+	ReadyMarker: "CopyComplete.txt",
 }
 
 var platformNovaSeqAdd = &cleve.Platform{
-	Name:         "NovaSeq",
-	SerialTag:    "InstrumentSerialNumber",
-	SerialPrefix: "LH",
-}
-
-var incompletePlatform = &cleve.Platform{
-	Name: "FunkySeq",
+	Name: "NovaSeq",
 }
 
 var platformNextSeq = &cleve.Platform{
-	Name:         "NextSeq",
-	SerialTag:    "InstrumentID",
-	SerialPrefix: "NB",
-	ReadyMarker:  "CopyComplete.txt",
+	Name:        "NextSeq",
+	ReadyMarker: "CopyComplete.txt",
 }
 
 func TestPlatformsHandler(t *testing.T) {
@@ -139,57 +129,51 @@ func TestAddPlatformHandler(t *testing.T) {
 		Error           error
 	}{
 		"novaseq1": {
-			platformNovaSeq,
-			200,
-			true,
-			nil,
+			RequestPlatform: platformNovaSeq,
+			Code:            200,
+			InvokesCreate:   true,
 		},
 		"novaseq_no_readymarker": {
-			platformNovaSeqAdd,
-			200,
-			true,
-			nil,
-		},
-		"incomplete_platform": {
-			incompletePlatform,
-			400,
-			false,
-			nil,
+			RequestPlatform: platformNovaSeqAdd,
+			Code:            200,
+			InvokesCreate:   true,
 		},
 		"duplicate_platform": {
-			platformNovaSeq,
-			409,
-			true,
-			mongo.GenericDuplicateKeyError,
+			RequestPlatform: platformNovaSeq,
+			Code:            409,
+			InvokesCreate:   true,
+			Error:           mongo.GenericDuplicateKeyError,
 		},
 	}
 
 	for k, v := range table {
-		ps := mock.PlatformSetter{}
-		ps.CreatePlatformFn = func(p *cleve.Platform) error {
-			return v.Error
-		}
-
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-
-		rBody, _ := json.Marshal(v.RequestPlatform)
-		r := httptest.NewRequest("POST", "/api/platforms", strings.NewReader(string(rBody)))
-		c.Request = r
-
-		AddPlatformHandler(&ps)(c)
-
-		if ps.CreatePlatformInvoked != v.InvokesCreate {
-			if v.InvokesCreate {
-				t.Fatalf("CreatePlatform should have been invoked, but was not")
-			} else {
-				t.Fatalf("CreatePlatform should not have been invoked, but was")
+		t.Run(k, func(t *testing.T) {
+			ps := mock.PlatformSetter{}
+			ps.CreatePlatformFn = func(p *cleve.Platform) error {
+				return v.Error
 			}
-		}
 
-		if w.Code != v.Code {
-			t.Logf("%s", w.Body.String())
-			t.Fatalf("Expected HTTP %d, got %d for %s", v.Code, w.Code, k)
-		}
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			rBody, _ := json.Marshal(v.RequestPlatform)
+			r := httptest.NewRequest("POST", "/api/platforms", bytes.NewReader(rBody))
+			c.Request = r
+
+			AddPlatformHandler(&ps)(c)
+
+			if ps.CreatePlatformInvoked != v.InvokesCreate {
+				if v.InvokesCreate {
+					t.Fatalf("CreatePlatform should have been invoked, but was not")
+				} else {
+					t.Fatalf("CreatePlatform should not have been invoked, but was")
+				}
+			}
+
+			if w.Code != v.Code {
+				t.Logf("%s", w.Body.String())
+				t.Fatalf("Expected HTTP %d, got %d for %s", v.Code, w.Code, k)
+			}
+		})
 	}
 }

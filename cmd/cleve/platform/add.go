@@ -9,26 +9,22 @@ import (
 )
 
 var (
-	name         string
-	serialTag    string
-	serialPrefix string
-	readyMarker  string
-	addCmd       = &cobra.Command{
+	name        string
+	readyMarker string
+	addCmd      = &cobra.Command{
 		Use:   "add [flags] name serialtag serialprefix",
 		Short: "Add a platform to the database",
 		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 3 {
-				log.Fatalf("name, serialtag and serialprefix are required")
+			if len(args) != 1 {
+				log.Fatalf("name is required")
 			}
-			if args[0] == "" || args[1] == "" || args[2] == "" {
+			if args[0] == "" {
 				log.Fatalf("arguments cannot be empty")
 			}
 			return nil
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
 			name = args[0]
-			serialTag = args[1]
-			serialPrefix = args[2]
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			db, err := mongo.Connect()
@@ -37,10 +33,8 @@ var (
 			}
 
 			platform := cleve.Platform{
-				Name:         name,
-				SerialTag:    serialTag,
-				SerialPrefix: serialPrefix,
-				ReadyMarker:  readyMarker,
+				Name:        name,
+				ReadyMarker: readyMarker,
 			}
 
 			if err := db.CreatePlatform(&platform); err != nil {

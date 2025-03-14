@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -311,8 +312,17 @@ func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
 
 func (db DB) CreateRun(r *cleve.Run) error {
 	r.Created = time.Now()
-	_, err := db.RunCollection().InsertOne(context.TODO(), r)
-	return err
+	if _, err := db.RunCollection().InsertOne(context.TODO(), r); err != nil {
+		return err
+	}
+	err := db.CreatePlatform(&cleve.Platform{
+		Name:        r.Platform,
+		ReadyMarker: interop.PlatformReadyMarker(r.Platform),
+	})
+	if err != nil && !mongo.IsDuplicateKeyError(err) {
+		return err
+	}
+	return nil
 }
 
 func (db DB) DeleteRun(runId string) error {

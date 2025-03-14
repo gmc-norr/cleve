@@ -20,6 +20,9 @@ var (
 			if len(args) > 1 {
 				return fmt.Errorf("error: too many arguments")
 			}
+			if len(args) != 1 {
+				return fmt.Errorf("error: platform name required")
+			}
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {

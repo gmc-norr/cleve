@@ -35,10 +35,10 @@ var (
 				fmt.Println(string(jsonString))
 			} else {
 				w := tabwriter.NewWriter(os.Stdout, 2, 4, 2, ' ', 0)
-				fmt.Fprint(w, "name\tserial tag\tserial prefix\tready marker\n")
-				fmt.Fprint(w, "----\t----------\t-------------\t------------\n")
+				fmt.Fprint(w, "name\tready marker\n")
+				fmt.Fprint(w, "----\t------------\n")
 				for _, p := range platforms {
-					fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.Name, p.SerialTag, p.SerialPrefix, p.ReadyMarker)
+					fmt.Fprintf(w, "%s\t%s\n", p.Name, p.ReadyMarker)
 				}
 				w.Flush()
 			}

@@ -18,6 +18,12 @@ func (m idMatcher) match(id string) bool {
 	return m.idPattern.Match([]byte(id))
 }
 
+var readyMarkers = map[string]string{
+	"NovaSeq X Plus": "CopyComplete.txt",
+	"NextSeq 5x0":    "CopyComplete.txt",
+	"MiSeq":          "CopyComplete.txt",
+}
+
 // Current sequencers that we use and support
 var instrumentIds = []idMatcher{
 	{idPattern: regexp.MustCompile(`^LH\d{5}$`), name: "NovaSeq X Plus"},
@@ -175,4 +181,9 @@ func IdentifyFlowcell(fcid string) string {
 		}
 	}
 	return "unknown"
+}
+
+func PlatformReadyMarker(platform string) string {
+	marker := readyMarkers[platform]
+	return marker
 }
