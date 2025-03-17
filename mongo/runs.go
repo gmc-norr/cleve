@@ -17,10 +17,37 @@ import (
 func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 	var pipeline mongo.Pipeline
 
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$set", Value: bson.D{
+				{
+					Key: "schema_version",
+					Value: bson.D{
+						{Key: "$ifNull", Value: bson.A{"$schema_version", 1}},
+					},
+				},
+			},
+		},
+	})
+
+	pipeline = append(pipeline, bson.D{
+		{Key: "$addFields", Value: bson.D{
+			{Key: "sequencing_date", Value: bson.D{
+				{Key: "$cond", Value: bson.D{
+					{Key: "if", Value: bson.D{
+						{Key: "$eq", Value: bson.A{"$schema_version", 1}},
+					}},
+					{Key: "then", Value: "$run_info.run.date"},
+					{Key: "else", Value: "$run_info.date"},
+				}},
+			}},
+		}},
+	})
+
 	// Sort by sequencing date
 	pipeline = append(pipeline, bson.D{
 		{Key: "$sort", Value: bson.D{
-			{Key: "run_info.run.date", Value: -1},
+			{Key: "sequencing_date", Value: -1},
 		}},
 	})
 
