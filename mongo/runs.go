@@ -84,7 +84,6 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 			return cleve.RunResult{}, err
 		}
 		platformNames := append(platform.Aliases, platform.Name)
-		log.Println(platformNames)
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "$expr", Value: bson.D{{Key: "$in", Value: bson.A{"$platform", platformNames}}}},
