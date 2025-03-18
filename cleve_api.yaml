@@ -326,38 +326,6 @@ endpoints:
     section: platforms
     description: Get all sequencing platforms
 
-  - path: /platforms
-    method: POST
-    section: platforms
-    description: Create a new sequencing platform
-    headers:
-      - key: Authorization
-        type: string
-        description: API key
-        required: true
-    params:
-      - key: platform
-        type: string
-        description: platform name
-        required: true
-      - key: name
-        type: string
-        description: platform name
-        required: true
-      - key: serial_tag
-        type: string
-        description: the XML tag in `RunParameters.xml` where the platform serial number is stored
-        required: true
-      - key: serial_prefix
-        type: string
-        description: the prefix of the platform serial number
-        required: true
-      - key: ready_marker
-        type: string
-        description: name of the file that marks that a sequencing run is complete
-        default: CopyComplete.txt
-        required: false
-
   - path: /platforms/{platform}
     method: GET
     section: platforms
