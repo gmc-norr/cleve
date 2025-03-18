@@ -152,6 +152,7 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 	}
 
 	// Conform old run parameters to current format
+	// Note: there was no MiSeq support for schema version 1, so no MiSeq data is expected here.
 	if strings.HasPrefix(platform, "NovaSeq") {
 		novaseqRunparameters, err := unmarshalNovaSeqV1RunParameters(data)
 		if err != nil {

@@ -23,6 +23,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 		qc, err := db.RunQCs(filter)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 
 		switch config.ChartData {
