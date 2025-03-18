@@ -183,7 +183,7 @@ func unmarshalNovaSeqV1RunParameters(data []byte) (rp interop.RunParameters, err
 			PartNumber     string    `bson:"partnumber"`
 			LotNumber      string    `bson:"lotnumber"`
 			ExpirationDate time.Time `bson:"expirationdate"`
-			Mode           int       `bson:"mode"`
+			Mode           string    `bson:"mode"`
 		} `bson:"consumableinfo"`
 	}
 	run := struct {

@@ -29,7 +29,7 @@ func testConsumable(t *testing.T, c Consumable, ec Consumable) {
 		t.Errorf("expected part number %s, found %s", ec.PartNumber, c.PartNumber)
 	}
 	if c.Mode != ec.Mode {
-		t.Errorf("expected mode %d, found %d", ec.Mode, c.Mode)
+		t.Errorf("expected mode %s, found %s", ec.Mode, c.Mode)
 	}
 	if !c.ExpirationDate.Equal(ec.ExpirationDate) {
 		t.Errorf("expected expiration date %s, found %s", ec.ExpirationDate, c.ExpirationDate)
@@ -151,7 +151,7 @@ func TestReadRunParameters(t *testing.T) {
 				PartNumber:   "20083896",
 				// 2026-03-26T00:00:00+01:00
 				ExpirationDate: time.Date(2026, 3, 26, 0, 0, 0, 0, CET),
-				Mode:           1,
+				Mode:           "1",
 			},
 			consumables: []Consumable{
 				{
@@ -163,7 +163,7 @@ func TestReadRunParameters(t *testing.T) {
 					PartNumber:   "20066617",
 					// 2026-03-12T00:00:00+01:00
 					ExpirationDate: time.Date(2026, 3, 12, 0, 0, 0, 0, CET),
-					Mode:           1,
+					Mode:           "1",
 				},
 				{
 					Type:         "SampleTube",
@@ -174,7 +174,7 @@ func TestReadRunParameters(t *testing.T) {
 					PartNumber:   "20072272",
 					// 2026-10-03T00:00:00+02:00
 					ExpirationDate: time.Date(2026, 10, 3, 0, 0, 0, 0, CEST),
-					Mode:           6,
+					Mode:           "6",
 				},
 				{
 					Type:         "Lyo",
@@ -185,7 +185,7 @@ func TestReadRunParameters(t *testing.T) {
 					PartNumber:   "20090569",
 					// 2026-04-09T00:00:00+02:00
 					ExpirationDate: time.Date(2026, 4, 9, 0, 0, 0, 0, CEST),
-					Mode:           9,
+					Mode:           "9",
 				},
 				{
 					Type:         "Buffer",
@@ -196,7 +196,7 @@ func TestReadRunParameters(t *testing.T) {
 					PartNumber:   "20089853",
 					// 2026-03-26T00:00:00+01:00
 					ExpirationDate: time.Date(2026, 3, 26, 0, 0, 0, 0, CET),
-					Mode:           3,
+					Mode:           "3",
 				},
 			},
 		},

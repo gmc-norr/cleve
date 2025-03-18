@@ -67,7 +67,7 @@ type Consumable struct {
 	Type           string    `bson:"type" json:"type"`
 	Name           string    `bson:"name,omitzero" json:"name,omitzero"`
 	Version        string    `bson:"version,omitzero" json:"version,omitzero"`
-	Mode           int       `bson:"mode,omitzero" json:"mode,omitzero"`
+	Mode           string    `bson:"mode,omitzero" json:"mode,omitzero"`
 	SerialNumber   string    `bson:"serial_number" json:"serial_number"`
 	PartNumber     string    `bson:"part_number" json:"part_number"`
 	LotNumber      string    `bson:"lot_number" json:"lot_number"`
@@ -92,7 +92,7 @@ type runParametersNovaSeq struct {
 		PartNumber     string      `xml:"PartNumber"`
 		LotNumber      string      `xml:"LotNumber"`
 		ExpirationDate interopTime `xml:"ExpirationDate"`
-		Mode           int         `xml:"Mode"`
+		Mode           string      `xml:"Mode"`
 		Version        string      `xml:"Version"`
 	} `xml:"ConsumableInfo>ConsumableInfo"`
 }
