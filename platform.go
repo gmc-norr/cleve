@@ -2,6 +2,7 @@ package cleve
 
 import (
 	"slices"
+	"strings"
 
 	"github.com/gmc-norr/cleve/interop"
 	"go.mongodb.org/mongo-driver/bson"
@@ -44,7 +45,7 @@ func (p *Platforms) Add(platform Platform) {
 // Condense merges platforms by name. This collects all the instrument IDs and aliases
 // for platforms with the same name, as well as sums up the run count for all individual
 // instruments. The function will leave the original object intact and return a new
-// Platforms object.
+// Platforms object. Platforms will be sorted lexicographically by name.
 func (p Platforms) Condense() Platforms {
 	condensed := make(map[string]Platform, 0)
 	for _, platform := range p.Platforms {
@@ -61,6 +62,9 @@ func (p Platforms) Condense() Platforms {
 		v.Aliases = slices.Compact(v.Aliases)
 		res = append(res, v)
 	}
+	slices.SortFunc(res, func(a Platform, b Platform) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 	return Platforms{
 		Platforms:   res,
 		isCondensed: true,
