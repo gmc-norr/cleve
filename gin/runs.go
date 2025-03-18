@@ -92,7 +92,6 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 		}
 
 		run := cleve.Run{
-			SchemaVersion:  2,
 			RunID:          interopData.RunInfo.RunId,
 			ExperimentName: interopData.RunParameters.ExperimentName,
 			Path:           addRunRequest.Path,

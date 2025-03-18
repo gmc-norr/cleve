@@ -37,7 +37,6 @@ func TestUnmarshalV1(t *testing.T) {
 		reagentSerial  string
 		bufferSerial   string
 		doc            bson.M
-		schemaVersion  int
 		shouldError    bool
 	}{
 		{
@@ -139,9 +138,6 @@ func TestUnmarshalV1(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if run.SchemaVersion != 1 {
-				t.Errorf("expected schema version 1, got %d", run.SchemaVersion)
-			}
 			if run.Platform != c.platform {
 				t.Errorf("expected platform %q, got %q", c.platform, run.Platform)
 			}

@@ -16,7 +16,6 @@ type RunResult struct {
 
 // Run represents an Illumina sequencing run.
 type Run struct {
-	SchemaVersion    int                   `bson:"schema_version" json:"schema_version"`
 	RunID            string                `bson:"run_id" json:"run_id"`
 	ExperimentName   string                `bson:"experiment_name" json:"experiment_name"`
 	Path             string                `bson:"path" json:"path"`
@@ -43,14 +42,8 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 		return err
 	}
 
-	if v.SchemaVersion == 0 {
-		r.SchemaVersion = 1
-	} else {
-		r.SchemaVersion = v.SchemaVersion
-	}
-
-	switch r.SchemaVersion {
-	case 1:
+	switch v.SchemaVersion {
+	case 0, 1:
 		rpV1, err := unmarshalRunV1(data)
 		if err != nil {
 			return err
@@ -62,7 +55,7 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 			return err
 		}
 	default:
-		return fmt.Errorf("unsupported schema version: %d", r.SchemaVersion)
+		return fmt.Errorf("unsupported schema version: %d", v.SchemaVersion)
 	}
 
 	return nil
@@ -115,7 +108,6 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 	platform := interop.IdentifyPlatform(v1.RunInfo.Run.Instrument)
 	flowcell := interop.IdentifyFlowcell(v1.RunInfo.Run.Flowcell)
 
-	r.SchemaVersion = 1
 	r.RunID = v1.RunID
 	r.ExperimentName = v1.ExperimentName
 	r.Path = v1.Path

@@ -64,7 +64,6 @@ var addCmd = &cobra.Command{
 		}
 
 		run := cleve.Run{
-			SchemaVersion:  2,
 			RunID:          interopData.RunInfo.RunId,
 			ExperimentName: interopData.RunParameters.ExperimentName,
 			Path:           runDir,
