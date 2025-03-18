@@ -54,6 +54,7 @@ func (p Platforms) Condense() Platforms {
 		resP.InstrumentIds = append(resP.InstrumentIds, platform.InstrumentIds...)
 		resP.Aliases = append(resP.Aliases, platform.Aliases...)
 		resP.RunCount += platform.RunCount
+		resP.ReadyMarker = platform.ReadyMarker
 		condensed[platform.Name] = resP
 	}
 	res := make([]Platform, 0)
