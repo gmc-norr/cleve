@@ -1,7 +1,6 @@
 package gin
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,13 +10,8 @@ import (
 
 // Interface for reading platform information from the database.
 type PlatformGetter interface {
-	Platform(string) (*cleve.Platform, error)
-	Platforms() ([]*cleve.Platform, error)
-}
-
-// Interface for storing platforms in the database.
-type PlatformSetter interface {
-	CreatePlatform(*cleve.Platform) error
+	Platform(string) (cleve.Platform, error)
+	Platforms() (cleve.Platforms, error)
 }
 
 func PlatformsHandler(db PlatformGetter) gin.HandlerFunc {
@@ -31,7 +25,7 @@ func PlatformsHandler(db PlatformGetter) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, platforms)
+		c.JSON(http.StatusOK, platforms.Platforms)
 	}
 }
 
@@ -46,40 +40,6 @@ func GetPlatformHandler(db PlatformGetter) gin.HandlerFunc {
 					http.StatusNotFound,
 					gin.H{"error": "no such platform", "name": name},
 				)
-			}
-			c.AbortWithStatusJSON(
-				http.StatusInternalServerError,
-				gin.H{"error": err.Error()},
-			)
-			return
-		}
-
-		c.JSON(http.StatusOK, platform)
-	}
-}
-
-func AddPlatformHandler(db PlatformSetter) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var platform cleve.Platform
-
-		if err := c.BindJSON(&platform); err != nil {
-			c.AbortWithStatusJSON(
-				http.StatusBadRequest,
-				gin.H{"error": err.Error()},
-			)
-			return
-		}
-
-		if platform.ReadyMarker == "" {
-			platform.ReadyMarker = "CopyComplete.txt"
-		}
-
-		if err := db.CreatePlatform(&platform); err != nil {
-			if mongo.IsDuplicateKeyError(err) {
-				c.AbortWithStatusJSON(
-					http.StatusConflict,
-					gin.H{"error": fmt.Sprintf("platform %s already exists", platform.Name)},
-				)
 				return
 			}
 			c.AbortWithStatusJSON(
@@ -89,6 +49,6 @@ func AddPlatformHandler(db PlatformSetter) gin.HandlerFunc {
 			return
 		}
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, platform)
 	}
 }

@@ -9,7 +9,6 @@ import (
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -17,10 +16,37 @@ import (
 func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 	var pipeline mongo.Pipeline
 
+	pipeline = append(pipeline, bson.D{
+		{
+			Key: "$set", Value: bson.D{
+				{
+					Key: "schema_version",
+					Value: bson.D{
+						{Key: "$ifNull", Value: bson.A{"$schema_version", 1}},
+					},
+				},
+			},
+		},
+	})
+
+	pipeline = append(pipeline, bson.D{
+		{Key: "$addFields", Value: bson.D{
+			{Key: "sequencing_date", Value: bson.D{
+				{Key: "$cond", Value: bson.D{
+					{Key: "if", Value: bson.D{
+						{Key: "$eq", Value: bson.A{"$schema_version", 1}},
+					}},
+					{Key: "then", Value: "$run_info.run.date"},
+					{Key: "else", Value: "$run_info.date"},
+				}},
+			}},
+		}},
+	})
+
 	// Sort by sequencing date
 	pipeline = append(pipeline, bson.D{
 		{Key: "$sort", Value: bson.D{
-			{Key: "run_info.run.date", Value: -1},
+			{Key: "sequencing_date", Value: -1},
 		}},
 	})
 
@@ -53,9 +79,14 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 
 	// Filter on platform
 	if filter.Platform != "" {
+		platform, err := db.Platform(filter.Platform)
+		if err != nil {
+			return cleve.RunResult{}, err
+		}
+		platformNames := append(platform.Aliases, platform.Name)
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
-				{Key: "platform", Value: filter.Platform},
+				{Key: "$expr", Value: bson.D{{Key: "$in", Value: bson.A{"$platform", platformNames}}}},
 			}},
 		})
 	}
@@ -311,10 +342,19 @@ func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
 }
 
 func (db DB) CreateRun(r *cleve.Run) error {
-	r.Created = time.Now()
-	r.ID = primitive.NewObjectID()
-	_, err := db.RunCollection().InsertOne(context.TODO(), r)
-	return err
+	type auxRun struct {
+		SchemaVersion int `bson:"schema_version"`
+		*cleve.Run    `bson:",inline"`
+	}
+	run := auxRun{
+		SchemaVersion: 2,
+		Run:           r,
+	}
+	run.Created = time.Now()
+	if _, err := db.RunCollection().InsertOne(context.TODO(), run); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (db DB) DeleteRun(runId string) error {

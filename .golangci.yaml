@@ -10,4 +10,4 @@ linters:
     - unused
     - goimports
 issues:
-  fix: true
+  fix: false

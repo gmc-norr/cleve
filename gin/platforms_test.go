@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -14,28 +13,14 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-var platformNovaSeq = &cleve.Platform{
-	Name:         "NovaSeq",
-	SerialTag:    "InstrumentSerialNumber",
-	SerialPrefix: "LH",
-	ReadyMarker:  "CopyComplete.txt",
+var platformNovaSeq = cleve.Platform{
+	Name:        "NovaSeq",
+	ReadyMarker: "CopyComplete.txt",
 }
 
-var platformNovaSeqAdd = &cleve.Platform{
-	Name:         "NovaSeq",
-	SerialTag:    "InstrumentSerialNumber",
-	SerialPrefix: "LH",
-}
-
-var incompletePlatform = &cleve.Platform{
-	Name: "FunkySeq",
-}
-
-var platformNextSeq = &cleve.Platform{
-	Name:         "NextSeq",
-	SerialTag:    "InstrumentID",
-	SerialPrefix: "NB",
-	ReadyMarker:  "CopyComplete.txt",
+var platformNextSeq = cleve.Platform{
+	Name:        "NextSeq",
+	ReadyMarker: "CopyComplete.txt",
 }
 
 func TestPlatformsHandler(t *testing.T) {
@@ -43,24 +28,24 @@ func TestPlatformsHandler(t *testing.T) {
 	pg := mock.PlatformGetter{}
 
 	table := map[string]struct {
-		Platforms []*cleve.Platform
+		Platforms cleve.Platforms
 		Error     error
 		Code      int
 	}{
 		"case 1": {
-			[]*cleve.Platform{platformNovaSeq, platformNextSeq},
+			cleve.Platforms{Platforms: []cleve.Platform{platformNovaSeq, platformNextSeq}},
 			nil,
 			200,
 		},
 		"case 2": {
-			[]*cleve.Platform{},
+			cleve.Platforms{},
 			nil,
 			200,
 		},
 	}
 
 	for k, v := range table {
-		pg.PlatformsFn = func() ([]*cleve.Platform, error) {
+		pg.PlatformsFn = func() (cleve.Platforms, error) {
 			return v.Platforms, v.Error
 		}
 
@@ -83,7 +68,7 @@ func TestGetPlatformHandler(t *testing.T) {
 	pg := mock.PlatformGetter{}
 
 	table := map[string]struct {
-		Platform *cleve.Platform
+		Platform cleve.Platform
 		Code     int
 		Error    error
 	}{
@@ -93,14 +78,14 @@ func TestGetPlatformHandler(t *testing.T) {
 			nil,
 		},
 		"novaseq": {
-			nil,
+			cleve.Platform{},
 			404,
 			mongo.ErrNoDocuments,
 		},
 	}
 
 	for k, v := range table {
-		pg.PlatformFn = func(name string) (*cleve.Platform, error) {
+		pg.PlatformFn = func(name string) (cleve.Platform, error) {
 			return v.Platform, v.Error
 		}
 
@@ -122,74 +107,14 @@ func TestGetPlatformHandler(t *testing.T) {
 			if err := json.Unmarshal(b, &p); err != nil {
 				t.Fatal(err)
 			}
-			if p != *v.Platform {
+			if p.Name != v.Platform.Name {
 				fmt.Printf("%#v != %#v", p, v.Platform)
 				t.Fatalf("Incorrect response body for %s", k)
 			}
-		}
-	}
-}
-
-func TestAddPlatformHandler(t *testing.T) {
-	gin.SetMode("test")
-	table := map[string]struct {
-		RequestPlatform *cleve.Platform
-		Code            int
-		InvokesCreate   bool
-		Error           error
-	}{
-		"novaseq1": {
-			platformNovaSeq,
-			200,
-			true,
-			nil,
-		},
-		"novaseq_no_readymarker": {
-			platformNovaSeqAdd,
-			200,
-			true,
-			nil,
-		},
-		"incomplete_platform": {
-			incompletePlatform,
-			400,
-			false,
-			nil,
-		},
-		"duplicate_platform": {
-			platformNovaSeq,
-			409,
-			true,
-			mongo.GenericDuplicateKeyError,
-		},
-	}
-
-	for k, v := range table {
-		ps := mock.PlatformSetter{}
-		ps.CreatePlatformFn = func(p *cleve.Platform) error {
-			return v.Error
-		}
-
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-
-		rBody, _ := json.Marshal(v.RequestPlatform)
-		r := httptest.NewRequest("POST", "/api/platforms", strings.NewReader(string(rBody)))
-		c.Request = r
-
-		AddPlatformHandler(&ps)(c)
-
-		if ps.CreatePlatformInvoked != v.InvokesCreate {
-			if v.InvokesCreate {
-				t.Fatalf("CreatePlatform should have been invoked, but was not")
-			} else {
-				t.Fatalf("CreatePlatform should not have been invoked, but was")
+			if len(p.Aliases) != len(v.Platform.Aliases) {
+				fmt.Printf("%#v != %#v", p, v.Platform)
+				t.Fatalf("Incorrect response body for %s", k)
 			}
-		}
-
-		if w.Code != v.Code {
-			t.Logf("%s", w.Body.String())
-			t.Fatalf("Expected HTTP %d, got %d for %s", v.Code, w.Code, k)
 		}
 	}
 }

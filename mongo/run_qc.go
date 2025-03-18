@@ -51,9 +51,14 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 
 	// Platform filter
 	if filter.Platform != "" {
+		platform, err := db.Platform(filter.Platform)
+		if err != nil {
+			return qc, err
+		}
+		platformNames := append(platform.Aliases, platform.Name)
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
-				{Key: "run.platform", Value: filter.Platform},
+				{Key: "$expr", Value: bson.D{{Key: "$in", Value: bson.A{"$run.platform", platformNames}}}},
 			}},
 		})
 	}

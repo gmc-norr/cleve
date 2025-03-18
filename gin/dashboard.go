@@ -19,12 +19,9 @@ func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
 	if err != nil {
 		return gin.H{"error": err.Error()}, err
 	}
-	platformStrings := make([]string, 0)
-	for _, p := range platforms {
-		platformStrings = append(platformStrings, p.Name)
-	}
+	platformNames := platforms.Names()
 
-	return gin.H{"runs": runs, "platforms": platformStrings, "run_filter": filter}, nil
+	return gin.H{"runs": runs, "platforms": platformNames, "run_filter": filter}, nil
 }
 
 func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
@@ -141,12 +138,9 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		platformStrings := make([]string, 0)
-		for _, p := range platforms {
-			platformStrings = append(platformStrings, p.Name)
-		}
+		platformNames := platforms.Names()
 
 		c.Header("Hx-Push-Url", filter.UrlParams())
-		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.PaginationMetadata, "platforms": platformStrings, "filter": filter, "chart-config": chartConfig, "version": cleve.GetVersion()})
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.Qc, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "chart-config": chartConfig, "version": cleve.GetVersion()})
 	}
 }

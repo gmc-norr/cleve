@@ -16,42 +16,39 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mock"
 	"github.com/gmc-norr/cleve/mongo"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var novaseq1 *cleve.Run = &cleve.Run{
-	ID:             primitive.NewObjectID(),
 	RunID:          "run1",
 	ExperimentName: "experiment 1",
 	Path:           "/path/to/run1",
 	Platform:       "NovaSeq",
 	Created:        time.Now(),
 	StateHistory:   nil,
-	RunParameters:  &cleve.NovaSeqParameters{},
+	RunParameters:  interop.RunParameters{},
 }
 
 var novaseq2 *cleve.Run = &cleve.Run{
-	ID:             primitive.NewObjectID(),
 	RunID:          "run3",
 	ExperimentName: "experiment 3",
 	Path:           "/path/to/run3",
 	Platform:       "NovaSeq",
 	Created:        time.Now(),
 	StateHistory:   nil,
-	RunParameters:  &cleve.NovaSeqParameters{},
+	RunParameters:  interop.RunParameters{},
 }
 
 var nextseq1 *cleve.Run = &cleve.Run{
-	ID:             primitive.NewObjectID(),
 	RunID:          "run2",
 	ExperimentName: "experiment 2",
 	Path:           "/path/to/run2",
 	Platform:       "NextSeq",
 	Created:        time.Now(),
 	StateHistory:   nil,
-	RunParameters:  &cleve.NextSeqParameters{},
+	RunParameters:  interop.RunParameters{},
 }
 
 func TestRunsHandler(t *testing.T) {
@@ -304,28 +301,28 @@ func TestAddRunHandler(t *testing.T) {
 		hasSamplesheet bool
 	}{
 		{
-			"path missing",
-			"",
-			[]byte(`{"path": "/path/to/run", "state": "ready"}`),
-			http.StatusInternalServerError,
-			false,
-			false,
+			name:           "path missing",
+			runPath:        "",
+			data:           []byte(`{"path": "/path/to/run", "state": "ready"}`),
+			code:           http.StatusInternalServerError,
+			createInvoked:  false,
+			hasSamplesheet: false,
 		},
 		{
-			"valid run",
-			"/home/nima18/git/cleve/test_data/novaseq_full",
-			[]byte(`{"path": "/home/nima18/git/cleve/test_data/novaseq_full", "state": "ready"}`),
-			http.StatusOK,
-			true,
-			true,
+			name:           "valid run",
+			runPath:        "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1",
+			data:           []byte(`{"path": "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1", "state": "ready"}`),
+			code:           http.StatusOK,
+			createInvoked:  true,
+			hasSamplesheet: true,
 		},
 		{
-			"missing state",
-			"/home/nima18/git/cleve/test_data/novaseq_full",
-			[]byte(`{"path": "/home/nima18/git/cleve/test_data/novaseq_full"}`),
-			http.StatusBadRequest,
-			false,
-			false,
+			name:           "missing state",
+			runPath:        "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1",
+			data:           []byte(`{"path": "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1"}`),
+			code:           http.StatusBadRequest,
+			createInvoked:  false,
+			hasSamplesheet: false,
 		},
 	}
 
