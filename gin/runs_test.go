@@ -21,11 +21,6 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-type RunPlatformSetter interface {
-	mock.RunSetter
-	mock.PlatformSetter
-}
-
 var novaseq1 *cleve.Run = &cleve.Run{
 	RunID:          "run1",
 	ExperimentName: "experiment 1",
@@ -298,13 +293,12 @@ func TestAddRunHandler(t *testing.T) {
 	gin.SetMode("test")
 
 	cases := []struct {
-		name                  string
-		runPath               string
-		data                  []byte
-		code                  int
-		createInvoked         bool
-		createPlatformInvoked bool
-		hasSamplesheet        bool
+		name           string
+		runPath        string
+		data           []byte
+		code           int
+		createInvoked  bool
+		hasSamplesheet bool
 	}{
 		{
 			name:           "path missing",
@@ -315,34 +309,26 @@ func TestAddRunHandler(t *testing.T) {
 			hasSamplesheet: false,
 		},
 		{
-			name:                  "valid run",
-			runPath:               "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1",
-			data:                  []byte(`{"path": "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1", "state": "ready"}`),
-			code:                  http.StatusOK,
-			createInvoked:         true,
-			createPlatformInvoked: true,
-			hasSamplesheet:        true,
+			name:           "valid run",
+			runPath:        "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1",
+			data:           []byte(`{"path": "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1", "state": "ready"}`),
+			code:           http.StatusOK,
+			createInvoked:  true,
+			hasSamplesheet: true,
 		},
 		{
-			name:                  "missing state",
-			runPath:               "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1",
-			data:                  []byte(`{"path": "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1"}`),
-			code:                  http.StatusBadRequest,
-			createInvoked:         false,
-			createPlatformInvoked: false,
-			hasSamplesheet:        false,
+			name:           "missing state",
+			runPath:        "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1",
+			data:           []byte(`{"path": "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1"}`),
+			code:           http.StatusBadRequest,
+			createInvoked:  false,
+			hasSamplesheet: false,
 		},
 	}
 
 	for _, v := range cases {
 		t.Run(v.name, func(t *testing.T) {
-			rps := struct {
-				mock.RunSetter
-				mock.PlatformSetter
-			}{
-				mock.RunSetter{},
-				mock.PlatformSetter{},
-			}
+			rs := mock.RunSetter{}
 
 			if _, err := os.Stat(v.runPath); errors.Is(err, os.ErrNotExist) && v.name != "path missing" {
 				t.Skip("test data not found, skipping")
@@ -350,36 +336,25 @@ func TestAddRunHandler(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
-			rps.CreateRunFn = func(run *cleve.Run) error {
-				return rps.CreatePlatform(nil)
-			}
-			rps.CreateSampleSheetFn = func(samplesheet cleve.SampleSheet, opts ...mongo.SampleSheetOption) (*cleve.UpdateResult, error) {
-				return nil, nil
-			}
-			rps.CreatePlatformFn = func(p *cleve.Platform) error {
+			rs.CreateRunFn = func(run *cleve.Run) error {
 				return nil
+			}
+			rs.CreateSampleSheetFn = func(samplesheet cleve.SampleSheet, opts ...mongo.SampleSheetOption) (*cleve.UpdateResult, error) {
+				return nil, nil
 			}
 
 			c.Request = httptest.NewRequest(http.MethodPost, "/runs", bytes.NewBuffer(v.data))
-			AddRunHandler(&rps)(c)
+			AddRunHandler(&rs)(c)
 
-			if rps.CreateRunInvoked && !v.createInvoked {
+			if rs.CreateRunInvoked && !v.createInvoked {
 				t.Error(`CreateRun was invoked, but it shouldn't have been`)
-			} else if !rps.CreateRunInvoked && v.createInvoked {
+			} else if !rs.CreateRunInvoked && v.createInvoked {
 				t.Error(`CreateRun was not invoked, but it should have been`)
 			}
 
-			if rps.CreatePlatformInvoked != v.createPlatformInvoked {
-				if rps.CreatePlatformInvoked {
-					t.Error("CreatePlatform was invoked, but shouln't have been")
-				} else {
-					t.Error("CreatePlatform was not invoked, but should have been")
-				}
-			}
-
-			if rps.CreateSampleSheetInvoked && !v.hasSamplesheet {
+			if rs.CreateSampleSheetInvoked && !v.hasSamplesheet {
 				t.Error(`CreateSampleSheet was invoked, but it shouldn't have been`)
-			} else if !rps.CreateSampleSheetInvoked && v.hasSamplesheet {
+			} else if !rs.CreateSampleSheetInvoked && v.hasSamplesheet {
 				t.Error(`CreateSampleSheet was not invoked, but it should have been`)
 			}
 

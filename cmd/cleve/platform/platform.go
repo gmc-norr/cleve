@@ -11,6 +11,4 @@ var PlatformCmd = &cobra.Command{
 
 func init() {
 	PlatformCmd.AddCommand(listCmd)
-	PlatformCmd.AddCommand(addCmd)
-	PlatformCmd.AddCommand(deleteCmd)
 }

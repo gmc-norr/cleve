@@ -11,8 +11,8 @@ import (
 
 // Interface for reading platform information from the database.
 type PlatformGetter interface {
-	Platform(string) (*cleve.Platform, error)
-	Platforms() ([]*cleve.Platform, error)
+	Platform(string) (cleve.Platform, error)
+	Platforms() (cleve.Platforms, error)
 }
 
 // Interface for storing platforms in the database.

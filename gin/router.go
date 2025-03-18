@@ -194,7 +194,6 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	authEndpoints.PATCH("/api/runs/:runId/state", UpdateRunStateHandler(db))
 	authEndpoints.POST("/api/runs/:runId/samplesheet", AddRunSampleSheetHandler(db))
 	authEndpoints.POST("/api/runs/:runId/qc", AddRunQcHandler(db))
-	authEndpoints.POST("/api/platforms", AddPlatformHandler(db))
 	authEndpoints.POST("/api/samples", AddSampleHandler(db))
 	authEndpoints.POST("/api/samplesheets", AddSampleSheetHandler(db))
 

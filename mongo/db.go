@@ -67,10 +67,6 @@ func (db DB) KeyCollection() *mongo.Collection {
 	return db.Collection("keys")
 }
 
-func (db DB) PlatformCollection() *mongo.Collection {
-	return db.Collection("platforms")
-}
-
 func (db DB) RunQCCollection() *mongo.Collection {
 	return db.Collection("run_qc")
 }
@@ -89,12 +85,6 @@ func (db *DB) SetIndexes() error {
 		return err
 	}
 	log.Printf("Set index %s on runs", name)
-
-	name, err = db.SetPlatformIndex()
-	if err != nil {
-		return err
-	}
-	log.Printf("Set index %s on platforms", name)
 
 	name, err = db.SetRunQCIndex()
 	if err != nil {
