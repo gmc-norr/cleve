@@ -78,6 +78,7 @@ type FlowcellInfo struct {
 type RunInfo struct {
 	Version      int          `bson:"version" json:"version"`
 	RunId        string       `bson:"run_id" json:"run_id"`
+	RunNumber    int          `bson:"run_number" json:"run_number"`
 	Date         time.Time    `bson:"date" json:"date"`
 	Platform     string       `bson:"platform" json:"platform"`
 	FlowcellName string       `bson:"flowcell_name" json:"flowcell_name"`
@@ -92,7 +93,8 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 		XMLName xml.Name `xml:"RunInfo"`
 		Version int      `xml:"Version,attr"`
 		Run     struct {
-			Id           string        `xml:",attr"`
+			Id           string        `xml:"Id,attr"`
+			Number       int           `xml:"Number,attr"`
 			Date         interopTime   `xml:"Date"`
 			InstrumentId string        `xml:"Instrument"`
 			FlowcellId   string        `xml:"Flowcell"`
@@ -110,6 +112,7 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 	ri = RunInfo{
 		Version:      payload.Version,
 		RunId:        payload.Run.Id,
+		RunNumber:    payload.Run.Number,
 		Date:         payload.Run.Date.Time,
 		InstrumentId: payload.Run.InstrumentId,
 		FlowcellId:   payload.Run.FlowcellId,

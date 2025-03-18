@@ -81,7 +81,8 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 		RunInfo          struct {
 			Version int `bson:"version"`
 			Run     struct {
-				RunID          string    `bson:"runid"`
+				RunID          string    `bson:"run_id"`
+				Number         int       `bson:"number"`
 				Date           time.Time `bson:"date"`
 				Instrument     string    `bson:"instrument"`
 				Flowcell       string    `bson:"flowcell"`
@@ -114,6 +115,7 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 	platform := interop.IdentifyPlatform(v1.RunInfo.Run.Instrument)
 	flowcell := interop.IdentifyFlowcell(v1.RunInfo.Run.Flowcell)
 
+	r.SchemaVersion = 1
 	r.RunID = v1.RunID
 	r.ExperimentName = v1.ExperimentName
 	r.Path = v1.Path
@@ -127,6 +129,7 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 	r.RunInfo = interop.RunInfo{
 		Version:      v1.RunInfo.Version,
 		RunId:        v1.RunInfo.Run.RunID,
+		RunNumber:    v1.RunInfo.Run.Number,
 		Date:         (time.Time)(v1.RunInfo.Run.Date),
 		Platform:     platform,
 		FlowcellName: flowcell,
@@ -191,18 +194,18 @@ func unmarshalNovaSeqV1RunParameters(data []byte) (rp interop.RunParameters, err
 			Mode           int       `bson:"mode"`
 		} `bson:"consumableinfo"`
 	}
-	params := struct {
-		auxRunParams `bson:"run_parameters"`
+	run := struct {
+		Params auxRunParams `bson:"run_parameters"`
 	}{}
-	err = bson.Unmarshal(data, &params)
+	err = bson.Unmarshal(data, &run)
 	if err != nil {
 		return rp, err
 	}
 	rp = interop.RunParameters{
-		ExperimentName: params.ExperimentName,
-		Side:           params.Side,
+		ExperimentName: run.Params.ExperimentName,
+		Side:           run.Params.Side,
 	}
-	for _, consumable := range params.Consumables {
+	for _, consumable := range run.Params.Consumables {
 		interopConsumable := interop.Consumable{
 			Type:           consumable.Type,
 			Name:           consumable.Name,
@@ -243,39 +246,39 @@ func unmarshalNextSeqV1RunParameters(data []byte) (rp interop.RunParameters, err
 			PartNumber     string    `bson:"partnumber"`
 			LotNumber      string    `bson:"lotnumber"`
 			ExpirationDate time.Time `bson:"expirationdate"`
-		} `bson:"reagentrfidtag"`
+		} `bson:"reagentkitrfidtag"`
 	}
-	params := struct {
-		auxRunParams `bson:"run_parameters"`
+	run := struct {
+		Params auxRunParams `bson:"run_parameters"`
 	}{}
-	err = bson.Unmarshal(data, &params)
+	err = bson.Unmarshal(data, &run)
 	if err != nil {
 		return rp, err
 	}
 	rp = interop.RunParameters{
-		ExperimentName: params.ExperimentName,
+		ExperimentName: run.Params.ExperimentName,
 	}
 	rp.Flowcell = interop.Consumable{
 		Type:           "FlowCell",
-		SerialNumber:   params.FlowcellRfidTag.SerialNumber,
-		PartNumber:     params.FlowcellRfidTag.PartNumber,
-		LotNumber:      params.FlowcellRfidTag.LotNumber,
-		ExpirationDate: time.Time(params.FlowcellRfidTag.ExpirationDate),
+		SerialNumber:   run.Params.FlowcellRfidTag.SerialNumber,
+		PartNumber:     run.Params.FlowcellRfidTag.PartNumber,
+		LotNumber:      run.Params.FlowcellRfidTag.LotNumber,
+		ExpirationDate: time.Time(run.Params.FlowcellRfidTag.ExpirationDate),
 	}
 	rp.Consumables = []interop.Consumable{
 		{
 			Type:           "Buffer",
-			SerialNumber:   params.PR2BottleRfidTag.SerialNumber,
-			PartNumber:     params.PR2BottleRfidTag.PartNumber,
-			LotNumber:      params.PR2BottleRfidTag.LotNumber,
-			ExpirationDate: time.Time(params.PR2BottleRfidTag.ExpirationDate),
+			SerialNumber:   run.Params.PR2BottleRfidTag.SerialNumber,
+			PartNumber:     run.Params.PR2BottleRfidTag.PartNumber,
+			LotNumber:      run.Params.PR2BottleRfidTag.LotNumber,
+			ExpirationDate: time.Time(run.Params.PR2BottleRfidTag.ExpirationDate),
 		},
 		{
 			Type:           "Reagent",
-			SerialNumber:   params.ReagentKitRfidTag.SerialNumber,
-			PartNumber:     params.ReagentKitRfidTag.PartNumber,
-			LotNumber:      params.ReagentKitRfidTag.LotNumber,
-			ExpirationDate: time.Time(params.ReagentKitRfidTag.ExpirationDate),
+			SerialNumber:   run.Params.ReagentKitRfidTag.SerialNumber,
+			PartNumber:     run.Params.ReagentKitRfidTag.PartNumber,
+			LotNumber:      run.Params.ReagentKitRfidTag.LotNumber,
+			ExpirationDate: time.Time(run.Params.ReagentKitRfidTag.ExpirationDate),
 		},
 	}
 	return rp, nil
