@@ -7,11 +7,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// Platforms represents a collection of sequencing platforms.
 type Platforms struct {
 	Platforms   []Platform
 	isCondensed bool
 }
 
+// Get retrieves a platform by name. If a platform with that name is found,
+// the platform is returned with ok set to true. Otherwise a default struct
+// for the platform is returned with ok set to false.
 func (p Platforms) Get(name string) (platform Platform, ok bool) {
 	var match bool
 	if !p.isCondensed {
@@ -29,6 +33,7 @@ func (p Platforms) Get(name string) (platform Platform, ok bool) {
 	return platform, false
 }
 
+// Add adds a platform to the collection.
 func (p *Platforms) Add(platform Platform) {
 	p.Platforms = append(p.Platforms, platform)
 	if p.isCondensed {
@@ -36,6 +41,10 @@ func (p *Platforms) Add(platform Platform) {
 	}
 }
 
+// Condense merges platforms by name. This collects all the instrument IDs and aliases
+// for platforms with the same name, as well as sums up the run count for all individual
+// instruments. The function will leave the original object intact and return a new
+// Platforms object.
 func (p Platforms) Condense() Platforms {
 	condensed := make(map[string]Platform, 0)
 	for _, platform := range p.Platforms {
@@ -58,6 +67,9 @@ func (p Platforms) Condense() Platforms {
 	}
 }
 
+// Names returns a slice of platform names that are present in the collection.
+// If the platforms have not been condensed there might be duplicates in the
+// resulting slice.
 func (p Platforms) Names() []string {
 	names := make([]string, 0, len(p.Platforms))
 	for _, platform := range p.Platforms {
@@ -66,6 +78,7 @@ func (p Platforms) Names() []string {
 	return names
 }
 
+// Platform represents a sequencing platform.
 type Platform struct {
 	Name          string
 	InstrumentIds []string
@@ -74,13 +87,7 @@ type Platform struct {
 	RunCount      int
 }
 
-func NewPlatform(name, readyMarker string) *Platform {
-	return &Platform{
-		Name:        name,
-		ReadyMarker: readyMarker,
-	}
-}
-
+// UnmarshalBSON unmarshals a BSON representation into a Platform struct.
 func (p *Platform) UnmarshalBSON(data []byte) error {
 	type PlatformAlias struct {
 		InstrumentId string   `bson:"instrument_id"`
