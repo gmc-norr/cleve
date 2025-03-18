@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
@@ -52,7 +51,7 @@ func (db DB) Platform(name string) (cleve.Platform, error) {
 	}
 	p, ok := platforms.Get(name)
 	if !ok {
-		return cleve.Platform{}, fmt.Errorf("no matching platform found")
+		return cleve.Platform{}, mongo.ErrNoDocuments
 	}
 	return p, nil
 }
