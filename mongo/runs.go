@@ -343,8 +343,16 @@ func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
 }
 
 func (db DB) CreateRun(r *cleve.Run) error {
-	r.Created = time.Now()
-	if _, err := db.RunCollection().InsertOne(context.TODO(), r); err != nil {
+	type auxRun struct {
+		SchemaVersion int `bson:"schema_version"`
+		*cleve.Run    `bson:",inline"`
+	}
+	run := auxRun{
+		SchemaVersion: 2,
+		Run:           r,
+	}
+	run.Created = time.Now()
+	if _, err := db.RunCollection().InsertOne(context.TODO(), run); err != nil {
 		return err
 	}
 	return nil
