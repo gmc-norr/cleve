@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 // Interop is the representation of Illumina Interop data.
@@ -218,14 +219,7 @@ func (i Interop) TotalYield() int {
 	bases := 0
 	excluded := i.excludedCycles()
 	for _, record := range i.QMetrics.Records {
-		isExcluded := false
-		for _, c := range excluded {
-			if record.Cycle() == c {
-				isExcluded = true
-				break
-			}
-		}
-		if isExcluded {
+		if slices.Contains(excluded, record.Cycle()) {
 			continue
 		}
 		bases += record.BaseCount()
@@ -238,14 +232,7 @@ func (i Interop) LaneYield() map[int]int {
 	laneYield := make(map[int]int, i.RunInfo.Flowcell.Lanes)
 	excluded := i.excludedCycles()
 	for _, record := range i.QMetrics.Records {
-		isExcluded := false
-		for _, c := range excluded {
-			if record.Cycle() == c {
-				isExcluded = true
-				break
-			}
-		}
-		if isExcluded {
+		if slices.Contains(excluded, record.Cycle()) {
 			continue
 		}
 		laneYield[record.Lane()] += record.BaseCount()
@@ -284,14 +271,7 @@ func (i Interop) LaneErrorRate() map[int]map[int]float64 {
 
 	// First calculate the mean error for each tile per read per lane
 	for _, record := range i.ErrorMetrics.Records {
-		isExcluded := false
-		for _, c := range excluded {
-			if record.Cycle == c {
-				isExcluded = true
-				break
-			}
-		}
-		if isExcluded {
+		if slices.Contains(excluded, record.Cycle) {
 			continue
 		}
 		read := i.cycleToRead(record.Cycle)
