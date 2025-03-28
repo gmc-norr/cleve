@@ -7,6 +7,8 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
+	"time"
 )
 
 // Interop is the representation of Illumina Interop data.
@@ -218,14 +220,7 @@ func (i Interop) TotalYield() int {
 	bases := 0
 	excluded := i.excludedCycles()
 	for _, record := range i.QMetrics.Records {
-		isExcluded := false
-		for _, c := range excluded {
-			if record.Cycle() == c {
-				isExcluded = true
-				break
-			}
-		}
-		if isExcluded {
+		if slices.Contains(excluded, record.Cycle()) {
 			continue
 		}
 		bases += record.BaseCount()
@@ -238,14 +233,7 @@ func (i Interop) LaneYield() map[int]int {
 	laneYield := make(map[int]int, i.RunInfo.Flowcell.Lanes)
 	excluded := i.excludedCycles()
 	for _, record := range i.QMetrics.Records {
-		isExcluded := false
-		for _, c := range excluded {
-			if record.Cycle() == c {
-				isExcluded = true
-				break
-			}
-		}
-		if isExcluded {
+		if slices.Contains(excluded, record.Cycle()) {
 			continue
 		}
 		laneYield[record.Lane()] += record.BaseCount()
@@ -284,14 +272,7 @@ func (i Interop) LaneErrorRate() map[int]map[int]float64 {
 
 	// First calculate the mean error for each tile per read per lane
 	for _, record := range i.ErrorMetrics.Records {
-		isExcluded := false
-		for _, c := range excluded {
-			if record.Cycle == c {
-				isExcluded = true
-				break
-			}
-		}
-		if isExcluded {
+		if slices.Contains(excluded, record.Cycle) {
 			continue
 		}
 		read := i.cycleToRead(record.Cycle)
@@ -326,6 +307,84 @@ func (i Interop) LaneErrorRate() map[int]map[int]float64 {
 	}
 
 	return errorRates
+}
+
+type RunSummary struct {
+	Yield           int `bson:"yield" json:"yield"`
+	PercentQ30      float64
+	PercentAligned  float64
+	ErrorRate       float64
+	PercentOccupied float64
+	IntensityC1     float64
+}
+
+// TODO: implement this
+func (i Interop) RunSummary() RunSummary {
+	return RunSummary{}
+}
+
+type LaneSummary struct {
+	Yield     int
+	ErrorRate float64
+}
+
+func (i Interop) LaneSummary() map[int]LaneSummary {
+	ls := make(map[int]LaneSummary)
+	laneErrors := i.LaneErrorRate()
+	for read := range laneErrors {
+		for lane, e := range laneErrors[read] {
+			if math.IsNaN(e) {
+				continue
+			}
+			lse := ls[lane]
+			lse.ErrorRate += e
+			ls[lane] = lse
+		}
+	}
+	for lane, yield := range i.LaneYield() {
+		lsy := ls[lane]
+		lsy.Yield += yield
+		ls[lane] = lsy
+	}
+	return ls
+}
+
+type TileSummaryRecord struct {
+	Name            string
+	Lane            int
+	PercentOccupied float64
+	PercentPF       float64
+}
+
+// TODO: make a proper implementation
+func (i Interop) Tiles() []TileRecord {
+	return make([]TileRecord, 0)
+}
+
+type InteropSummary struct {
+	RunId       string    `bson:"run_id"`
+	Platform    string    `bson:"platform"`
+	Flowcell    string    `bson:"flowcell"`
+	Date        time.Time `bson:"date"`
+	RunSummary  RunSummary
+	Tiles       []TileRecord
+	LaneSummary map[int]LaneSummary
+}
+
+func (is InteropSummary) TileSummary() []TileSummaryRecord {
+	return make([]TileSummaryRecord, 0)
+}
+
+func (i Interop) Summarise() InteropSummary {
+	return InteropSummary{
+		RunId:       i.RunInfo.RunId,
+		Platform:    i.RunInfo.Platform,
+		Flowcell:    i.RunInfo.FlowcellName,
+		Date:        i.RunInfo.Date,
+		Tiles:       i.Tiles(),
+		RunSummary:  i.RunSummary(),
+		LaneSummary: i.LaneSummary(),
+	}
 }
 
 // TotalFracOccupied returns the fraction of occupied clusters across the whole flow cell.

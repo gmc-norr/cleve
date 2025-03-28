@@ -16,7 +16,6 @@ These visualisations provide a quick way of visually evaluate the state of a seq
 ## Requirements
 
 - A mongodb instance
-- [Illumina InterOp](https://github.com/Illumina/interop) binaries (tested with [v1.3.1](https://github.com/Illumina/interop/releases/tag/v1.3.1))
 
 ## Installation
 
@@ -71,8 +70,6 @@ port: 8080
 
 The only part that doesn't have decent defaults is the database.
 If any required values are undefined the application will exit with an error.
-
-In addition to the yaml configuration, the environment variable `INTEROP_BIN` should point to the directory where the Illumina InterOp binaries are kept.
 
 ## CLI
 

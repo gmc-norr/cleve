@@ -33,10 +33,12 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Label: "%>=Q30",
 				Type:  config.ChartType,
 			}
-			for _, q := range qc.Qc {
-				q30 := float64(q.InteropSummary.RunSummary["Total"].PercentQ30)
+			for _, q := range qc.InteropSummary {
+				// q30 := float64(q.InteropSummary.RunSummary["Total"].PercentQ30)
+				// TODO: update this once I have a function for it
+				q30 := 0.0
 				datapoint := charts.RunStat[float64]{
-					RunID: q.RunID,
+					RunID: q.RunId,
 				}
 				if !math.IsNaN(q30) {
 					datapoint.Value = &q30
@@ -58,10 +60,12 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Label: "Error rate",
 				Type:  config.ChartType,
 			}
-			for _, q := range qc.Qc {
-				errorRate := float64(q.InteropSummary.RunSummary["Total"].ErrorRate)
+			for _, q := range qc.InteropSummary {
+				// errorRate := float64(q.InteropSummary.RunSummary["Total"].ErrorRate)
+				// TODO: update when I have a function for this
+				errorRate := 0.0
 				datapoint := charts.RunStat[float64]{
-					RunID: q.RunID,
+					RunID: q.RunId,
 				}
 				if !math.IsNaN(errorRate) {
 					datapoint.Value = &errorRate

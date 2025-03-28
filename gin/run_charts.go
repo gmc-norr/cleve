@@ -44,7 +44,7 @@ func RunChartsHandler(db RunQCGetter) gin.HandlerFunc {
 			plotData.Grouping = "Lane"
 		}
 
-		for _, tile := range qc.TileSummary {
+		for _, tile := range qc.TileSummary() {
 			d := charts.ScatterDatum{}
 			switch config.XData {
 			case "percent_occupied":

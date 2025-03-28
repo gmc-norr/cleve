@@ -146,5 +146,13 @@ func (f SampleFilter) UrlParams() string {
 	if f.Analysis != "" {
 		p += fmt.Sprintf("%sanalysis=%s", sep, f.Analysis)
 	}
+	if f.Page != 0 {
+		p = fmt.Sprintf("%s%spage=%d", p, sep, f.Page)
+		sep = "&"
+	}
+	if f.PageSize != 0 {
+		p = fmt.Sprintf("%s%spage_size=%d", p, sep, f.PageSize)
+	}
+
 	return p
 }

@@ -8,20 +8,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 )
 
 // Interface for reading run QC data from the database.
 type RunQCGetter interface {
 	Runs(cleve.RunFilter) (cleve.RunResult, error)
-	RunQC(string) (*cleve.InteropQC, error)
+	RunQC(string) (interop.InteropSummary, error)
 	RunQCs(cleve.QcFilter) (cleve.QcResult, error)
 }
 
 // Interface for storing run QC data in the database.
 type RunQCSetter interface {
 	Run(string, bool) (*cleve.Run, error)
-	CreateRunQC(string, *cleve.InteropQC) error
+	CreateRunQC(string, interop.InteropSummary) error
 }
 
 // Interface for both getting and storing run QC data.
@@ -119,31 +120,16 @@ func AddRunQcHandler(db RunQCGetterSetter) gin.HandlerFunc {
 			return
 		}
 
-		summary, err := cleve.GenerateSummary(run.Path)
+		qc, err := interop.InteropFromDir(interopPath)
 		if err != nil {
 			ctx.AbortWithStatusJSON(
-				http.StatusInternalServerError,
-				gin.H{"error": err.Error()},
+				http.StatusConflict,
+				gin.H{"error": fmt.Errorf("failed to read interop data for %s: %w", runId, err)},
 			)
 			return
 		}
 
-		imaging, err := cleve.GenerateImagingTable(runId, run.Path)
-		if err != nil {
-			ctx.AbortWithStatusJSON(
-				http.StatusInternalServerError,
-				gin.H{"error": err.Error()},
-			)
-			return
-		}
-
-		qc := &cleve.InteropQC{
-			RunID:          runId,
-			InteropSummary: summary,
-			TileSummary:    imaging.LaneTileSummary(),
-		}
-
-		if err := db.CreateRunQC(runId, qc); err != nil {
+		if err := db.CreateRunQC(runId, qc.Summarise()); err != nil {
 			if mongo.IsDuplicateKeyError(err) {
 				ctx.AbortWithStatusJSON(
 					http.StatusConflict,

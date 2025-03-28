@@ -9,7 +9,7 @@
 
 <div id="table-nav">
     <button type="button" class="table-nav-item disabled:bg-gray-400 bg-accent-900 text-white py-1 px-2"
-        hx-get="/runtable?page={{ subtractInt $current_page 1 }}"
+        hx-get="/runtable?page={{ subtractInt $current_page 1 }}&page_size={{ $run_filter.PageSize }}"
         hx-include="form"
         hx-select="#runtable-body"
         hx-target="#runtable-body"
@@ -19,7 +19,7 @@
 
     {{ range N 1 (addInt .runs.PaginationMetadata.TotalPages 1) }}
     <button type="button" class="table-nav-item w-10 disabled:bg-gray-400 bg-accent-900 text-white p-1"
-        hx-get="/runtable?page={{ . }}"
+        hx-get="/runtable?page={{ . }}&page_size={{ $run_filter.PageSize }}"
         hx-include="form"
         hx-select="#runtable-body"
         hx-target="#runtable-body"
@@ -29,7 +29,7 @@
     {{ end }}
 
     <button type="button" class="table-nav-item disabled:bg-gray-400 bg-accent-900 text-white py-1 px-2"
-        hx-get="/runtable?page={{ addInt $current_page 1 }}"
+        hx-get="/runtable?page={{ addInt $current_page 1 }}&page_size={{ $run_filter.PageSize }}"
         hx-include="form"
         hx-select="#runtable-body"
         hx-target="#runtable-body"
