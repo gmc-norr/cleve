@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -82,22 +83,65 @@ func (db DB) SampleSheetCollection() *mongo.Collection {
 func (db *DB) SetIndexes() error {
 	name, err := db.SetRunIndex()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to set index on runs, does the collection exist? %w", err)
 	}
 	log.Printf("Set index %s on runs", name)
 
 	name, err = db.SetRunQCIndex()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to set index on run qc, does the collection exist? %w", err)
 	}
 	log.Printf("Set index %s on run qc", name)
 
 	name, err = db.SetSampleSheetIndex()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to set index on samplesheets, does the collection exist? %w", err)
 	}
 	log.Printf("Set index %s on samplesheets", name)
 
+	return nil
+}
+
+// Init creates all the mongodb collections needed by cleve. The function
+// will exit at the first error it sees, if any. When a collection is
+// created the indexes will also be set for this collection.
+func (db *DB) Init(ctx context.Context) error {
+	createCollection := func(name string) error {
+		err := db.CreateCollection(ctx, name)
+		if err != nil {
+			if errors.As(err, &mongo.CommandError{}) {
+				log.Printf("collection %s already exists", name)
+				return nil
+			}
+			return err
+		}
+		log.Printf("created collection %s", name)
+		return nil
+	}
+	if err := createCollection("runs"); err != nil {
+		return err
+	}
+	if _, err := db.SetRunIndex(); err != nil {
+		return err
+	}
+	if err := createCollection("keys"); err != nil {
+		return err
+	}
+	if err := createCollection("run_qc"); err != nil {
+		return err
+	}
+	if _, err := db.SetRunQCIndex(); err != nil {
+		return err
+	}
+	if err := createCollection("samples"); err != nil {
+		return err
+	}
+	if err := createCollection("samplesheets"); err != nil {
+		return err
+	}
+	if _, err := db.SetSampleSheetIndex(); err != nil {
+		return err
+	}
 	return nil
 }
 
