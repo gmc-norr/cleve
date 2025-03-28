@@ -310,3 +310,26 @@ func TestLaneErrorRate(t *testing.T) {
 		})
 	}
 }
+
+func TestLaneSummary(t *testing.T) {
+	testcases := []struct {
+		name string
+		path string
+	}{
+		{
+			name: "novaseq",
+			path: "./testdata/20250115_LH00352_0031_A225HMVLT1",
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			i, err := InteropFromDir(c.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ls := i.LaneSummary()
+			t.Logf("%+v", ls)
+		})
+	}
+}

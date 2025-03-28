@@ -5,13 +5,21 @@ import (
 	"fmt"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (db DB) CreateRunQC(runId string, qc *cleve.InteropQC) error {
+func (db DB) CreateRunQC(runId string, qc interop.InteropSummary) error {
 	_, err := db.RunQCCollection().InsertOne(context.TODO(), qc)
+	return err
+}
+
+func (db DB) DeleteRunQC(runId string) error {
+	_, err := db.RunQCCollection().DeleteOne(context.TODO(), bson.D{
+		{Key: "run_id", Value: runId},
+	})
 	return err
 }
 
@@ -34,21 +42,6 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 		})
 	}
 
-	// Get run information
-	pipeline = append(pipeline, bson.D{
-		{Key: "$lookup", Value: bson.M{
-			"from":         "runs",
-			"localField":   "run_id",
-			"foreignField": "run_id",
-			"as":           "run",
-		}},
-	})
-
-	// We expect only one run, so unwind the array
-	pipeline = append(pipeline, bson.D{
-		{Key: "$unwind", Value: "$run"},
-	})
-
 	// Platform filter
 	if filter.Platform != "" {
 		platform, err := db.Platform(filter.Platform)
@@ -58,7 +51,7 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 		platformNames := append(platform.Aliases, platform.Name)
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
-				{Key: "$expr", Value: bson.D{{Key: "$in", Value: bson.A{"$run.platform", platformNames}}}},
+				{Key: "$expr", Value: bson.D{{Key: "$in", Value: bson.A{"$platform", platformNames}}}},
 			}},
 		})
 	}
@@ -82,7 +75,7 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	// Sort
 	qcFacet = append(qcFacet, bson.D{
 		{Key: "$sort", Value: bson.D{
-			{Key: "run.run_info.run.date", Value: -1},
+			{Key: "date", Value: -1},
 		}},
 	})
 
@@ -92,7 +85,7 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 			"metadata": bson.A{
 				bson.D{{Key: "$count", Value: "total_count"}},
 			},
-			"qc": qcFacet,
+			"interop": qcFacet,
 		}},
 	})
 
@@ -103,7 +96,7 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 				"metadata": bson.M{
 					"$arrayElemAt": bson.A{"$metadata", 0},
 				},
-				"qc": 1,
+				"interop": 1,
 			},
 		},
 	})
@@ -113,7 +106,7 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 			Key: "$set",
 			Value: bson.M{
 				"metadata.count": bson.M{
-					"$size": "$qc",
+					"$size": "$interop",
 				},
 				"metadata.page":      filter.Page,
 				"metadata.page_size": filter.PageSize,
@@ -164,26 +157,30 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	return qc, nil
 }
 
-func (db DB) RunQC(runId string) (*cleve.InteropQC, error) {
-	var qc cleve.InteropQC
+func (db DB) RunQC(runId string) (interop.InteropSummary, error) {
+	var qc interop.InteropSummary
 	err := db.RunQCCollection().FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}).Decode(&qc)
-	return &qc, err
+	return qc, err
 }
 
 func (db DB) RunTotalQ30(runId string) (float64, error) {
-	qc, err := db.RunQC(runId)
+	_, err := db.RunQC(runId)
 	if err != nil {
 		return 0, err
 	}
-	return float64(qc.InteropSummary.RunSummary["Total"].PercentQ30), nil
+	// return float64(qc.InteropSummary.RunSummary["Total"].PercentQ30), nil
+	// TODO: fix when I have a function for this
+	return 0.0, nil
 }
 
 func (db DB) RunTotalErrorRate(runId string) (float64, error) {
-	e, err := db.RunQC(runId)
+	_, err := db.RunQC(runId)
 	if err != nil {
 		return 0, err
 	}
-	return float64(e.InteropSummary.RunSummary["Total"].ErrorRate), nil
+	// return float64(e.InteropSummary.RunSummary["Total"].ErrorRate), nil
+	// TODO: fix when I have a function for this
+	return 0.0, nil
 }
 
 func (db DB) RunQCIndex() ([]map[string]string, error) {

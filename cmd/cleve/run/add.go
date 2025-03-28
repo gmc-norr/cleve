@@ -76,6 +76,13 @@ var (
 				log.Fatal(err)
 			}
 
+			if runState == cleve.Ready {
+				log.Printf("adding qc for run %s", run.RunID)
+				if err := db.CreateRunQC(run.RunID, interopData.Summarise()); err != nil {
+					log.Fatal(err)
+				}
+			}
+
 			log.Printf("Successfully added run %s", run.RunID)
 		},
 	}
