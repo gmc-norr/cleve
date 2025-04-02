@@ -220,7 +220,7 @@ func (i Interop) TotalYield() int {
 	bases := 0
 	excluded := i.excludedCycles()
 	for _, record := range i.QMetrics.Records {
-		if slices.Contains(excluded, record.Cycle()) {
+		if slices.Contains(excluded, record.Cycle) {
 			continue
 		}
 		bases += record.BaseCount()
@@ -233,10 +233,10 @@ func (i Interop) LaneYield() map[int]int {
 	laneYield := make(map[int]int, i.RunInfo.Flowcell.Lanes)
 	excluded := i.excludedCycles()
 	for _, record := range i.QMetrics.Records {
-		if slices.Contains(excluded, record.Cycle()) {
+		if slices.Contains(excluded, record.Cycle) {
 			continue
 		}
-		laneYield[record.Lane()] += record.BaseCount()
+		laneYield[record.Lane] += record.BaseCount()
 	}
 	return laneYield
 }
