@@ -336,3 +336,121 @@ func TestLaneSummary(t *testing.T) {
 		})
 	}
 }
+
+func TestReadQ30(t *testing.T) {
+	testcases := []struct {
+		name     string
+		path     string
+		expected map[int]map[int]float64
+	}{
+		{
+			name: "novaseq 20250115",
+			path: "./testdata/20250115_LH00352_0031_A225HMVLT1",
+			expected: map[int]map[int]float64{
+				1: {
+					1: 92.44,
+					2: 92.38,
+				},
+				2: {
+					1: 92.82,
+					2: 92.34,
+				},
+				3: {
+					1: 72.06,
+					2: 72.83,
+				},
+				4: {
+					1: 91.34,
+					2: 91.46,
+				},
+			},
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
+			i, err := InteropFromDir(c.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			readQ30 := i.ReadQ30()
+			for read := range c.expected {
+				for lane, q30 := range c.expected[read] {
+					obsQ30 := 100 * readQ30[read][lane]
+					if q30-obsQ30 > 0.0099 {
+						t.Errorf("expected Q30 of %.2f for read %d on lane %d, got %.2f", q30, read, lane, obsQ30)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestLaneQ30(t *testing.T) {
+	testcases := []struct {
+		name     string
+		path     string
+		expected map[int]float64
+	}{
+		{
+			name: "novaseq 20250115",
+			path: "./testdata/20250115_LH00352_0031_A225HMVLT1",
+			expected: map[int]float64{
+				1: 87.17,
+				2: 87.25,
+			},
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
+			i, err := InteropFromDir(c.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			laneQ30 := i.LaneQ30()
+			for lane, q30 := range c.expected {
+				obsQ30 := 100 * laneQ30[lane]
+				if q30-obsQ30 > 0.0099 {
+					t.Errorf("expected Q30 of %.2f for lane %d, got %.2f", q30, lane, obsQ30)
+				}
+			}
+		})
+	}
+}
+
+func TestRunQ30(t *testing.T) {
+	testcases := []struct {
+		name     string
+		path     string
+		expected float64
+	}{
+		{
+			name:     "novaseq 20250115",
+			path:     "./testdata/20250115_LH00352_0031_A225HMVLT1",
+			expected: 91.49,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			if _, err := os.Stat(c.path); errors.Is(err, os.ErrNotExist) {
+				t.Skip("test data not found, skipping")
+			}
+			i, err := InteropFromDir(c.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			obsQ30 := 100 * i.RunQ30()
+			if c.expected-obsQ30 > 0.0099 {
+				t.Errorf("expected run Q30 of %.2f, got %.2f", c.expected, obsQ30)
+			}
+		})
+	}
+}

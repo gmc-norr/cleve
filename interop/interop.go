@@ -404,3 +404,98 @@ func (i Interop) LaneFracOccupied() map[int]float64 {
 	}
 	return laneFracOccupied
 }
+
+// ReadQ30 calculates the fraction of passing filter clusters with a Q score >= 30
+// for each lane on the flowcell. It is calculated by first getting the Q30 fraction
+// for each read in each lane and then averaging these for each lane.
+func (i Interop) ReadQ30() map[int]map[int]float64 {
+	pfCount := make(map[int]map[int]int)
+	totalCount := make(map[int]map[int]int)
+	q30bin := -1
+	for i, b := range i.QMetrics.BinDefs {
+		if b.Value >= 30 {
+			q30bin = i
+			break
+		}
+	}
+
+	if q30bin == -1 {
+		return nil
+	}
+
+	excluded := i.excludedCycles()
+	for _, record := range i.QMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		read := i.cycleToRead(record.Cycle)
+		if _, ok := pfCount[read]; !ok {
+			pfCount[read] = make(map[int]int)
+			totalCount[read] = make(map[int]int)
+		}
+		for bi := q30bin; bi < int(i.QMetrics.Bins); bi++ {
+			pfCount[read][record.Lane] += record.Histogram[bi]
+		}
+		totalCount[read][record.Lane] += record.BaseCount()
+	}
+
+	readQ30 := make(map[int]map[int]float64)
+	for read := range pfCount {
+		for lane := range pfCount[read] {
+			if _, ok := readQ30[read]; !ok {
+				readQ30[read] = make(map[int]float64)
+			}
+			readQ30[read][lane] = float64(pfCount[read][lane]) / float64(totalCount[read][lane])
+		}
+	}
+	return readQ30
+}
+
+// LaneQ30 calculates the fraction of passing filter clusters with a Q score >= 30
+// for each lane on the flowcell. It is calculated by first getting the Q30 fraction
+// for each read in each lane and then averaging these for each lane.
+func (i Interop) LaneQ30() map[int]float64 {
+	laneQ30 := make(map[int]float64)
+	readQ30 := i.ReadQ30()
+	for read := range readQ30 {
+		for lane, q30 := range readQ30[read] {
+			laneQ30[lane] += q30
+		}
+	}
+	for lane := range laneQ30 {
+		laneQ30[lane] /= float64(len(readQ30))
+	}
+	return laneQ30
+}
+
+// RunQ30 returns the fraction of clusters with a Q score >= 30 for all
+// passing filter clusters for a flow cell. It is calculated by summing
+// up the number of clusters with a Q score >= 30 across all tiles.
+func (i Interop) RunQ30() float64 {
+	pfCount := 0
+	totalCount := 0
+	q30bin := -1
+	for i, b := range i.QMetrics.BinDefs {
+		if b.Value >= 30 {
+			q30bin = i
+			break
+		}
+	}
+
+	if q30bin == -1 {
+		return 0.0
+	}
+
+	excluded := i.excludedCycles()
+	for _, record := range i.QMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		for bi := q30bin; bi < int(i.QMetrics.Bins); bi++ {
+			pfCount += record.Histogram[bi]
+		}
+		totalCount += record.BaseCount()
+	}
+
+	return float64(pfCount) / float64(totalCount)
+}
