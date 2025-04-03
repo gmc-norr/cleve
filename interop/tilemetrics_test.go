@@ -9,10 +9,11 @@ import (
 
 func TestReadTileMetrics(t *testing.T) {
 	type lanestat struct {
-		reads   float64 // millions
-		readsPf float64 // millions
-		percPf  float64 // percent
-		density float64 // K/mm^2
+		reads       float64 // millions
+		readsPf     float64 // millions
+		percPf      float64 // percent
+		density     float64 // K/mm^2
+		percAligned float64 // percent
 	}
 	testcases := []struct {
 		name      string
@@ -32,16 +33,42 @@ func TestReadTileMetrics(t *testing.T) {
 			density: 7235.21,
 			laneStats: map[int]lanestat{
 				1: {
-					reads:   1393.25,
-					readsPf: 1083.77,
-					percPf:  77.79,
-					density: 7235.21,
+					reads:       1393.25,
+					readsPf:     1083.77,
+					percPf:      77.79,
+					density:     7235.21,
+					percAligned: 0.0,
 				},
 				2: {
-					reads:   1393.25,
-					readsPf: 1089.44,
-					percPf:  78.19,
-					density: 7235.21,
+					reads:       1393.25,
+					readsPf:     1089.44,
+					percPf:      78.19,
+					density:     7235.21,
+					percAligned: 0.0,
+				},
+			},
+		},
+		{
+			name:    "novaseq 2",
+			path:    "./testdata/20250115_LH00352_0031_A225HMVLT1/InterOp/TileMetricsOut.bin",
+			version: 3,
+			lanes:   2,
+			percPf:  76.09,
+			density: 7235.21,
+			laneStats: map[int]lanestat{
+				1: {
+					reads:       1393.25,
+					readsPf:     1067.27,
+					percPf:      76.60,
+					density:     7235.21,
+					percAligned: 0.145,
+				},
+				2: {
+					reads:       1393.25,
+					readsPf:     1052.88,
+					percPf:      75.57,
+					density:     7235.21,
+					percAligned: 0.14,
 				},
 			},
 		},
@@ -54,28 +81,32 @@ func TestReadTileMetrics(t *testing.T) {
 			density: (172.13 + 167.66 + 171.33 + 163.95) / 4,
 			laneStats: map[int]lanestat{
 				1: {
-					reads:   37.22,
-					readsPf: 34.32,
-					percPf:  92.21,
-					density: 172.12,
+					reads:       37.22,
+					readsPf:     34.32,
+					percPf:      92.21,
+					density:     172.12,
+					percAligned: 34.51,
 				},
 				2: {
-					reads:   36.25,
-					readsPf: 33.47,
-					percPf:  92.30,
-					density: 167.66,
+					reads:       36.25,
+					readsPf:     33.47,
+					percPf:      92.30,
+					density:     167.66,
+					percAligned: 35.33,
 				},
 				3: {
-					reads:   37.05,
-					readsPf: 34.11,
-					percPf:  92.07,
-					density: 171.33,
+					reads:       37.05,
+					readsPf:     34.11,
+					percPf:      92.07,
+					density:     171.33,
+					percAligned: 34.83,
 				},
 				4: {
-					reads:   35.45,
-					readsPf: 32.74,
-					percPf:  92.36,
-					density: 163.95,
+					reads:       35.45,
+					readsPf:     32.74,
+					percPf:      92.36,
+					density:     163.95,
+					percAligned: 35.00,
 				},
 			},
 		},
@@ -87,10 +118,11 @@ func TestReadTileMetrics(t *testing.T) {
 			percPf:  79.31,
 			laneStats: map[int]lanestat{
 				1: {
-					reads:   22.86,
-					readsPf: 18.13,
-					percPf:  79.19,
-					density: 1031.06,
+					reads:       22.86,
+					readsPf:     18.13,
+					percPf:      79.19,
+					density:     1031.06,
+					percAligned: 22.41,
 				},
 			},
 		},
@@ -102,10 +134,11 @@ func TestReadTileMetrics(t *testing.T) {
 			percPf:  79.73,
 			laneStats: map[int]lanestat{
 				1: {
-					reads:   26.98,
-					readsPf: 21.51,
-					percPf:  79.64,
-					density: 1210.09,
+					reads:       26.98,
+					readsPf:     21.51,
+					percPf:      79.64,
+					density:     1210.09,
+					percAligned: 0.98,
 				},
 			},
 		},
@@ -156,6 +189,15 @@ func TestReadTileMetrics(t *testing.T) {
 				}
 				if mReadsPf != c.laneStats[lane].readsPf {
 					t.Errorf("expected %.2fM passing filter reads for lane %d, got %.2fM", c.laneStats[lane].readsPf, lane, mReadsPf)
+				}
+			}
+
+			lanePercentAligned := tm.LanePercentAligned()
+			for lane := range c.laneStats {
+				expAligned := c.laneStats[lane].percAligned
+				obsAligned := lanePercentAligned[lane]
+				if math.IsNaN(obsAligned) != math.IsNaN(expAligned) || math.Abs(obsAligned-expAligned) > 0.0099 {
+					t.Errorf("expected %.2f%% aligned in lane %d, got %.2f%%", expAligned, lane, obsAligned)
 				}
 			}
 
