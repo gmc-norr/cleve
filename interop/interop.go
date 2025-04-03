@@ -253,62 +253,6 @@ func (i Interop) cycleToRead(cycle int) int {
 	return 0
 }
 
-// LaneErrorRate calculates the average error rate for lanes, on a per read basis. It works by first
-// calculating the average error rate across all usable cycles for each tile. These are then averaged
-// for each tile for a given read. The return value is a nested map where the first key is the read number
-// and the second key is the lane number.
-func (i Interop) LaneErrorRate() map[int]map[int]float64 {
-	errorRates := make(map[int]map[int]float64, len(i.RunInfo.Reads))
-	for _, read := range i.RunInfo.Reads {
-		errorRates[read.Number] = make(map[int]float64)
-	}
-
-	excluded := i.excludedCycles()
-
-	tileMeans := make(map[int]map[[2]int]*RunningAverage)
-	for _, read := range i.RunInfo.Reads {
-		tileMeans[read.Number] = make(map[[2]int]*RunningAverage)
-	}
-
-	// First calculate the mean error for each tile per read per lane
-	for _, record := range i.ErrorMetrics.Records {
-		if slices.Contains(excluded, record.Cycle) {
-			continue
-		}
-		read := i.cycleToRead(record.Cycle)
-		key := [2]int{record.Lane, record.Tile}
-		avg, ok := tileMeans[read][key]
-		if !ok {
-			avg = &RunningAverage{}
-		}
-		avg.Add(record.ErrorRate)
-		tileMeans[read][key] = avg
-	}
-
-	// Calculate the mean error across all tiles per read per lane
-	for read := range tileMeans {
-		for lane := 1; lane <= i.RunInfo.Flowcell.Lanes; lane++ {
-			sum := 0.0
-			n := 0
-			for key, x := range tileMeans[read] {
-				if key[0] != lane {
-					continue
-				}
-				sum += x.Average
-				n++
-			}
-			if n == 0 {
-				// Set NaN explicitly
-				errorRates[read][lane] = math.NaN()
-			} else {
-				errorRates[read][lane] = sum / float64(n)
-			}
-		}
-	}
-
-	return errorRates
-}
-
 type RunSummary struct {
 	Yield           int `bson:"yield" json:"yield"`
 	PercentQ30      float64
@@ -331,19 +275,17 @@ type LaneSummary struct {
 func (i Interop) LaneSummary() map[int]LaneSummary {
 	ls := make(map[int]LaneSummary)
 	laneErrors := i.LaneErrorRate()
-	for read := range laneErrors {
-		for lane, e := range laneErrors[read] {
-			if math.IsNaN(e) {
-				continue
-			}
-			lse := ls[lane]
-			lse.ErrorRate += e
-			ls[lane] = lse
+	for lane, e := range laneErrors {
+		if math.IsNaN(e) {
+			continue
 		}
+		lse := ls[lane]
+		lse.ErrorRate = e
+		ls[lane] = lse
 	}
 	for lane, yield := range i.LaneYield() {
 		lsy := ls[lane]
-		lsy.Yield += yield
+		lsy.Yield = yield
 		ls[lane] = lsy
 	}
 	return ls
@@ -498,4 +440,61 @@ func (i Interop) RunQ30() float64 {
 	}
 
 	return float64(pfCount) / float64(totalCount)
+}
+
+// ReadErrorRate calculates the average error rate for reads, on a per lane basis. It works by first
+// calculating the average error rate across all usable cycles for each tile. These are then averaged
+// for each tile for a given lane. The return value is a nested map where the first key is the read number
+// and the second key is the lane number.
+func (i Interop) ReadErrorRate() map[int]map[int]float64 {
+	readErrors := make(map[int]map[int]float64)
+	counts := make(map[int]map[int]int)
+	excluded := i.excludedCycles()
+	for _, record := range i.ErrorMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		read := i.cycleToRead(record.Cycle)
+		if _, ok := readErrors[read]; !ok {
+			readErrors[read] = make(map[int]float64)
+			counts[read] = make(map[int]int)
+		}
+		readErrors[read][record.Lane] += record.ErrorRate
+		counts[read][record.Lane]++
+	}
+	for read := range readErrors {
+		for lane := range readErrors[read] {
+			readErrors[read][lane] /= float64(counts[read][lane])
+		}
+	}
+	return readErrors
+}
+
+// LaneErrorRate calculates the average error rate for each lane of the flow cell. It is calculated
+// from the lane averages produced by `Interop.ReadErrorRate`.
+func (i Interop) LaneErrorRate() map[int]float64 {
+	laneErrors := make(map[int]float64)
+	counts := make(map[int]int)
+	readErrors := i.ReadErrorRate()
+	for read := range readErrors {
+		for lane, e := range readErrors[read] {
+			laneErrors[lane] += e
+			counts[lane]++
+		}
+	}
+	for lane := range laneErrors {
+		laneErrors[lane] /= float64(counts[lane])
+	}
+	return laneErrors
+}
+
+// RunErrorRate calculates the average error rate for each lane of the flow cell. It is the average
+// of the lane error rates from `Interop.LaneErrorRate`.
+func (i Interop) RunErrorRate() float64 {
+	errorRate := 0.0
+	laneError := i.LaneErrorRate()
+	for _, e := range laneError {
+		errorRate += e
+	}
+	return errorRate / float64(len(laneError))
 }
