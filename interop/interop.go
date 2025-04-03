@@ -347,10 +347,10 @@ func (i Interop) LaneFracOccupied() map[int]float64 {
 	return laneFracOccupied
 }
 
-// ReadQ30 calculates the fraction of passing filter clusters with a Q score >= 30
+// ReadPercentQ30 calculates the fraction of passing filter clusters with a Q score >= 30
 // for each lane on the flowcell. It is calculated by first getting the Q30 fraction
 // for each read in each lane and then averaging these for each lane.
-func (i Interop) ReadQ30() map[int]map[int]float64 {
+func (i Interop) ReadPercentQ30() map[int]map[int]float64 {
 	pfCount := make(map[int]map[int]int)
 	totalCount := make(map[int]map[int]int)
 	q30bin := -1
@@ -387,33 +387,33 @@ func (i Interop) ReadQ30() map[int]map[int]float64 {
 			if _, ok := readQ30[read]; !ok {
 				readQ30[read] = make(map[int]float64)
 			}
-			readQ30[read][lane] = float64(pfCount[read][lane]) / float64(totalCount[read][lane])
+			readQ30[read][lane] = 100 * float64(pfCount[read][lane]) / float64(totalCount[read][lane])
 		}
 	}
 	return readQ30
 }
 
-// LaneQ30 calculates the fraction of passing filter clusters with a Q score >= 30
+// LanePercentQ30 calculates the fraction of passing filter clusters with a Q score >= 30
 // for each lane on the flowcell. It is calculated by first getting the Q30 fraction
 // for each read in each lane and then averaging these for each lane.
-func (i Interop) LaneQ30() map[int]float64 {
+func (i Interop) LanePercentQ30() map[int]float64 {
 	laneQ30 := make(map[int]float64)
-	readQ30 := i.ReadQ30()
+	readQ30 := i.ReadPercentQ30()
 	for read := range readQ30 {
 		for lane, q30 := range readQ30[read] {
 			laneQ30[lane] += q30
 		}
 	}
 	for lane := range laneQ30 {
-		laneQ30[lane] /= float64(len(readQ30))
+		laneQ30[lane] = laneQ30[lane] / float64(len(readQ30))
 	}
 	return laneQ30
 }
 
-// RunQ30 returns the fraction of clusters with a Q score >= 30 for all
+// RunPercentQ30 returns the fraction of clusters with a Q score >= 30 for all
 // passing filter clusters for a flow cell. It is calculated by summing
 // up the number of clusters with a Q score >= 30 across all tiles.
-func (i Interop) RunQ30() float64 {
+func (i Interop) RunPercentQ30() float64 {
 	pfCount := 0
 	totalCount := 0
 	q30bin := -1
@@ -439,7 +439,7 @@ func (i Interop) RunQ30() float64 {
 		totalCount += record.BaseCount()
 	}
 
-	return float64(pfCount) / float64(totalCount)
+	return 100 * float64(pfCount) / float64(totalCount)
 }
 
 // ReadErrorRate calculates the average error rate for reads, on a per lane basis. It works by first

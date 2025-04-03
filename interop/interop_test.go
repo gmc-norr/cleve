@@ -425,7 +425,7 @@ func TestReadQ30(t *testing.T) {
 					2: 72.83,
 				},
 				4: {
-					1: 91.34,
+					1: 91.37,
 					2: 91.46,
 				},
 			},
@@ -441,11 +441,11 @@ func TestReadQ30(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			readQ30 := i.ReadQ30()
+			readQ30 := i.ReadPercentQ30()
 			for read := range c.expected {
 				for lane, q30 := range c.expected[read] {
-					obsQ30 := 100 * readQ30[read][lane]
-					if q30-obsQ30 > 0.0099 {
+					obsQ30 := readQ30[read][lane]
+					if math.Abs(q30-obsQ30) > 0.0099 {
 						t.Errorf("expected Q30 of %.2f for read %d on lane %d, got %.2f", q30, read, lane, obsQ30)
 					}
 				}
@@ -479,10 +479,10 @@ func TestLaneQ30(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			laneQ30 := i.LaneQ30()
+			laneQ30 := i.LanePercentQ30()
 			for lane, q30 := range c.expected {
-				obsQ30 := 100 * laneQ30[lane]
-				if q30-obsQ30 > 0.0099 {
+				obsQ30 := laneQ30[lane]
+				if math.Abs(q30-obsQ30) > 0.0099 {
 					t.Errorf("expected Q30 of %.2f for lane %d, got %.2f", q30, lane, obsQ30)
 				}
 			}
@@ -512,7 +512,7 @@ func TestRunQ30(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			obsQ30 := 100 * i.RunQ30()
+			obsQ30 := i.RunPercentQ30()
 			if c.expected-obsQ30 > 0.0099 {
 				t.Errorf("expected run Q30 of %.2f, got %.2f", c.expected, obsQ30)
 			}
