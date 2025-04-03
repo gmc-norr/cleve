@@ -60,6 +60,13 @@ func parseBinDefinitionV4(qm *QMetrics) error {
 	qm.HasBins = false
 	qm.Bins = 50
 	qm.BinDefs = make([]BinDefinition, qm.Bins)
+	for i := range qm.Bins {
+		qm.BinDefs[i] = BinDefinition{
+			Low:   i + 1,
+			High:  i + 1,
+			Value: i + 1,
+		}
+	}
 	return nil
 }
 
