@@ -498,3 +498,7 @@ func (i Interop) RunErrorRate() float64 {
 	}
 	return errorRate / float64(len(laneError))
 }
+
+func (i Interop) RunPercentOccupied() float64 {
+	return 100 * float64(i.ExtendedTileMetrics.OccupiedClusters()) / float64(i.TileMetrics.Clusters())
+}
