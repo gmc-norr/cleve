@@ -296,15 +296,62 @@ func (i Interop) LaneSummary() map[int]LaneSummary {
 }
 
 type TileSummaryRecord struct {
+	LT
 	Name            string
-	Lane            int
-	PercentOccupied float64
-	PercentPF       float64
+	ClusterCount    int     `bson:"cluster_count" json:"cluster_count"`
+	PFClusterCount  int     `bson:"pf_cluster_count" json:"pf_cluster_count"`
+	PercentOccupied float64 `bson:"percent_occupied" json:"percent_occupied"`
+	PercentPF       float64 `bson:"percent_pf" json:"percent_pf"`
+	PercentQ30      float64 `bson:"percent_q30" json:"percent_q30"`
+	PercentAligned  float64 `bson:"percent_aligned" json:"percent_aligned"`
+	ErrorRate       float64 `bson:"error_rate" json:"error_rate"`
 }
 
-// TODO: make a proper implementation
-func (i Interop) Tiles() []TileRecord {
-	return make([]TileRecord, 0)
+func (i Interop) TileSummary() []TileSummaryRecord {
+	tiles := make(map[string]TileSummaryRecord)
+	for _, record := range i.TileMetrics.Records {
+		name := record.LT.TileName()
+		ts, ok := tiles[name]
+		if !ok {
+			ts.LT = record.LT
+			ts.Name = record.TileName()
+		}
+		ts.PFClusterCount = record.PfClusterCount
+		ts.ClusterCount = record.ClusterCount
+		ts.PercentPF = 100 * float64(record.PfClusterCount) / float64(record.ClusterCount)
+		percAligned := 0.0
+		for _, v := range record.PercentAligned {
+			percAligned += v
+		}
+		percAligned /= float64(len(record.PercentAligned))
+		ts.PercentAligned = percAligned
+		tiles[name] = ts
+	}
+
+	for name, errorRate := range i.TileErrorRate() {
+		ts := tiles[name]
+		ts.ErrorRate = errorRate
+		tiles[name] = ts
+	}
+
+	for name, q30 := range i.TilePercentQ30() {
+		ts := tiles[name]
+		ts.PercentQ30 = q30
+		tiles[name] = ts
+	}
+
+	for _, record := range i.ExtendedTileMetrics.Records {
+		name := record.LT.TileName()
+		ts := tiles[name]
+		ts.PercentOccupied = 100 * float64(record.OccupiedClusters) / float64(tiles[name].ClusterCount)
+		tiles[name] = ts
+	}
+
+	tileSummaries := make([]TileSummaryRecord, 0, i.RunInfo.Flowcell.Tiles)
+	for _, ts := range tiles {
+		tileSummaries = append(tileSummaries, ts)
+	}
+	return tileSummaries
 }
 
 type InteropSummary struct {
@@ -313,12 +360,8 @@ type InteropSummary struct {
 	Flowcell    string    `bson:"flowcell"`
 	Date        time.Time `bson:"date"`
 	RunSummary  RunSummary
-	Tiles       []TileRecord
+	TileSummary []TileSummaryRecord
 	LaneSummary map[int]LaneSummary
-}
-
-func (is InteropSummary) TileSummary() []TileSummaryRecord {
-	return make([]TileSummaryRecord, 0)
 }
 
 func (i Interop) Summarise() InteropSummary {
@@ -327,9 +370,9 @@ func (i Interop) Summarise() InteropSummary {
 		Platform:    i.RunInfo.Platform,
 		Flowcell:    i.RunInfo.FlowcellName,
 		Date:        i.RunInfo.Date,
-		Tiles:       i.Tiles(),
 		RunSummary:  i.RunSummary(),
 		LaneSummary: i.LaneSummary(),
+		TileSummary: i.TileSummary(),
 	}
 }
 
@@ -349,6 +392,44 @@ func (i Interop) LaneFracOccupied() map[int]float64 {
 		laneFracOccupied[lane] = float64(laneOccupiedCount[lane]) / float64(laneCount[lane])
 	}
 	return laneFracOccupied
+}
+
+// TilePercentQ30 calculates the Q30 across all usable cycles for each tile on the flow cell.
+// The return value is a map with tile names as keys and the percent Q30 as values. If Q30
+// is not represented in the bin definitions, nil will be returned.
+func (i Interop) TilePercentQ30() map[string]float64 {
+	q30bin := -1
+	for i, b := range i.QMetrics.BinDefs {
+		if b.Value >= 30 {
+			q30bin = i
+			break
+		}
+	}
+
+	if q30bin == -1 {
+		return nil
+	}
+
+	tileQ30 := make(map[string]float64)
+	counts := make(map[string]int)
+	excluded := i.excludedCycles()
+	for _, record := range i.QMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		name := record.TileName()
+		tileQCounts := 0
+		for bi := q30bin; bi < int(i.QMetrics.Bins); bi++ {
+			tileQCounts += record.Histogram[bi]
+		}
+		tileQ30[name] += 100 * float64(tileQCounts) / float64(record.BaseCount())
+		counts[name]++
+	}
+
+	for name := range tileQ30 {
+		tileQ30[name] /= float64(counts[name])
+	}
+	return tileQ30
 }
 
 // ReadPercentQ30 calculates the fraction of passing filter clusters with a Q score >= 30
@@ -444,6 +525,25 @@ func (i Interop) RunPercentQ30() float64 {
 	}
 
 	return 100 * float64(pfCount) / float64(totalCount)
+}
+
+// TileErrorRate calculates the average error for all tiles over usable cycles for the whole flow cell.
+func (i Interop) TileErrorRate() map[string]float64 {
+	tileErrors := make(map[string]float64)
+	counts := make(map[string]int)
+	excluded := i.excludedCycles()
+	for _, record := range i.ErrorMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		name := record.TileName()
+		tileErrors[name] += record.ErrorRate
+		counts[name]++
+	}
+	for name := range tileErrors {
+		tileErrors[name] /= float64(counts[name])
+	}
+	return tileErrors
 }
 
 // ReadErrorRate calculates the average error rate for reads, on a per lane basis. It works by first
