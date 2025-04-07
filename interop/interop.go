@@ -355,13 +355,13 @@ func (i Interop) TileSummary() []TileSummaryRecord {
 }
 
 type InteropSummary struct {
-	RunId       string    `bson:"run_id"`
-	Platform    string    `bson:"platform"`
-	Flowcell    string    `bson:"flowcell"`
-	Date        time.Time `bson:"date"`
-	RunSummary  RunSummary
-	TileSummary []TileSummaryRecord
-	LaneSummary map[int]LaneSummary
+	RunId       string              `bson:"run_id" json:"run_id"`
+	Platform    string              `bson:"platform" json:"platform"`
+	Flowcell    string              `bson:"flowcell" json:"flowcell"`
+	Date        time.Time           `bson:"date" json:"date"`
+	RunSummary  RunSummary          `bson:"run_summary" json:"run_summary"`
+	TileSummary []TileSummaryRecord `bson:"tile_summary" json:"tile_summary"`
+	LaneSummary map[int]LaneSummary `bson:"lane_summary" json:"lane_summary"`
 }
 
 func (i Interop) Summarise() InteropSummary {
