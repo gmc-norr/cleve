@@ -256,6 +256,7 @@ func (i Interop) cycleToRead(cycle int) int {
 type RunSummary struct {
 	Yield           int     `bson:"yield" json:"yield"`
 	PercentQ30      float64 `bson:"percent_q30,omitempty" json:"percent_q30,omitempty"`
+	PercentPf       float64 `bson:"percent_pf" json:"percent_pf"`
 	PercentAligned  float64 `bson:"percent_aligned,omitempty" json:"percent_aligned"`
 	ErrorRate       float64 `bson:"error_rate,omitempty" json:"error_rate,omitempty"`
 	PercentOccupied float64 `bson:"percent_occupied,omitempty" json:"percent_occupied,omitempty"`
@@ -265,6 +266,7 @@ func (i Interop) RunSummary() (rs RunSummary) {
 	return RunSummary{
 		Yield:           i.TotalYield(),
 		PercentQ30:      i.RunPercentQ30(),
+		PercentPf:       100 * float64(i.TileMetrics.PfClusters()) / float64(i.TileMetrics.Clusters()),
 		PercentAligned:  i.TileMetrics.PercentAligned(),
 		ErrorRate:       i.RunErrorRate(),
 		PercentOccupied: i.RunPercentOccupied(),
