@@ -163,26 +163,6 @@ func (db DB) RunQC(runId string) (interop.InteropSummary, error) {
 	return qc, err
 }
 
-func (db DB) RunTotalQ30(runId string) (float64, error) {
-	_, err := db.RunQC(runId)
-	if err != nil {
-		return 0, err
-	}
-	// return float64(qc.InteropSummary.RunSummary["Total"].PercentQ30), nil
-	// TODO: fix when I have a function for this
-	return 0.0, nil
-}
-
-func (db DB) RunTotalErrorRate(runId string) (float64, error) {
-	_, err := db.RunQC(runId)
-	if err != nil {
-		return 0, err
-	}
-	// return float64(e.InteropSummary.RunSummary["Total"].ErrorRate), nil
-	// TODO: fix when I have a function for this
-	return 0.0, nil
-}
-
 func (db DB) RunQCIndex() ([]map[string]string, error) {
 	cursor, err := db.RunQCCollection().Indexes().List(context.TODO())
 	if err != nil {
