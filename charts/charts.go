@@ -99,7 +99,7 @@ func ScatterChart(d ScatterData) *charts.Scatter {
 	series := make(map[any][]opts.ScatterData)
 	for _, k := range d.Data {
 		sd := opts.ScatterData{
-			Value:      []interface{}{k.X, k.Y},
+			Value:      []any{k.X, k.Y},
 			Symbol:     "circle",
 			SymbolSize: 5,
 		}

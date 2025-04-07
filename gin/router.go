@@ -98,7 +98,7 @@ func N(start, end int) chan int {
 	return stream
 }
 
-func toFloat(x interface{}) float64 {
+func toFloat(x any) float64 {
 	switch v := x.(type) {
 	case float64:
 		return v
