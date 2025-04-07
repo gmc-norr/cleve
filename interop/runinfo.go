@@ -88,6 +88,17 @@ type RunInfo struct {
 	Flowcell     FlowcellInfo `bson:"flowcell" json:"flowcell"`
 }
 
+// ReadCount returns the number of non-index reads configured for the run.
+func (ri RunInfo) ReadCount() int {
+	n := 0
+	for _, r := range ri.Reads {
+		if !r.IsIndex {
+			n++
+		}
+	}
+	return n
+}
+
 func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 	var payload struct {
 		XMLName xml.Name `xml:"RunInfo"`

@@ -84,6 +84,7 @@ func InteropFromDir(rundir string) (Interop, error) {
 	i.tilemetricsFile, _ = alternativeFile(interopdir, "TileMetricsOut.bin", "TileMetrics.bin")
 	i.extendedTileMetricsFile, _ = alternativeFile(interopdir, "ExtendedTileMetricsOut.bin", "ExtendedTileMetrics.bin")
 	i.errorMetricsFile, _ = alternativeFile(interopdir, "ErrorMetricsOut.bin", "ErrorMetrics.bin")
+	i.indexMetricsFile, _ = alternativeFile(interopdir, "IndexMetricsOut.bin", "IndexMetrics.bin")
 
 	i.RunInfo, err = ReadRunInfo(i.runinfoFile)
 	if err != nil {
@@ -256,6 +257,8 @@ func (i Interop) cycleToRead(cycle int) int {
 type RunSummary struct {
 	Yield           int     `bson:"yield" json:"yield"`
 	PercentQ30      float64 `bson:"percent_q30,omitempty" json:"percent_q30,omitempty"`
+	ClusterCount    int     `bson:"cluster_count" json:"cluster_count"`
+	PfClusterCount  int     `bson:"pf_cluster_count" json:"pf_cluster_count"`
 	PercentPf       float64 `bson:"percent_pf" json:"percent_pf"`
 	PercentAligned  float64 `bson:"percent_aligned,omitempty" json:"percent_aligned"`
 	ErrorRate       float64 `bson:"error_rate,omitempty" json:"error_rate,omitempty"`
@@ -266,11 +269,63 @@ func (i Interop) RunSummary() (rs RunSummary) {
 	return RunSummary{
 		Yield:           i.TotalYield(),
 		PercentQ30:      i.RunPercentQ30(),
+		ClusterCount:    i.TileMetrics.Clusters(),
+		PfClusterCount:  i.TileMetrics.PfClusters(),
 		PercentPf:       100 * float64(i.TileMetrics.PfClusters()) / float64(i.TileMetrics.Clusters()),
 		PercentAligned:  i.TileMetrics.PercentAligned(),
 		ErrorRate:       i.RunErrorRate(),
 		PercentOccupied: i.RunPercentOccupied(),
 	}
+}
+
+type IndexSummary struct {
+	TotalReads          int                  `bson:"total_reads" json:"total_reads"`
+	PfReads             int                  `bson:"pf_reads" json:"pf_reads"`
+	IdReads             int                  `bson:"id_reads" json:"id_reads"`
+	UndeterminedReads   int                  `bson:"undetermined_reads" json:"undetermined_reads"`
+	PercentId           float64              `bson:"percent_id" json:"percent_id"`
+	PercentUndetermined float64              `bson:"percent_undetermined" json:"percent_undetermined"`
+	Indexes             []IndexSummaryRecord `bson:"indexes" json:"indexes"`
+}
+
+type IndexSummaryRecord struct {
+	Sample       string  `bson:"sample" json:"sample"`
+	Index        string  `bson:"index" json:"index"`
+	ReadCount    int     `bson:"read_count" json:"read_count"`
+	PercentReads float64 `bson:"percent_reads" json:"percent_reads"`
+}
+
+func (i Interop) IndexSummary() IndexSummary {
+	summary := IndexSummary{
+		TotalReads: i.RunInfo.ReadCount() * i.TileMetrics.Clusters(),
+		PfReads:    i.RunInfo.ReadCount() * i.TileMetrics.PfClusters(),
+	}
+	records := make(map[string]IndexSummaryRecord)
+	pfReads := i.RunInfo.ReadCount() * i.TileMetrics.PfClusters()
+	idReads := 0
+	for _, record := range i.IndexMetrics.Records {
+		key := record.SampleName + record.IndexName
+		is, ok := records[key]
+		if !ok {
+			is = IndexSummaryRecord{
+				Sample: record.SampleName,
+				Index:  record.IndexName,
+			}
+			records[key] = is
+		}
+		idReads += record.ClusterCount
+		is.ReadCount += record.ClusterCount
+		is.PercentReads += 100 * float64(record.ClusterCount) / float64(pfReads)
+		records[key] = is
+	}
+	summary.IdReads = idReads
+	summary.PercentId = 100 * float64(idReads) / float64(pfReads)
+	summary.UndeterminedReads = pfReads - idReads
+	summary.PercentUndetermined = 100 * float64(summary.UndeterminedReads) / float64(pfReads)
+	for _, s := range records {
+		summary.Indexes = append(summary.Indexes, s)
+	}
+	return summary
 }
 
 type LaneSummary struct {
@@ -357,24 +412,26 @@ func (i Interop) TileSummary() []TileSummaryRecord {
 }
 
 type InteropSummary struct {
-	RunId       string              `bson:"run_id" json:"run_id"`
-	Platform    string              `bson:"platform" json:"platform"`
-	Flowcell    string              `bson:"flowcell" json:"flowcell"`
-	Date        time.Time           `bson:"date" json:"date"`
-	RunSummary  RunSummary          `bson:"run_summary" json:"run_summary"`
-	TileSummary []TileSummaryRecord `bson:"tile_summary" json:"tile_summary"`
-	LaneSummary map[int]LaneSummary `bson:"lane_summary" json:"lane_summary"`
+	RunId        string              `bson:"run_id" json:"run_id"`
+	Platform     string              `bson:"platform" json:"platform"`
+	Flowcell     string              `bson:"flowcell" json:"flowcell"`
+	Date         time.Time           `bson:"date" json:"date"`
+	RunSummary   RunSummary          `bson:"run_summary" json:"run_summary"`
+	TileSummary  []TileSummaryRecord `bson:"tile_summary" json:"tile_summary"`
+	LaneSummary  map[int]LaneSummary `bson:"lane_summary" json:"lane_summary"`
+	IndexSummary IndexSummary        `bson:"index_summary" json:"index_summary"`
 }
 
 func (i Interop) Summarise() InteropSummary {
 	return InteropSummary{
-		RunId:       i.RunInfo.RunId,
-		Platform:    i.RunInfo.Platform,
-		Flowcell:    i.RunInfo.FlowcellName,
-		Date:        i.RunInfo.Date,
-		RunSummary:  i.RunSummary(),
-		LaneSummary: i.LaneSummary(),
-		TileSummary: i.TileSummary(),
+		RunId:        i.RunInfo.RunId,
+		Platform:     i.RunInfo.Platform,
+		Flowcell:     i.RunInfo.FlowcellName,
+		Date:         i.RunInfo.Date,
+		RunSummary:   i.RunSummary(),
+		LaneSummary:  i.LaneSummary(),
+		TileSummary:  i.TileSummary(),
+		IndexSummary: i.IndexSummary(),
 	}
 }
 
