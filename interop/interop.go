@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -331,31 +330,26 @@ func (i Interop) IndexSummary() IndexSummary {
 }
 
 type LaneSummary struct {
+	Lane      int     `bson:"lane" json:"lane"`
 	Yield     int     `bson:"yield" json:"yield"`
 	ErrorRate float64 `bson:"error_rate" json:"error_rate"`
 	Density   float64 `bson:"density" json:"density"`
 }
 
-func (i Interop) LaneSummary() map[int]LaneSummary {
-	ls := make(map[int]LaneSummary)
-	laneErrors := i.LaneErrorRate()
-	for lane, e := range laneErrors {
-		if math.IsNaN(e) {
-			continue
+func (i Interop) LaneSummary() []LaneSummary {
+	nLanes := i.RunInfo.Flowcell.Lanes
+	ls := make([]LaneSummary, nLanes)
+	laneError := i.LaneErrorRate()
+	laneYield := i.LaneYield()
+	laneDensity := i.TileMetrics.LaneDensity()
+
+	for lane := range nLanes {
+		ls[lane] = LaneSummary{
+			Lane:      lane + 1,
+			Yield:     laneYield[lane+1],
+			ErrorRate: laneError[lane+1],
+			Density:   laneDensity[lane+1],
 		}
-		lse := ls[lane]
-		lse.ErrorRate = e
-		ls[lane] = lse
-	}
-	for lane, yield := range i.LaneYield() {
-		lsy := ls[lane]
-		lsy.Yield = yield
-		ls[lane] = lsy
-	}
-	for lane, density := range i.TileMetrics.LaneDensity() {
-		lsd := ls[lane]
-		lsd.Density = density
-		ls[lane] = lsd
 	}
 	return ls
 }
@@ -458,7 +452,7 @@ type InteropSummary struct {
 	Date         time.Time           `bson:"date" json:"date"`
 	RunSummary   RunSummary          `bson:"run_summary" json:"run_summary"`
 	TileSummary  []TileSummaryRecord `bson:"tile_summary" json:"tile_summary"`
-	LaneSummary  map[int]LaneSummary `bson:"lane_summary" json:"lane_summary"`
+	LaneSummary  []LaneSummary       `bson:"lane_summary" json:"lane_summary"`
 	IndexSummary IndexSummary        `bson:"index_summary" json:"index_summary"`
 	ReadSummary  []ReadSummary       `bson:"read_summary" json:"read_summary"`
 }
