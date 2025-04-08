@@ -76,21 +76,21 @@ func (m TileMetrics) ReadPercentAligned() map[int]map[int]float64 {
 	readPercentAligned := make(map[int]map[int]float64)
 	counts := make(map[int]map[int]int)
 	for _, r := range m.Records {
-		if _, ok := readPercentAligned[r.Lane]; !ok {
-			readPercentAligned[r.Lane] = make(map[int]float64)
-			counts[r.Lane] = make(map[int]int)
-		}
 		for read, v := range r.PercentAligned {
 			if math.IsNaN(v) {
 				continue
 			}
-			readPercentAligned[r.Lane][read] += v
-			counts[r.Lane][read]++
+			if _, ok := readPercentAligned[read]; !ok {
+				readPercentAligned[read] = make(map[int]float64)
+				counts[read] = make(map[int]int)
+			}
+			readPercentAligned[read][r.Lane] += v
+			counts[read][r.Lane]++
 		}
 	}
-	for lane := range readPercentAligned {
-		for read := range readPercentAligned[lane] {
-			readPercentAligned[lane][read] /= float64(counts[lane][read])
+	for read := range readPercentAligned {
+		for lane := range readPercentAligned[read] {
+			readPercentAligned[read][lane] /= float64(counts[read][lane])
 		}
 	}
 	return readPercentAligned
@@ -99,8 +99,8 @@ func (m TileMetrics) ReadPercentAligned() map[int]map[int]float64 {
 func (m TileMetrics) LanePercentAligned() map[int]float64 {
 	lanePercentAligned := make(map[int]float64)
 	readPercentAligned := m.ReadPercentAligned()
-	for lane := range readPercentAligned {
-		for _, v := range readPercentAligned[lane] {
+	for read := range readPercentAligned {
+		for lane, v := range readPercentAligned[read] {
 			lanePercentAligned[lane] += v
 		}
 	}
