@@ -139,6 +139,16 @@ func (m TileMetrics) LaneDensity() map[int]float64 {
 	return laneDensities
 }
 
+func (m TileMetrics) RunDensity() float64 {
+	runDensity := 0.0
+	n := 0
+	for _, d := range m.LaneDensity() {
+		runDensity += d
+		n++
+	}
+	return runDensity / float64(n)
+}
+
 // FractionPassingFilter returns the fraction of clusters passing filters.
 func (m TileMetrics) FractionPassingFilter() float64 {
 	return float64(m.PfClusters()) / float64(m.Clusters())
