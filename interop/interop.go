@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -436,12 +437,20 @@ func (i Interop) ReadSummary() []ReadSummary {
 	for read := range nReads {
 		for lane := range nLanes {
 			i := (nLanes * (read)) + lane
+			e, ok := readError[read+1][lane+1]
+			if !ok {
+				e = math.NaN()
+			}
+			a, ok := readAligned[read+1][lane+1]
+			if !ok {
+				a = math.NaN()
+			}
 			rs[i] = ReadSummary{
 				Read:           read + 1,
 				Lane:           lane + 1,
 				PercentQ30:     readQ30[read+1][lane+1],
-				ErrorRate:      readError[read+1][lane+1],
-				PercentAligned: readAligned[read+1][lane+1],
+				ErrorRate:      e,
+				PercentAligned: a,
 			}
 		}
 	}
