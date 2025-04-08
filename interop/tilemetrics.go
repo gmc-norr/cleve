@@ -98,14 +98,16 @@ func (m TileMetrics) ReadPercentAligned() map[int]map[int]float64 {
 
 func (m TileMetrics) LanePercentAligned() map[int]float64 {
 	lanePercentAligned := make(map[int]float64)
+	counts := make(map[int]int)
 	readPercentAligned := m.ReadPercentAligned()
 	for read := range readPercentAligned {
 		for lane, v := range readPercentAligned[read] {
 			lanePercentAligned[lane] += v
+			counts[lane]++
 		}
 	}
 	for lane := range lanePercentAligned {
-		lanePercentAligned[lane] /= float64(len(readPercentAligned[lane]))
+		lanePercentAligned[lane] /= float64(counts[lane])
 	}
 	return lanePercentAligned
 }
