@@ -304,10 +304,12 @@ func (i Interop) IndexSummary() IndexSummary {
 	records := make(map[string]IndexSummaryRecord)
 	pfReads := i.RunInfo.NonIndexReadCount() * i.TileMetrics.PfClusters()
 	idReads := 0
+	keyOrder := make([]string, 0)
 	for _, record := range i.IndexMetrics.Records {
 		key := record.SampleName + record.IndexName
 		is, ok := records[key]
 		if !ok {
+			keyOrder = append(keyOrder, key)
 			is = IndexSummaryRecord{
 				Sample: record.SampleName,
 				Index:  record.IndexName,
@@ -323,8 +325,9 @@ func (i Interop) IndexSummary() IndexSummary {
 	summary.PercentId = 100 * float64(idReads) / float64(pfReads)
 	summary.UndeterminedReads = pfReads - idReads
 	summary.PercentUndetermined = 100 * float64(summary.UndeterminedReads) / float64(pfReads)
-	for _, s := range records {
-		summary.Indexes = append(summary.Indexes, s)
+	summary.Indexes = make([]IndexSummaryRecord, len(keyOrder))
+	for i, k := range keyOrder {
+		summary.Indexes[i] = records[k]
 	}
 	return summary
 }
