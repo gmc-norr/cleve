@@ -329,8 +329,9 @@ func (i Interop) IndexSummary() IndexSummary {
 }
 
 type LaneSummary struct {
-	Yield     int
-	ErrorRate float64
+	Yield     int     `bson:"yield" json:"yield"`
+	ErrorRate float64 `bson:"error_rate" json:"error_rate"`
+	Density   float64 `bson:"density" json:"density"`
 }
 
 func (i Interop) LaneSummary() map[int]LaneSummary {
@@ -348,6 +349,11 @@ func (i Interop) LaneSummary() map[int]LaneSummary {
 		lsy := ls[lane]
 		lsy.Yield = yield
 		ls[lane] = lsy
+	}
+	for lane, density := range i.TileMetrics.LaneDensity() {
+		lsd := ls[lane]
+		lsd.Density = density
+		ls[lane] = lsd
 	}
 	return ls
 }
