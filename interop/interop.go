@@ -297,11 +297,11 @@ type IndexSummaryRecord struct {
 
 func (i Interop) IndexSummary() IndexSummary {
 	summary := IndexSummary{
-		TotalReads: i.RunInfo.ReadCount() * i.TileMetrics.Clusters(),
-		PfReads:    i.RunInfo.ReadCount() * i.TileMetrics.PfClusters(),
+		TotalReads: i.RunInfo.NonIndexReadCount() * i.TileMetrics.Clusters(),
+		PfReads:    i.RunInfo.NonIndexReadCount() * i.TileMetrics.PfClusters(),
 	}
 	records := make(map[string]IndexSummaryRecord)
-	pfReads := i.RunInfo.ReadCount() * i.TileMetrics.PfClusters()
+	pfReads := i.RunInfo.NonIndexReadCount() * i.TileMetrics.PfClusters()
 	idReads := 0
 	for _, record := range i.IndexMetrics.Records {
 		key := record.SampleName + record.IndexName
@@ -417,6 +417,38 @@ func (i Interop) TileSummary() []TileSummaryRecord {
 	return tileSummaries
 }
 
+type ReadSummary struct {
+	Read           int     `bson:"read" json:"read"`
+	Lane           int     `bson:"lane" json:"lane"`
+	PercentQ30     float64 `bson:"percent_q30" json:"percent_q30"`
+	PercentAligned float64 `bson:"percent_aligned" json:"percent_aligned"`
+	ErrorRate      float64 `bson:"error_rate" json:"error_rate"`
+}
+
+func (i Interop) ReadSummary() []ReadSummary {
+	nReads := i.RunInfo.ReadCount()
+	nLanes := i.RunInfo.Flowcell.Lanes
+	rs := make([]ReadSummary, nReads*nLanes)
+
+	readQ30 := i.ReadPercentQ30()
+	readError := i.ReadErrorRate()
+	readAligned := i.TileMetrics.ReadPercentAligned()
+
+	for read := range nReads {
+		for lane := range nLanes {
+			i := (nLanes * (read)) + lane
+			rs[i] = ReadSummary{
+				Read:           read + 1,
+				Lane:           lane + 1,
+				PercentQ30:     readQ30[read+1][lane+1],
+				ErrorRate:      readError[read+1][lane+1],
+				PercentAligned: readAligned[read+1][lane+1],
+			}
+		}
+	}
+	return rs
+}
+
 type InteropSummary struct {
 	RunId        string              `bson:"run_id" json:"run_id"`
 	Platform     string              `bson:"platform" json:"platform"`
@@ -426,6 +458,7 @@ type InteropSummary struct {
 	TileSummary  []TileSummaryRecord `bson:"tile_summary" json:"tile_summary"`
 	LaneSummary  map[int]LaneSummary `bson:"lane_summary" json:"lane_summary"`
 	IndexSummary IndexSummary        `bson:"index_summary" json:"index_summary"`
+	ReadSummary  []ReadSummary       `bson:"read_summary" json:"read_summary"`
 }
 
 func (i Interop) Summarise() InteropSummary {
@@ -438,6 +471,7 @@ func (i Interop) Summarise() InteropSummary {
 		LaneSummary:  i.LaneSummary(),
 		TileSummary:  i.TileSummary(),
 		IndexSummary: i.IndexSummary(),
+		ReadSummary:  i.ReadSummary(),
 	}
 }
 
