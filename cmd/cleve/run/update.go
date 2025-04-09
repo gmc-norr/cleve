@@ -3,6 +3,8 @@ package run
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gmc-norr/cleve"
@@ -17,6 +19,20 @@ var (
 	updateCmd   = &cobra.Command{
 		Use:   "update [flags] run_id",
 		Short: "Update a sequencing run",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			path, _ := cmd.Flags().GetString("path")
+			if path == "" {
+				return
+			}
+			if !filepath.IsAbs(path) {
+				cobra.CheckErr("path needs to be absolute")
+			}
+			if info, err := os.Stat(path); err != nil {
+				cobra.CheckErr(err)
+			} else if !info.IsDir() {
+				cobra.CheckErr("path needs to be a directory")
+			}
+		},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("run id is required")
@@ -79,7 +95,7 @@ func init() {
 	}
 	stateString := strings.Join(allowedStates, ", ")
 	updateCmd.Flags().StringVar(&stateArg, "state", "", "Run state (one of "+stateString+")")
-	updateCmd.Flags().StringP("path", "p", "", "Path to the run")
+	updateCmd.Flags().StringP("path", "p", "", "Absolute path to the run")
 	updateCmd.Flags().Bool("reload-qc", false, "Reload QC data for run")
 
 	cobra.OnInitialize(func() {
