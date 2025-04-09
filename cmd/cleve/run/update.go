@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 )
@@ -38,6 +39,32 @@ var (
 				didSomething = true
 			}
 
+			newPath, _ := cmd.Flags().GetString("path")
+			if newPath != "" {
+				log.Printf("Updating path of run %s to %s", args[0], newPath)
+				if err := db.SetRunPath(args[0], newPath); err != nil {
+					log.Fatalf("error: %s", err)
+				}
+				didSomething = true
+			}
+
+			reloadQc, _ := cmd.Flags().GetBool("reload-qc")
+			if reloadQc {
+				log.Printf("Updating QC data for run %s", args[0])
+				run, err := db.Run(args[0], false)
+				if err != nil {
+					log.Fatalf("error: %s", err)
+				}
+				qc, err := interop.InteropFromDir(run.Path)
+				if err != nil {
+					log.Fatalf("error: %s", err)
+				}
+				if err := db.UpdateRunQC(qc.Summarise()); err != nil {
+					log.Fatalf("error: %s", err)
+				}
+				didSomething = true
+			}
+
 			if !didSomething {
 				log.Printf("No changes made to run %s", args[0])
 			}
@@ -52,6 +79,8 @@ func init() {
 	}
 	stateString := strings.Join(allowedStates, ", ")
 	updateCmd.Flags().StringVar(&stateArg, "state", "", "Run state (one of "+stateString+")")
+	updateCmd.Flags().StringP("path", "p", "", "Path to the run")
+	updateCmd.Flags().Bool("reload-qc", false, "Reload QC data for run")
 
 	cobra.OnInitialize(func() {
 		if stateArg != "" {

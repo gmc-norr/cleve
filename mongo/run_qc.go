@@ -32,6 +32,21 @@ func (db DB) DeleteRunQC(runId string) error {
 	return err
 }
 
+func (db DB) UpdateRunQC(qc interop.InteropSummary) error {
+	type auxQc struct {
+		Version int                    `bson:"schema_version"`
+		Qc      interop.InteropSummary `bson:",inline"`
+	}
+	aqc := auxQc{
+		Version: 2,
+		Qc:      qc,
+	}
+	_, err := db.RunQCCollection().ReplaceOne(context.TODO(), bson.D{
+		{Key: "run_id", Value: qc.RunId},
+	}, aqc, options.Replace().SetUpsert(true))
+	return err
+}
+
 func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	var pipeline mongo.Pipeline
 	var qc cleve.QcResult
