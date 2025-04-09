@@ -9,6 +9,18 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
+type UserMessage struct {
+	Text  string
+	Class string
+}
+
+func NewUserMessage(text, class string) UserMessage {
+	return UserMessage{
+		Text:  text,
+		Class: class,
+	}
+}
+
 func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
 	runs, err := db.Runs(filter)
 	if err != nil {
@@ -76,6 +88,16 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 			hasQc = false
 		}
 
+		var message *UserMessage
+		if qc.Date.IsZero() {
+			m := NewUserMessage(
+				"The stored QC data for this run is of an unsupported version. Update this run to view it.",
+				"warning",
+			)
+			message = &m
+			hasQc = false
+		}
+
 		sampleSheet, err := db.SampleSheet(mongo.SampleSheetWithRunId(runId))
 		if err != nil {
 			if err != mongo.ErrNoDocuments {
@@ -85,7 +107,7 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 			}
 		}
 
-		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet, "chart_config": GetRunChartConfig(c), "version": cleve.GetVersion()})
+		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet, "chart_config": GetRunChartConfig(c), "version": cleve.GetVersion(), "message": message})
 	}
 }
 

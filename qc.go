@@ -1,6 +1,8 @@
 package cleve
 
-import "github.com/gmc-norr/cleve/interop"
+import (
+	"github.com/gmc-norr/cleve/interop"
+)
 
 type QcResult struct {
 	PaginationMetadata `bson:"metadata" json:"metadata"`
