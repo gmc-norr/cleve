@@ -711,5 +711,8 @@ func (i Interop) RunErrorRate() float64 {
 }
 
 func (i Interop) RunPercentOccupied() float64 {
+	if i.extendedTileMetricsFile == "" {
+		return math.NaN()
+	}
 	return 100 * float64(i.ExtendedTileMetrics.OccupiedClusters()) / float64(i.TileMetrics.Clusters())
 }
