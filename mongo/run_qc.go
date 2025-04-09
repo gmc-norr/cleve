@@ -108,6 +108,7 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	qcFacet = append(qcFacet, bson.D{
 		{Key: "$sort", Value: bson.D{
 			{Key: "date", Value: -1},
+			{Key: "run_id", Value: -1},
 		}},
 	})
 
