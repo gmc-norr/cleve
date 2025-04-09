@@ -34,9 +34,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Type:  config.ChartType,
 			}
 			for _, q := range qc.InteropSummary {
-				// q30 := float64(q.InteropSummary.RunSummary["Total"].PercentQ30)
-				// TODO: update this once I have a function for it
-				q30 := 0.0
+				q30 := q.RunSummary.PercentQ30
 				datapoint := charts.RunStat[float64]{
 					RunID: q.RunId,
 				}
@@ -61,9 +59,7 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				Type:  config.ChartType,
 			}
 			for _, q := range qc.InteropSummary {
-				// errorRate := float64(q.InteropSummary.RunSummary["Total"].ErrorRate)
-				// TODO: update when I have a function for this
-				errorRate := 0.0
+				errorRate := q.RunSummary.ErrorRate
 				datapoint := charts.RunStat[float64]{
 					RunID: q.RunId,
 				}
