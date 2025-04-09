@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -139,6 +140,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 		"multiplyInt": multiplyInt,
 		"title":       title,
 		"toFloat":     toFloat,
+		"isNaN":       math.IsNaN,
 		"N":           N,
 	})
 	templateFS, err := cleve.GetTemplateFS()

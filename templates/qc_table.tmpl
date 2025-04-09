@@ -4,7 +4,7 @@
 {{ $total_pages := .metadata.TotalPages }}
 {{ $start_sample := addInt (multiplyInt (subtractInt .metadata.Page 1) .metadata.PageSize) 1 }}
 
-<section class="mt-4 mb-8">
+<section class="mx-6 mb-4 mb-8">
     <p>Here are QC data from the sequencing for runs that have completed.</p>
 
     <p id="table-counts">
@@ -12,7 +12,7 @@
         Page {{ .metadata.Page }} / {{ .metadata.TotalPages }}
     </p>
 
-    <div id="table-nav">
+    <div class="my-2" id="table-nav">
         <button type="button"
             class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
             hx-get="/qc?page={{ subtractInt $current_page 1 }}&page_size={{ $filter.PageSize }}"
@@ -64,12 +64,11 @@
                     <th>Sequencing date</th>
                     <th>Platform</th>
                     <th>Flowcell</th>
-                    <th>Yield (Gbp)</th>
-                    <th>%&ge;Q30</th>
-                    <th>% Aligned to PhiX</th>
-                    <th>Error rate</th>
-                    <th>% Occupied</th>
-                    <th>Cycle 1 intensity</th>
+                    <th class="text-right">Yield (Gbp)</th>
+                    <th class="text-right">%&ge;Q30</th>
+                    <th class="text-right">Aligned to PhiX (%)</th>
+                    <th class="text-right">Error rate (%)</th>
+                    <th class="text-right">Occupied (%)</th>
                 </tr>
                 <tr>
                     <th><input class="w-full border border-slate-300" type="text" name="run_id_query" placeholder="Run ID filter" value="{{ $filter.RunIdQuery }}"></input></th>
@@ -83,11 +82,10 @@
                         </select>
                     </th>
                     <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
+                    <th class="text-right"></th>
+                    <th class="text-right"></th>
+                    <th class="text-right"></th>
+                    <th class="text-right"></th>
                 </tr>
             </thead>
 
@@ -95,15 +93,18 @@
                 {{ range .qc }}
                 <tr class="hover:bg-accent-100">
                     <td><a class="text-accent-900" href="/runs/{{ .RunId }}">{{ .RunId }}</a></td>
+                    {{ if .Date.IsZero }}
+                    <td colspan="8" class="text-center">Unsupported QC version in the database, update the run</td>
+                    {{ else }}
                     <td>{{ .Date.Local.Format "2006-01-02" }}</td>
                     <td>{{ .Platform }}</td>
                     <td>{{ .Flowcell }}</td>
-                    <td>{{ multiply (toFloat .RunSummary.Yield) 1e-9 | printf "%.2f" }}</td>
-                    <td>{{ .RunSummary.PercentQ30 }}</td>
-                    <td>{{ .RunSummary.PercentAligned | printf "%.2f" }}</td>
-                    <td>{{ .RunSummary.ErrorRate | printf "%.2f" }}</td>
-                    <td>{{ .RunSummary.PercentOccupied }}</td>
-                    <td>{{ .RunSummary.IntensityC1 }}</td>
+                    <td class="text-right">{{ multiply (toFloat .RunSummary.Yield) 1e-9 | printf "%.2f" }}</td>
+                    <td class="text-right">{{ .RunSummary.PercentQ30 | printf "%.2f" }}</td>
+                    <td class="text-right">{{ .RunSummary.PercentAligned | printf "%.2f" }}</td>
+                    <td class="text-right">{{ .RunSummary.ErrorRate | printf "%.2f" }}</td>
+                    <td class="text-right">{{ .RunSummary.PercentOccupied | printf "%.2f" }}</td>
+                    {{ end }}
                 </tr>
                 {{ end }}
             </tbody>
