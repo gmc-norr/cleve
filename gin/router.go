@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
@@ -103,6 +104,8 @@ func toFloat(x any) float64 {
 	switch v := x.(type) {
 	case float64:
 		return v
+	case interop.OptionalFloat:
+		return float64(v)
 	case int:
 		return float64(v)
 	}

@@ -2,6 +2,7 @@ package interop
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -10,6 +11,19 @@ import (
 	"slices"
 	"time"
 )
+
+type OptionalFloat float64
+
+func (f OptionalFloat) MarshalJSON() ([]byte, error) {
+	if f.IsNaN() {
+		return []byte("null"), nil
+	}
+	return json.Marshal(float64(f))
+}
+
+func (f OptionalFloat) IsNaN() bool {
+	return math.IsNaN(float64(f))
+}
 
 // Interop is the representation of Illumina Interop data.
 type Interop struct {
@@ -255,28 +269,28 @@ func (i Interop) cycleToRead(cycle int) int {
 }
 
 type RunSummary struct {
-	Yield           int     `bson:"yield" json:"yield"`
-	Density         float64 `bson:"density" json:"density"`
-	PercentQ30      float64 `bson:"percent_q30,omitempty" json:"percent_q30,omitempty"`
-	ClusterCount    int     `bson:"cluster_count" json:"cluster_count"`
-	PfClusterCount  int     `bson:"pf_cluster_count" json:"pf_cluster_count"`
-	PercentPf       float64 `bson:"percent_pf" json:"percent_pf"`
-	PercentAligned  float64 `bson:"percent_aligned,omitempty" json:"percent_aligned"`
-	ErrorRate       float64 `bson:"error_rate,omitempty" json:"error_rate,omitempty"`
-	PercentOccupied float64 `bson:"percent_occupied,omitempty" json:"percent_occupied,omitempty"`
+	Yield           int           `bson:"yield" json:"yield"`
+	Density         OptionalFloat `bson:"density" json:"density"`
+	PercentQ30      OptionalFloat `bson:"percent_q30,omitempty" json:"percent_q30,omitempty"`
+	ClusterCount    int           `bson:"cluster_count" json:"cluster_count"`
+	PfClusterCount  int           `bson:"pf_cluster_count" json:"pf_cluster_count"`
+	PercentPf       OptionalFloat `bson:"percent_pf" json:"percent_pf"`
+	PercentAligned  OptionalFloat `bson:"percent_aligned,omitempty" json:"percent_aligned"`
+	ErrorRate       OptionalFloat `bson:"error_rate,omitempty" json:"error_rate,omitempty"`
+	PercentOccupied OptionalFloat `bson:"percent_occupied,omitempty" json:"percent_occupied,omitempty"`
 }
 
 func (i Interop) RunSummary() (rs RunSummary) {
 	return RunSummary{
 		Yield:           i.TotalYield(),
-		Density:         i.TileMetrics.RunDensity(),
-		PercentQ30:      i.RunPercentQ30(),
+		Density:         OptionalFloat(i.TileMetrics.RunDensity()),
+		PercentQ30:      OptionalFloat(i.RunPercentQ30()),
 		ClusterCount:    i.TileMetrics.Clusters(),
 		PfClusterCount:  i.TileMetrics.PfClusters(),
-		PercentPf:       100 * float64(i.TileMetrics.PfClusters()) / float64(i.TileMetrics.Clusters()),
-		PercentAligned:  i.TileMetrics.PercentAligned(),
-		ErrorRate:       i.RunErrorRate(),
-		PercentOccupied: i.RunPercentOccupied(),
+		PercentPf:       OptionalFloat(100 * float64(i.TileMetrics.PfClusters()) / float64(i.TileMetrics.Clusters())),
+		PercentAligned:  OptionalFloat(i.TileMetrics.PercentAligned()),
+		ErrorRate:       OptionalFloat(i.RunErrorRate()),
+		PercentOccupied: OptionalFloat(i.RunPercentOccupied()),
 	}
 }
 
@@ -285,8 +299,8 @@ type IndexSummary struct {
 	PfReads             int                  `bson:"pf_reads" json:"pf_reads"`
 	IdReads             int                  `bson:"id_reads" json:"id_reads"`
 	UndeterminedReads   int                  `bson:"undetermined_reads" json:"undetermined_reads"`
-	PercentId           float64              `bson:"percent_id" json:"percent_id"`
-	PercentUndetermined float64              `bson:"percent_undetermined" json:"percent_undetermined"`
+	PercentId           OptionalFloat        `bson:"percent_id" json:"percent_id"`
+	PercentUndetermined OptionalFloat        `bson:"percent_undetermined" json:"percent_undetermined"`
 	Indexes             []IndexSummaryRecord `bson:"indexes" json:"indexes"`
 }
 
@@ -323,9 +337,9 @@ func (i Interop) IndexSummary() IndexSummary {
 		records[key] = is
 	}
 	summary.IdReads = idReads
-	summary.PercentId = 100 * float64(idReads) / float64(pfReads)
+	summary.PercentId = OptionalFloat(100 * float64(idReads) / float64(pfReads))
 	summary.UndeterminedReads = pfReads - idReads
-	summary.PercentUndetermined = 100 * float64(summary.UndeterminedReads) / float64(pfReads)
+	summary.PercentUndetermined = OptionalFloat(100 * float64(summary.UndeterminedReads) / float64(pfReads))
 	summary.Indexes = make([]IndexSummaryRecord, len(keyOrder))
 	for i, k := range keyOrder {
 		summary.Indexes[i] = records[k]
@@ -334,10 +348,10 @@ func (i Interop) IndexSummary() IndexSummary {
 }
 
 type LaneSummary struct {
-	Lane      int     `bson:"lane" json:"lane"`
-	Yield     int     `bson:"yield" json:"yield"`
-	ErrorRate float64 `bson:"error_rate" json:"error_rate"`
-	Density   float64 `bson:"density" json:"density"`
+	Lane      int           `bson:"lane" json:"lane"`
+	Yield     int           `bson:"yield" json:"yield"`
+	ErrorRate OptionalFloat `bson:"error_rate" json:"error_rate"`
+	Density   OptionalFloat `bson:"density" json:"density"`
 }
 
 func (i Interop) LaneSummary() []LaneSummary {
@@ -351,8 +365,8 @@ func (i Interop) LaneSummary() []LaneSummary {
 		ls[lane] = LaneSummary{
 			Lane:      lane + 1,
 			Yield:     laneYield[lane+1],
-			ErrorRate: laneError[lane+1],
-			Density:   laneDensity[lane+1],
+			ErrorRate: OptionalFloat(laneError[lane+1]),
+			Density:   OptionalFloat(laneDensity[lane+1]),
 		}
 	}
 	return ls
@@ -361,13 +375,13 @@ func (i Interop) LaneSummary() []LaneSummary {
 type TileSummaryRecord struct {
 	LT
 	Name            string
-	ClusterCount    int     `bson:"cluster_count" json:"cluster_count"`
-	PFClusterCount  int     `bson:"pf_cluster_count" json:"pf_cluster_count"`
-	PercentOccupied float64 `bson:"percent_occupied" json:"percent_occupied"`
-	PercentPF       float64 `bson:"percent_pf" json:"percent_pf"`
-	PercentQ30      float64 `bson:"percent_q30" json:"percent_q30"`
-	PercentAligned  float64 `bson:"percent_aligned" json:"percent_aligned"`
-	ErrorRate       float64 `bson:"error_rate" json:"error_rate"`
+	ClusterCount    int           `bson:"cluster_count" json:"cluster_count"`
+	PFClusterCount  int           `bson:"pf_cluster_count" json:"pf_cluster_count"`
+	PercentOccupied OptionalFloat `bson:"percent_occupied" json:"percent_occupied"`
+	PercentPF       OptionalFloat `bson:"percent_pf" json:"percent_pf"`
+	PercentQ30      OptionalFloat `bson:"percent_q30" json:"percent_q30"`
+	PercentAligned  OptionalFloat `bson:"percent_aligned" json:"percent_aligned"`
+	ErrorRate       OptionalFloat `bson:"error_rate" json:"error_rate"`
 }
 
 func (i Interop) TileSummary() []TileSummaryRecord {
@@ -381,32 +395,32 @@ func (i Interop) TileSummary() []TileSummaryRecord {
 		}
 		ts.PFClusterCount = record.PfClusterCount
 		ts.ClusterCount = record.ClusterCount
-		ts.PercentPF = 100 * float64(record.PfClusterCount) / float64(record.ClusterCount)
+		ts.PercentPF = OptionalFloat(100 * float64(record.PfClusterCount) / float64(record.ClusterCount))
 		percAligned := 0.0
 		for _, v := range record.PercentAligned {
 			percAligned += v
 		}
 		percAligned /= float64(len(record.PercentAligned))
-		ts.PercentAligned = percAligned
+		ts.PercentAligned = OptionalFloat(percAligned)
 		tiles[name] = ts
 	}
 
 	for name, errorRate := range i.TileErrorRate() {
 		ts := tiles[name]
-		ts.ErrorRate = errorRate
+		ts.ErrorRate = OptionalFloat(errorRate)
 		tiles[name] = ts
 	}
 
 	for name, q30 := range i.TilePercentQ30() {
 		ts := tiles[name]
-		ts.PercentQ30 = q30
+		ts.PercentQ30 = OptionalFloat(q30)
 		tiles[name] = ts
 	}
 
 	for _, record := range i.ExtendedTileMetrics.Records {
 		name := record.LT.TileName()
 		ts := tiles[name]
-		ts.PercentOccupied = 100 * float64(record.OccupiedClusters) / float64(tiles[name].ClusterCount)
+		ts.PercentOccupied = OptionalFloat(100 * float64(record.OccupiedClusters) / float64(tiles[name].ClusterCount))
 		tiles[name] = ts
 	}
 
@@ -418,11 +432,11 @@ func (i Interop) TileSummary() []TileSummaryRecord {
 }
 
 type ReadSummary struct {
-	Read           int     `bson:"read" json:"read"`
-	Lane           int     `bson:"lane" json:"lane"`
-	PercentQ30     float64 `bson:"percent_q30" json:"percent_q30"`
-	PercentAligned float64 `bson:"percent_aligned" json:"percent_aligned"`
-	ErrorRate      float64 `bson:"error_rate" json:"error_rate"`
+	Read           int           `bson:"read" json:"read"`
+	Lane           int           `bson:"lane" json:"lane"`
+	PercentQ30     float64       `bson:"percent_q30" json:"percent_q30"`
+	PercentAligned OptionalFloat `bson:"percent_aligned" json:"percent_aligned"`
+	ErrorRate      OptionalFloat `bson:"error_rate" json:"error_rate"`
 }
 
 func (i Interop) ReadSummary() []ReadSummary {
@@ -449,8 +463,8 @@ func (i Interop) ReadSummary() []ReadSummary {
 				Read:           read + 1,
 				Lane:           lane + 1,
 				PercentQ30:     readQ30[read+1][lane+1],
-				ErrorRate:      e,
-				PercentAligned: a,
+				ErrorRate:      OptionalFloat(e),
+				PercentAligned: OptionalFloat(a),
 			}
 		}
 	}

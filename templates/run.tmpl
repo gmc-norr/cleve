@@ -52,7 +52,7 @@
             <h3 class="text-xl font-bold">% Passing filter</h3>
             <span class="text-lg inline-block w-full text-right">{{ .qc.RunSummary.PercentPf | printf "%.2f" }}%</span>
         </div>
-        {{ if not (isNaN .qc.RunSummary.PercentOccupied) }}
+        {{ if not .qc.RunSummary.PercentOccupied.IsNaN }}
         <div class="bg-accent-100 p-4 mx-2">
             <h3 class="text-xl font-bold">% Occupied</h3>
             <span class="text-lg inline-block w-full text-right">{{ .qc.RunSummary.PercentOccupied | printf "%.2f" }}%</span>
@@ -60,7 +60,7 @@
         {{ end }}
         <div class="bg-accent-100 p-4 ml-2">
             <h3 class="text-xl font-bold">Cluster density (K/mm<sup>2</sup>)</h3>
-            <span class="text-lg inline-block w-full text-right">{{ multiply .qc.RunSummary.Density 1e-3 | printf "%.2f" }}</span>
+            <span class="text-lg inline-block w-full text-right">{{ toFloat .qc.RunSummary.Density | multiply 1e-3 | printf "%.2f" }}</span>
         </div>
     </div>
     {{ end }}
@@ -121,7 +121,7 @@
             {{ range .qc.LaneSummary }}
                 <tr>
                     <td class="px-2">{{ .Lane }}</td>
-                    <td class="px-2 text-right">{{ multiply .Density 1e-3 | printf "%.2f" }}</td>
+                    <td class="px-2 text-right">{{ toFloat .Density | multiply 1e-3 | printf "%.2f" }}</td>
                     <td class="px-2 text-right">{{ toFloat .Yield | multiply  1e-9 | printf "%.2f" }}</td>
                     <td class="px-2 text-right">{{ .ErrorRate | printf "%.2f" }}</td>
                 </tr>
