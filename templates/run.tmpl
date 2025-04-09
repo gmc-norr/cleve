@@ -67,7 +67,7 @@
 </section>
 
 <section class="m-6 border-t overflow-x-auto">
-    <h3 class="text-2xl my-4">Index metrics</h3>
+    <h3 class="text-2xl my-4">Index summary</h3>
 
     {{ if .hasQc }}
     <div class="flex items-center my-6">
@@ -84,6 +84,9 @@
             <span class="text-lg inline-block w-full text-right">{{ .qc.IndexSummary.PercentUndetermined | printf "%.2f" }}%</span>
         </div>
     </div>
+    {{ if not .qc.IndexSummary.Indexes }}
+    <p>No indexing information found.</p>
+    {{ else }}
     <table class="my-6">
         <thead class="bg-accent-900 text-accent-100">
             <tr>
@@ -104,6 +107,7 @@
             {{ end }}
         </tbody>
     </table>
+    {{ end }}
 </section>
 
 <section class="m-6 border-t overflow-x-auto">
