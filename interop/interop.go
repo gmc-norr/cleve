@@ -52,21 +52,38 @@ type Interop struct {
 }
 
 // Returns the first file that exists, have read permission set,
-// and is not a directory. If none is found, returns the last
-// error seen.
+// and is not a directory. Glob patterns in the filenames is allowed.
+// If multiple files match the glob pattern, the name of the most
+// recently modified file is returned. If none is found, returns the
+// last error seen.
 func alternativeFile(dir string, filenames ...string) (string, error) {
 	var err error
 	for _, fn := range filenames {
-		var info os.FileInfo
-		path := filepath.Join(dir, fn)
-		info, err = os.Stat(path)
+		var globbedFilenames []string
+		globbedFilenames, err = filepath.Glob(filepath.Join(dir, fn))
 		if err != nil {
 			continue
 		}
-		if info.IsDir() {
+		if len(globbedFilenames) == 0 {
 			continue
 		}
-		return path, nil
+		if len(globbedFilenames) == 1 {
+			return globbedFilenames[0], nil
+		}
+		newestFile := -1
+		var latestMod time.Time
+		for i, gfn := range globbedFilenames {
+			info, _ := os.Stat(gfn)
+			modTime := info.ModTime()
+			if modTime.Compare(latestMod) == 1 {
+				latestMod = modTime
+				newestFile = i
+			}
+		}
+		if newestFile == -1 {
+			return "", fmt.Errorf("unable to pick newest file")
+		}
+		return globbedFilenames[newestFile], nil
 	}
 	if err != nil {
 		return "", err
@@ -98,7 +115,7 @@ func InteropFromDir(rundir string) (Interop, error) {
 	i.tilemetricsFile, _ = alternativeFile(interopdir, "TileMetricsOut.bin", "TileMetrics.bin")
 	i.extendedTileMetricsFile, _ = alternativeFile(interopdir, "ExtendedTileMetricsOut.bin", "ExtendedTileMetrics.bin")
 	i.errorMetricsFile, _ = alternativeFile(interopdir, "ErrorMetricsOut.bin", "ErrorMetrics.bin")
-	i.indexMetricsFile, _ = alternativeFile(interopdir, "IndexMetricsOut.bin", "IndexMetrics.bin")
+	i.indexMetricsFile, _ = alternativeFile(interopdir, "IndexMetricsOut.bin", "IndexMetrics.bin", "../Analysis/*/Data/Demux/IndexMetricsOut.bin")
 
 	i.RunInfo, err = ReadRunInfo(i.runinfoFile)
 	if err != nil {
