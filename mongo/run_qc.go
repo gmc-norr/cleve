@@ -89,6 +89,13 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 
 	qcFacet := mongo.Pipeline{}
 
+	// Sort by date, descending
+	qcFacet = append(qcFacet, bson.D{
+		{Key: "$sort", Value: bson.D{
+			{Key: "date", Value: -1},
+		}},
+	})
+
 	// Skip
 	if filter.Page > 0 && filter.PageSize > 0 {
 		qcFacet = append(qcFacet, bson.D{
@@ -102,13 +109,6 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 			{Key: "$limit", Value: filter.PageSize},
 		})
 	}
-
-	// Sort
-	qcFacet = append(qcFacet, bson.D{
-		{Key: "$sort", Value: bson.D{
-			{Key: "date", Value: -1},
-		}},
-	})
 
 	// Facet to get both metadata and qc
 	pipeline = append(pipeline, bson.D{
