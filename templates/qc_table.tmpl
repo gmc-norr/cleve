@@ -19,7 +19,7 @@
             hx-include="#qc-table-form"
             hx-select="#qc-table-body"
             hx-target="#qc-table-body"
-            hx-select-oob="#table-counts,#table-nav"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
             hx-swap="outerHTML"
             {{ if eq $current_page 1 }}disabled{{ end }}>
             Previous
@@ -31,7 +31,7 @@
             hx-include="#qc-table-form"
             hx-select="#qc-table-body"
             hx-target="#qc-table-body"
-            hx-select-oob="#table-counts,#table-nav"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
             hx-swap="outerHTML"
             {{ if eq $current_page .}}disabled{{ end }}>
             {{ . }}
@@ -43,7 +43,7 @@
             hx-include="#qc-table-form"
             hx-select="#qc-table-body"
             hx-target="#qc-table-body"
-            hx-select-oob="#table-counts,#table-nav"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
             hx-swap="outerHTML"
             {{ if eq $current_page $total_pages }}disabled{{ end }}>
             Next

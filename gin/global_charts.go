@@ -17,9 +17,6 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
-		// Get all results
-		filter.PageSize = 0
-
 		qc, err := db.RunQCs(filter)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
