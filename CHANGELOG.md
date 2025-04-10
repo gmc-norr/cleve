@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0](https://github.com/gmc-norr/cleve/compare/v0.3.0...v0.4.0) (2025-04-10)
+
+This version contains quite a lot of things despite the relatively short list of changes. The representation of runs and run QC has changed fundamentally. While the runs are backwards compatible, the run QC is not. Old data will be presented with a message that the QC data needs to be updated. For this there is functionality added to the CLI through `cleve run update`. There are things that are not quite finished, and there are still some things that need some cleaning, and there are separate issues for these things that will be addressed in coming versions.
+
+### Features
+
+* add interop package ([#60](https://github.com/gmc-norr/cleve/issues/60)) ([4066645](https://github.com/gmc-norr/cleve/commit/4066645943a3231dafa87824f075753097308364))
+* add pagination for QC API endpoint ([#47](https://github.com/gmc-norr/cleve/issues/47)) ([033c264](https://github.com/gmc-norr/cleve/commit/033c2648cc768697c0cc3d8d37ba30c3fceb9000))
+* more flexible interop handling ([#62](https://github.com/gmc-norr/cleve/issues/62)) ([d39f656](https://github.com/gmc-norr/cleve/commit/d39f656edf57bd8e5e9e781c9832478ad834ab9a))
+* update to tailwindcss 4 ([5aaddd5](https://github.com/gmc-norr/cleve/commit/5aaddd573a86e76d161b55094b9992e7843b6f52))
+
+
+### Bug Fixes
+
+* better handling of errors in table pagination ([#45](https://github.com/gmc-norr/cleve/issues/45)) ([1f44f11](https://github.com/gmc-norr/cleve/commit/1f44f11ce8fd10cd999ab76fc55163d85809c807))
+* Bump golang.org/x/crypto from 0.22.0 to 0.31.0 ([#58](https://github.com/gmc-norr/cleve/issues/58)) ([ed73806](https://github.com/gmc-norr/cleve/commit/ed738065124c3b0fba4fce9e7df8d2bb8c538541))
+* Bump golang.org/x/net from 0.24.0 to 0.33.0 ([#59](https://github.com/gmc-norr/cleve/issues/59)) ([6a5f727](https://github.com/gmc-norr/cleve/commit/6a5f7275f81a666bd41a1da2800c6be34dbf57ab))
+* correct filtering for QC data ([#34](https://github.com/gmc-norr/cleve/issues/34)) ([683054e](https://github.com/gmc-norr/cleve/commit/683054eddfec613ecf8930a1f331801dce52ed3b))
+* treat sections without suffix as settings ([#32](https://github.com/gmc-norr/cleve/issues/32)) ([787b1fd](https://github.com/gmc-norr/cleve/commit/787b1fd3f5ded294e3ef158fa848580e1ece8eff))
+
 ## [0.3.0](https://github.com/gmc-norr/cleve/compare/v0.2.0...v0.3.0) (2024-10-01)
 
 This release adds a basic sample collection to the cleve database.
