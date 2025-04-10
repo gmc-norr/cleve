@@ -17,13 +17,13 @@
         <input type="hidden" name="page" value="{{ .filter.Page }}" />
         <label for="chart-data-select">Chart type:</label>
         <select id="chart-data-select" name="chart-data">
-            <option value="q30"{{ if eq .chart_config.chart_data "q30" }} selected{{ end }}>%&ge;Q30</option>
-            <option value="error_rate"{{ if eq .chart_config.chart_data "error_rate" }} selected{{ end }}>Error rate</option>
+            <option value="q30"{{ if eq .chart_config.ChartData "q30" }} selected{{ end }}>%&ge;Q30</option>
+            <option value="error_rate"{{ if eq .chart_config.ChartData "error_rate" }} selected{{ end }}>Error rate</option>
         </select>
         <label for="chart-type-select">Chart type:</label>
         <select id="chart-type-select" name="chart-type">
-            <option value="bar"{{ if eq .chart_config.chart_type "bar" }} selected{{ end }}>Bar chart</option>
-            <option value="line"{{ if eq .chart_config.chart_type "line" }} selected{{ end }}>Line chart</option>
+            <option value="bar"{{ if eq .chart_config.ChartData "bar" }} selected{{ end }}>Bar chart</option>
+            <option value="line"{{ if eq .chart_config.ChartType "line" }} selected{{ end }}>Line chart</option>
         </select>
     </form>
     <div id="chart-container"

@@ -163,6 +163,6 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		platformNames := platforms.Names()
 
 		c.Header("Hx-Push-Url", filter.UrlParams())
-		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "chart-config": chartConfig, "version": cleve.GetVersion()})
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "chart_config": chartConfig, "version": cleve.GetVersion()})
 	}
 }
