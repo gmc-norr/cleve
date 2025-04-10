@@ -2,14 +2,14 @@
 {{ $run_filter := .run_filter }}
 {{ $current_page := .runs.PaginationMetadata.Page }}
 {{ $total_pages := .runs.PaginationMetadata.TotalPages }}
-<p id="table-counts">
+<p class="mx-6" id="table-counts">
     Showing {{ .runs.PaginationMetadata.Count}} of {{ .runs.PaginationMetadata.TotalCount }} runs
     Page {{ .runs.PaginationMetadata.Page }} / {{ .runs.PaginationMetadata.TotalPages }}
 </p>
 
-<div id="table-nav">
+<div class="mx-6 my-2" id="table-nav">
     <button type="button" class="table-nav-item disabled:bg-gray-400 bg-accent-900 text-white py-1 px-2"
-        hx-get="/runtable?page={{ subtractInt $current_page 1 }}"
+        hx-get="/runtable?page={{ subtractInt $current_page 1 }}&page_size={{ $run_filter.PageSize }}"
         hx-include="form"
         hx-select="#runtable-body"
         hx-target="#runtable-body"
@@ -19,7 +19,7 @@
 
     {{ range N 1 (addInt .runs.PaginationMetadata.TotalPages 1) }}
     <button type="button" class="table-nav-item w-10 disabled:bg-gray-400 bg-accent-900 text-white p-1"
-        hx-get="/runtable?page={{ . }}"
+        hx-get="/runtable?page={{ . }}&page_size={{ $run_filter.PageSize }}"
         hx-include="form"
         hx-select="#runtable-body"
         hx-target="#runtable-body"
@@ -29,7 +29,7 @@
     {{ end }}
 
     <button type="button" class="table-nav-item disabled:bg-gray-400 bg-accent-900 text-white py-1 px-2"
-        hx-get="/runtable?page={{ addInt $current_page 1 }}"
+        hx-get="/runtable?page={{ addInt $current_page 1 }}&page_size={{ $run_filter.PageSize }}"
         hx-include="form"
         hx-select="#runtable-body"
         hx-target="#runtable-body"
@@ -38,7 +38,7 @@
         {{ if eq $current_page $total_pages }}disabled{{ end }}>Next</button>
 </div>
 
-<div class="overflow-x-auto">
+<div class="mx-6 mb-6 overflow-x-auto">
     <form hx-get="/runtable" hx-target="#runtable-body" hx-select="#runtable-body" hx-swap="outerHTML" hx-trigger="keyup delay:300ms from:input[name=run_id_query], change from:select[name=platform], change from:select[name=state]" hx-select-oob="#table-counts,#table-nav">
         <table class="w-full">
             <thead class="text-left">

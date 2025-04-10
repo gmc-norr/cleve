@@ -2,12 +2,28 @@ package interop
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
+	"time"
 )
+
+type OptionalFloat float64
+
+func (f OptionalFloat) MarshalJSON() ([]byte, error) {
+	if f.IsNaN() {
+		return []byte("null"), nil
+	}
+	return json.Marshal(float64(f))
+}
+
+func (f OptionalFloat) IsNaN() bool {
+	return math.IsNaN(float64(f))
+}
 
 // Interop is the representation of Illumina Interop data.
 type Interop struct {
@@ -36,21 +52,38 @@ type Interop struct {
 }
 
 // Returns the first file that exists, have read permission set,
-// and is not a directory. If none is found, returns the last
-// error seen.
+// and is not a directory. Glob patterns in the filenames is allowed.
+// If multiple files match the glob pattern, the name of the most
+// recently modified file is returned. If none is found, returns the
+// last error seen.
 func alternativeFile(dir string, filenames ...string) (string, error) {
 	var err error
 	for _, fn := range filenames {
-		var info os.FileInfo
-		path := filepath.Join(dir, fn)
-		info, err = os.Stat(path)
+		var globbedFilenames []string
+		globbedFilenames, err = filepath.Glob(filepath.Join(dir, fn))
 		if err != nil {
 			continue
 		}
-		if info.IsDir() {
+		if len(globbedFilenames) == 0 {
 			continue
 		}
-		return path, nil
+		if len(globbedFilenames) == 1 {
+			return globbedFilenames[0], nil
+		}
+		newestFile := -1
+		var latestMod time.Time
+		for i, gfn := range globbedFilenames {
+			info, _ := os.Stat(gfn)
+			modTime := info.ModTime()
+			if modTime.Compare(latestMod) == 1 {
+				latestMod = modTime
+				newestFile = i
+			}
+		}
+		if newestFile == -1 {
+			return "", fmt.Errorf("unable to pick newest file")
+		}
+		return globbedFilenames[newestFile], nil
 	}
 	if err != nil {
 		return "", err
@@ -82,6 +115,7 @@ func InteropFromDir(rundir string) (Interop, error) {
 	i.tilemetricsFile, _ = alternativeFile(interopdir, "TileMetricsOut.bin", "TileMetrics.bin")
 	i.extendedTileMetricsFile, _ = alternativeFile(interopdir, "ExtendedTileMetricsOut.bin", "ExtendedTileMetrics.bin")
 	i.errorMetricsFile, _ = alternativeFile(interopdir, "ErrorMetricsOut.bin", "ErrorMetrics.bin")
+	i.indexMetricsFile, _ = alternativeFile(interopdir, "IndexMetricsOut.bin", "IndexMetrics.bin", "../Analysis/*/Data/Demux/IndexMetricsOut.bin")
 
 	i.RunInfo, err = ReadRunInfo(i.runinfoFile)
 	if err != nil {
@@ -218,14 +252,7 @@ func (i Interop) TotalYield() int {
 	bases := 0
 	excluded := i.excludedCycles()
 	for _, record := range i.QMetrics.Records {
-		isExcluded := false
-		for _, c := range excluded {
-			if record.Cycle() == c {
-				isExcluded = true
-				break
-			}
-		}
-		if isExcluded {
+		if slices.Contains(excluded, record.Cycle) {
 			continue
 		}
 		bases += record.BaseCount()
@@ -238,17 +265,10 @@ func (i Interop) LaneYield() map[int]int {
 	laneYield := make(map[int]int, i.RunInfo.Flowcell.Lanes)
 	excluded := i.excludedCycles()
 	for _, record := range i.QMetrics.Records {
-		isExcluded := false
-		for _, c := range excluded {
-			if record.Cycle() == c {
-				isExcluded = true
-				break
-			}
-		}
-		if isExcluded {
+		if slices.Contains(excluded, record.Cycle) {
 			continue
 		}
-		laneYield[record.Lane()] += record.BaseCount()
+		laneYield[record.Lane] += record.BaseCount()
 	}
 	return laneYield
 }
@@ -265,67 +285,233 @@ func (i Interop) cycleToRead(cycle int) int {
 	return 0
 }
 
-// LaneErrorRate calculates the average error rate for lanes, on a per read basis. It works by first
-// calculating the average error rate across all usable cycles for each tile. These are then averaged
-// for each tile for a given read. The return value is a nested map where the first key is the read number
-// and the second key is the lane number.
-func (i Interop) LaneErrorRate() map[int]map[int]float64 {
-	errorRates := make(map[int]map[int]float64, len(i.RunInfo.Reads))
-	for _, read := range i.RunInfo.Reads {
-		errorRates[read.Number] = make(map[int]float64)
+type RunSummary struct {
+	Yield           int           `bson:"yield" json:"yield"`
+	Density         OptionalFloat `bson:"density" json:"density"`
+	PercentQ30      OptionalFloat `bson:"percent_q30,omitempty" json:"percent_q30,omitempty"`
+	ClusterCount    int           `bson:"cluster_count" json:"cluster_count"`
+	PfClusterCount  int           `bson:"pf_cluster_count" json:"pf_cluster_count"`
+	PercentPf       OptionalFloat `bson:"percent_pf" json:"percent_pf"`
+	PercentAligned  OptionalFloat `bson:"percent_aligned,omitempty" json:"percent_aligned"`
+	ErrorRate       OptionalFloat `bson:"error_rate,omitempty" json:"error_rate,omitempty"`
+	PercentOccupied OptionalFloat `bson:"percent_occupied,omitempty" json:"percent_occupied,omitempty"`
+}
+
+func (i Interop) RunSummary() (rs RunSummary) {
+	return RunSummary{
+		Yield:           i.TotalYield(),
+		Density:         OptionalFloat(i.TileMetrics.RunDensity()),
+		PercentQ30:      OptionalFloat(i.RunPercentQ30()),
+		ClusterCount:    i.TileMetrics.Clusters(),
+		PfClusterCount:  i.TileMetrics.PfClusters(),
+		PercentPf:       OptionalFloat(100 * float64(i.TileMetrics.PfClusters()) / float64(i.TileMetrics.Clusters())),
+		PercentAligned:  OptionalFloat(i.TileMetrics.PercentAligned()),
+		ErrorRate:       OptionalFloat(i.RunErrorRate()),
+		PercentOccupied: OptionalFloat(i.RunPercentOccupied()),
 	}
+}
 
-	excluded := i.excludedCycles()
+type IndexSummary struct {
+	TotalReads          int                  `bson:"total_reads" json:"total_reads"`
+	PfReads             int                  `bson:"pf_reads" json:"pf_reads"`
+	IdReads             int                  `bson:"id_reads" json:"id_reads"`
+	UndeterminedReads   int                  `bson:"undetermined_reads" json:"undetermined_reads"`
+	PercentId           OptionalFloat        `bson:"percent_id" json:"percent_id"`
+	PercentUndetermined OptionalFloat        `bson:"percent_undetermined" json:"percent_undetermined"`
+	Indexes             []IndexSummaryRecord `bson:"indexes" json:"indexes"`
+}
 
-	tileMeans := make(map[int]map[[2]int]*RunningAverage)
-	for _, read := range i.RunInfo.Reads {
-		tileMeans[read.Number] = make(map[[2]int]*RunningAverage)
+type IndexSummaryRecord struct {
+	Sample       string  `bson:"sample" json:"sample"`
+	Index        string  `bson:"index" json:"index"`
+	ReadCount    int     `bson:"read_count" json:"read_count"`
+	PercentReads float64 `bson:"percent_reads" json:"percent_reads"`
+}
+
+func (i Interop) IndexSummary() IndexSummary {
+	summary := IndexSummary{
+		TotalReads: i.RunInfo.NonIndexReadCount() * i.TileMetrics.Clusters(),
+		PfReads:    i.RunInfo.NonIndexReadCount() * i.TileMetrics.PfClusters(),
 	}
-
-	// First calculate the mean error for each tile per read per lane
-	for _, record := range i.ErrorMetrics.Records {
-		isExcluded := false
-		for _, c := range excluded {
-			if record.Cycle == c {
-				isExcluded = true
-				break
-			}
-		}
-		if isExcluded {
-			continue
-		}
-		read := i.cycleToRead(record.Cycle)
-		key := [2]int{record.Lane, record.Tile}
-		avg, ok := tileMeans[read][key]
+	records := make(map[string]IndexSummaryRecord)
+	pfReads := i.RunInfo.NonIndexReadCount() * i.TileMetrics.PfClusters()
+	idReads := 0
+	keyOrder := make([]string, 0)
+	for _, record := range i.IndexMetrics.Records {
+		key := record.SampleName + record.IndexName
+		is, ok := records[key]
 		if !ok {
-			avg = &RunningAverage{}
+			keyOrder = append(keyOrder, key)
+			is = IndexSummaryRecord{
+				Sample: record.SampleName,
+				Index:  record.IndexName,
+			}
+			records[key] = is
 		}
-		avg.Add(record.ErrorRate)
-		tileMeans[read][key] = avg
+		idReads += record.ClusterCount
+		is.ReadCount += record.ClusterCount
+		is.PercentReads += 100 * float64(record.ClusterCount) / float64(pfReads)
+		records[key] = is
+	}
+	summary.IdReads = idReads
+	summary.PercentId = OptionalFloat(100 * float64(idReads) / float64(pfReads))
+	summary.UndeterminedReads = pfReads - idReads
+	summary.PercentUndetermined = OptionalFloat(100 * float64(summary.UndeterminedReads) / float64(pfReads))
+	summary.Indexes = make([]IndexSummaryRecord, len(keyOrder))
+	for i, k := range keyOrder {
+		summary.Indexes[i] = records[k]
+	}
+	return summary
+}
+
+type LaneSummary struct {
+	Lane      int           `bson:"lane" json:"lane"`
+	Yield     int           `bson:"yield" json:"yield"`
+	ErrorRate OptionalFloat `bson:"error_rate" json:"error_rate"`
+	Density   OptionalFloat `bson:"density" json:"density"`
+}
+
+func (i Interop) LaneSummary() []LaneSummary {
+	nLanes := i.RunInfo.Flowcell.Lanes
+	ls := make([]LaneSummary, nLanes)
+	laneError := i.LaneErrorRate()
+	laneYield := i.LaneYield()
+	laneDensity := i.TileMetrics.LaneDensity()
+
+	for lane := range nLanes {
+		ls[lane] = LaneSummary{
+			Lane:      lane + 1,
+			Yield:     laneYield[lane+1],
+			ErrorRate: OptionalFloat(laneError[lane+1]),
+			Density:   OptionalFloat(laneDensity[lane+1]),
+		}
+	}
+	return ls
+}
+
+type TileSummaryRecord struct {
+	LT
+	Name            string
+	ClusterCount    int           `bson:"cluster_count" json:"cluster_count"`
+	PFClusterCount  int           `bson:"pf_cluster_count" json:"pf_cluster_count"`
+	PercentOccupied OptionalFloat `bson:"percent_occupied" json:"percent_occupied"`
+	PercentPF       OptionalFloat `bson:"percent_pf" json:"percent_pf"`
+	PercentQ30      OptionalFloat `bson:"percent_q30" json:"percent_q30"`
+	PercentAligned  OptionalFloat `bson:"percent_aligned" json:"percent_aligned"`
+	ErrorRate       OptionalFloat `bson:"error_rate" json:"error_rate"`
+}
+
+func (i Interop) TileSummary() []TileSummaryRecord {
+	tiles := make(map[string]TileSummaryRecord)
+	for _, record := range i.TileMetrics.Records {
+		name := record.LT.TileName()
+		ts, ok := tiles[name]
+		if !ok {
+			ts.LT = record.LT
+			ts.Name = record.TileName()
+		}
+		ts.PFClusterCount = record.PfClusterCount
+		ts.ClusterCount = record.ClusterCount
+		ts.PercentPF = OptionalFloat(100 * float64(record.PfClusterCount) / float64(record.ClusterCount))
+		percAligned := 0.0
+		for _, v := range record.PercentAligned {
+			percAligned += v
+		}
+		percAligned /= float64(len(record.PercentAligned))
+		ts.PercentAligned = OptionalFloat(percAligned)
+		tiles[name] = ts
 	}
 
-	// Calculate the mean error across all tiles per read per lane
-	for read := range tileMeans {
-		for lane := 1; lane <= i.RunInfo.Flowcell.Lanes; lane++ {
-			sum := 0.0
-			n := 0
-			for key, x := range tileMeans[read] {
-				if key[0] != lane {
-					continue
-				}
-				sum += x.Average
-				n++
+	for name, errorRate := range i.TileErrorRate() {
+		ts := tiles[name]
+		ts.ErrorRate = OptionalFloat(errorRate)
+		tiles[name] = ts
+	}
+
+	for name, q30 := range i.TilePercentQ30() {
+		ts := tiles[name]
+		ts.PercentQ30 = OptionalFloat(q30)
+		tiles[name] = ts
+	}
+
+	for _, record := range i.ExtendedTileMetrics.Records {
+		name := record.LT.TileName()
+		ts := tiles[name]
+		ts.PercentOccupied = OptionalFloat(100 * float64(record.OccupiedClusters) / float64(tiles[name].ClusterCount))
+		tiles[name] = ts
+	}
+
+	tileSummaries := make([]TileSummaryRecord, 0, i.RunInfo.Flowcell.Tiles)
+	for _, ts := range tiles {
+		tileSummaries = append(tileSummaries, ts)
+	}
+	return tileSummaries
+}
+
+type ReadSummary struct {
+	Read           int           `bson:"read" json:"read"`
+	Lane           int           `bson:"lane" json:"lane"`
+	PercentQ30     float64       `bson:"percent_q30" json:"percent_q30"`
+	PercentAligned OptionalFloat `bson:"percent_aligned" json:"percent_aligned"`
+	ErrorRate      OptionalFloat `bson:"error_rate" json:"error_rate"`
+}
+
+func (i Interop) ReadSummary() []ReadSummary {
+	nReads := i.RunInfo.ReadCount()
+	nLanes := i.RunInfo.Flowcell.Lanes
+	rs := make([]ReadSummary, nReads*nLanes)
+
+	readQ30 := i.ReadPercentQ30()
+	readError := i.ReadErrorRate()
+	readAligned := i.TileMetrics.ReadPercentAligned()
+
+	for read := range nReads {
+		for lane := range nLanes {
+			i := (nLanes * (read)) + lane
+			e, ok := readError[read+1][lane+1]
+			if !ok {
+				e = math.NaN()
 			}
-			if n == 0 {
-				// Set NaN explicitly
-				errorRates[read][lane] = math.NaN()
-			} else {
-				errorRates[read][lane] = sum / float64(n)
+			a, ok := readAligned[read+1][lane+1]
+			if !ok {
+				a = math.NaN()
+			}
+			rs[i] = ReadSummary{
+				Read:           read + 1,
+				Lane:           lane + 1,
+				PercentQ30:     readQ30[read+1][lane+1],
+				ErrorRate:      OptionalFloat(e),
+				PercentAligned: OptionalFloat(a),
 			}
 		}
 	}
+	return rs
+}
 
-	return errorRates
+type InteropSummary struct {
+	RunId        string              `bson:"run_id" json:"run_id"`
+	Platform     string              `bson:"platform" json:"platform"`
+	Flowcell     string              `bson:"flowcell" json:"flowcell"`
+	Date         time.Time           `bson:"date" json:"date"`
+	RunSummary   RunSummary          `bson:"run_summary" json:"run_summary"`
+	TileSummary  []TileSummaryRecord `bson:"tile_summary" json:"tile_summary"`
+	LaneSummary  []LaneSummary       `bson:"lane_summary" json:"lane_summary"`
+	IndexSummary IndexSummary        `bson:"index_summary" json:"index_summary"`
+	ReadSummary  []ReadSummary       `bson:"read_summary" json:"read_summary"`
+}
+
+func (i Interop) Summarise() InteropSummary {
+	return InteropSummary{
+		RunId:        i.RunInfo.RunId,
+		Platform:     i.RunInfo.Platform,
+		Flowcell:     i.RunInfo.FlowcellName,
+		Date:         i.RunInfo.Date,
+		RunSummary:   i.RunSummary(),
+		LaneSummary:  i.LaneSummary(),
+		TileSummary:  i.TileSummary(),
+		IndexSummary: i.IndexSummary(),
+		ReadSummary:  i.ReadSummary(),
+	}
 }
 
 // TotalFracOccupied returns the fraction of occupied clusters across the whole flow cell.
@@ -344,4 +530,220 @@ func (i Interop) LaneFracOccupied() map[int]float64 {
 		laneFracOccupied[lane] = float64(laneOccupiedCount[lane]) / float64(laneCount[lane])
 	}
 	return laneFracOccupied
+}
+
+// TilePercentQ30 calculates the Q30 across all usable cycles for each tile on the flow cell.
+// The return value is a map with tile names as keys and the percent Q30 as values. If Q30
+// is not represented in the bin definitions, nil will be returned.
+func (i Interop) TilePercentQ30() map[string]float64 {
+	q30bin := -1
+	for i, b := range i.QMetrics.BinDefs {
+		if b.Value >= 30 {
+			q30bin = i
+			break
+		}
+	}
+
+	if q30bin == -1 {
+		return nil
+	}
+
+	tileQ30 := make(map[string]float64)
+	counts := make(map[string]int)
+	excluded := i.excludedCycles()
+	for _, record := range i.QMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		name := record.TileName()
+		tileQCounts := 0
+		for bi := q30bin; bi < int(i.QMetrics.Bins); bi++ {
+			tileQCounts += record.Histogram[bi]
+		}
+		tileQ30[name] += 100 * float64(tileQCounts) / float64(record.BaseCount())
+		counts[name]++
+	}
+
+	for name := range tileQ30 {
+		tileQ30[name] /= float64(counts[name])
+	}
+	return tileQ30
+}
+
+// ReadPercentQ30 calculates the fraction of passing filter clusters with a Q score >= 30
+// for each lane on the flowcell. It is calculated by first getting the Q30 fraction
+// for each read in each lane and then averaging these for each lane.
+func (i Interop) ReadPercentQ30() map[int]map[int]float64 {
+	pfCount := make(map[int]map[int]int)
+	totalCount := make(map[int]map[int]int)
+	q30bin := -1
+	for i, b := range i.QMetrics.BinDefs {
+		if b.Value >= 30 {
+			q30bin = i
+			break
+		}
+	}
+
+	if q30bin == -1 {
+		return nil
+	}
+
+	excluded := i.excludedCycles()
+	for _, record := range i.QMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		read := i.cycleToRead(record.Cycle)
+		if _, ok := pfCount[read]; !ok {
+			pfCount[read] = make(map[int]int)
+			totalCount[read] = make(map[int]int)
+		}
+		for bi := q30bin; bi < int(i.QMetrics.Bins); bi++ {
+			pfCount[read][record.Lane] += record.Histogram[bi]
+		}
+		totalCount[read][record.Lane] += record.BaseCount()
+	}
+
+	readQ30 := make(map[int]map[int]float64)
+	for read := range pfCount {
+		for lane := range pfCount[read] {
+			if _, ok := readQ30[read]; !ok {
+				readQ30[read] = make(map[int]float64)
+			}
+			readQ30[read][lane] = 100 * float64(pfCount[read][lane]) / float64(totalCount[read][lane])
+		}
+	}
+	return readQ30
+}
+
+// LanePercentQ30 calculates the fraction of passing filter clusters with a Q score >= 30
+// for each lane on the flowcell. It is calculated by first getting the Q30 fraction
+// for each read in each lane and then averaging these for each lane.
+func (i Interop) LanePercentQ30() map[int]float64 {
+	laneQ30 := make(map[int]float64)
+	readQ30 := i.ReadPercentQ30()
+	for read := range readQ30 {
+		for lane, q30 := range readQ30[read] {
+			laneQ30[lane] += q30
+		}
+	}
+	for lane := range laneQ30 {
+		laneQ30[lane] = laneQ30[lane] / float64(len(readQ30))
+	}
+	return laneQ30
+}
+
+// RunPercentQ30 returns the fraction of clusters with a Q score >= 30 for all
+// passing filter clusters for a flow cell. It is calculated by summing
+// up the number of clusters with a Q score >= 30 across all tiles.
+func (i Interop) RunPercentQ30() float64 {
+	pfCount := 0
+	totalCount := 0
+	q30bin := -1
+	for i, b := range i.QMetrics.BinDefs {
+		if b.Value >= 30 {
+			q30bin = i
+			break
+		}
+	}
+
+	if q30bin == -1 {
+		return 0.0
+	}
+
+	excluded := i.excludedCycles()
+	for _, record := range i.QMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		for bi := q30bin; bi < int(i.QMetrics.Bins); bi++ {
+			pfCount += record.Histogram[bi]
+		}
+		totalCount += record.BaseCount()
+	}
+
+	return 100 * float64(pfCount) / float64(totalCount)
+}
+
+// TileErrorRate calculates the average error for all tiles over usable cycles for the whole flow cell.
+func (i Interop) TileErrorRate() map[string]float64 {
+	tileErrors := make(map[string]float64)
+	counts := make(map[string]int)
+	excluded := i.excludedCycles()
+	for _, record := range i.ErrorMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		name := record.TileName()
+		tileErrors[name] += record.ErrorRate
+		counts[name]++
+	}
+	for name := range tileErrors {
+		tileErrors[name] /= float64(counts[name])
+	}
+	return tileErrors
+}
+
+// ReadErrorRate calculates the average error rate for reads, on a per lane basis. It works by first
+// calculating the average error rate across all usable cycles for each tile. These are then averaged
+// for each tile for a given lane. The return value is a nested map where the first key is the read number
+// and the second key is the lane number.
+func (i Interop) ReadErrorRate() map[int]map[int]float64 {
+	readErrors := make(map[int]map[int]float64)
+	counts := make(map[int]map[int]int)
+	excluded := i.excludedCycles()
+	for _, record := range i.ErrorMetrics.Records {
+		if slices.Contains(excluded, record.Cycle) {
+			continue
+		}
+		read := i.cycleToRead(record.Cycle)
+		if _, ok := readErrors[read]; !ok {
+			readErrors[read] = make(map[int]float64)
+			counts[read] = make(map[int]int)
+		}
+		readErrors[read][record.Lane] += record.ErrorRate
+		counts[read][record.Lane]++
+	}
+	for read := range readErrors {
+		for lane := range readErrors[read] {
+			readErrors[read][lane] /= float64(counts[read][lane])
+		}
+	}
+	return readErrors
+}
+
+// LaneErrorRate calculates the average error rate for each lane of the flow cell. It is calculated
+// from the lane averages produced by `Interop.ReadErrorRate`.
+func (i Interop) LaneErrorRate() map[int]float64 {
+	laneErrors := make(map[int]float64)
+	counts := make(map[int]int)
+	readErrors := i.ReadErrorRate()
+	for read := range readErrors {
+		for lane, e := range readErrors[read] {
+			laneErrors[lane] += e
+			counts[lane]++
+		}
+	}
+	for lane := range laneErrors {
+		laneErrors[lane] /= float64(counts[lane])
+	}
+	return laneErrors
+}
+
+// RunErrorRate calculates the average error rate for each lane of the flow cell. It is the average
+// of the lane error rates from `Interop.LaneErrorRate`.
+func (i Interop) RunErrorRate() float64 {
+	errorRate := 0.0
+	laneError := i.LaneErrorRate()
+	for _, e := range laneError {
+		errorRate += e
+	}
+	return errorRate / float64(len(laneError))
+}
+
+func (i Interop) RunPercentOccupied() float64 {
+	if i.extendedTileMetricsFile == "" {
+		return math.NaN()
+	}
+	return 100 * float64(i.ExtendedTileMetrics.OccupiedClusters()) / float64(i.TileMetrics.Clusters())
 }

@@ -31,11 +31,17 @@ func (qm QMetrics) TotalYield() int {
 	return bases
 }
 
-type QMetricRecord interface {
-	Tile() int
-	Lane() int
-	Cycle() int
-	BaseCount() int
+type QMetricRecord struct {
+	LTC
+	Histogram []int
+}
+
+func (qmr QMetricRecord) BaseCount() int {
+	c := 0
+	for _, binCount := range qmr.Histogram {
+		c += binCount
+	}
+	return c
 }
 
 type QMetricRecordV4 = QMetricRecordV6
@@ -45,55 +51,22 @@ type QMetricRecordV6 struct {
 	Histogram []uint32
 }
 
-func (qmr QMetricRecordV6) Tile() int {
-	return int(qmr.ltc1.Tile)
-}
-
-func (qmr QMetricRecordV6) Lane() int {
-	return int(qmr.ltc1.Lane)
-}
-
-func (qmr QMetricRecordV6) Cycle() int {
-	return int(qmr.ltc1.Cycle)
-}
-
-func (qmr QMetricRecordV6) BaseCount() int {
-	c := 0
-	for _, binCount := range qmr.Histogram {
-		c += int(binCount)
-	}
-	return c
-}
-
 type QMetricRecordV7 struct {
 	ltc2
 	Histogram []uint32
-}
-
-func (qmr QMetricRecordV7) Tile() int {
-	return int(qmr.ltc2.Tile)
-}
-
-func (qmr QMetricRecordV7) Lane() int {
-	return int(qmr.ltc2.Lane)
-}
-
-func (qmr QMetricRecordV7) Cycle() int {
-	return int(qmr.ltc2.Cycle)
-}
-
-func (qmr QMetricRecordV7) BaseCount() int {
-	c := 0
-	for _, binCount := range qmr.Histogram {
-		c += int(binCount)
-	}
-	return c
 }
 
 func parseBinDefinitionV4(qm *QMetrics) error {
 	qm.HasBins = false
 	qm.Bins = 50
 	qm.BinDefs = make([]BinDefinition, qm.Bins)
+	for i := range qm.Bins {
+		qm.BinDefs[i] = BinDefinition{
+			Low:   i + 1,
+			High:  i + 1,
+			Value: i + 1,
+		}
+	}
 	return nil
 }
 
@@ -143,7 +116,7 @@ func parseBinDefinitionV7(r io.Reader, qm *QMetrics) error {
 	}
 
 	qm.BinDefs = make([]BinDefinition, qm.Bins)
-	for i := 0; i < int(qm.Bins); i++ {
+	for i := range qm.Bins {
 		bd := BinDefinition{}
 		if err := binary.Read(r, binary.LittleEndian, &bd); err != nil {
 			return err
@@ -155,17 +128,23 @@ func parseBinDefinitionV7(r io.Reader, qm *QMetrics) error {
 
 func parseQMetricRecords4(r io.Reader, qm *QMetrics) error {
 	for {
-		record := QMetricRecordV4{}
-		if err := binary.Read(r, binary.LittleEndian, &record.ltc1); err != nil {
+		recordV4 := QMetricRecordV4{}
+		record := QMetricRecord{}
+		if err := binary.Read(r, binary.LittleEndian, &recordV4.ltc1); err != nil {
 			if err == io.EOF {
 				break
 			}
 			return err
 		}
-		record.Histogram = make([]uint32, qm.Bins)
-		err := binary.Read(r, binary.LittleEndian, &record.Histogram)
+		recordV4.Histogram = make([]uint32, qm.Bins)
+		err := binary.Read(r, binary.LittleEndian, &recordV4.Histogram)
 		if err != nil {
 			return err
+		}
+		record.LTC = recordV4.ltc1.normalize()
+		record.Histogram = make([]int, qm.Bins)
+		for i := range recordV4.Histogram {
+			record.Histogram[i] = int(recordV4.Histogram[i])
 		}
 		qm.Records = append(qm.Records, record)
 	}
@@ -174,17 +153,23 @@ func parseQMetricRecords4(r io.Reader, qm *QMetrics) error {
 
 func parseQMetricRecords6(r io.Reader, qm *QMetrics) error {
 	for {
-		record := QMetricRecordV6{}
-		if err := binary.Read(r, binary.LittleEndian, &record.ltc1); err != nil {
+		recordV6 := QMetricRecordV6{}
+		record := QMetricRecord{}
+		if err := binary.Read(r, binary.LittleEndian, &recordV6.ltc1); err != nil {
 			if err.Error() == "EOF" {
 				break
 			}
 			return err
 		}
-		record.Histogram = make([]uint32, qm.Bins)
-		err := binary.Read(r, binary.LittleEndian, &record.Histogram)
+		recordV6.Histogram = make([]uint32, qm.Bins)
+		err := binary.Read(r, binary.LittleEndian, &recordV6.Histogram)
 		if err != nil {
 			return err
+		}
+		record.LTC = recordV6.ltc1.normalize()
+		record.Histogram = make([]int, qm.Bins)
+		for i := range recordV6.Histogram {
+			record.Histogram[i] = int(recordV6.Histogram[i])
 		}
 		qm.Records = append(qm.Records, record)
 	}
@@ -193,18 +178,24 @@ func parseQMetricRecords6(r io.Reader, qm *QMetrics) error {
 
 func parseQMetricRecords7(r io.Reader, qm *QMetrics) error {
 	for {
-		record := QMetricRecordV7{}
-		if err := binary.Read(r, binary.LittleEndian, &record.ltc2); err != nil {
+		recordV7 := QMetricRecordV7{}
+		record := QMetricRecord{}
+		if err := binary.Read(r, binary.LittleEndian, &recordV7.ltc2); err != nil {
 			// A valid file should reach EOF here
 			if errors.Is(err, io.EOF) {
 				break
 			}
 			return err
 		}
-		record.Histogram = make([]uint32, qm.Bins)
-		err := binary.Read(r, binary.LittleEndian, &record.Histogram)
+		recordV7.Histogram = make([]uint32, qm.Bins)
+		err := binary.Read(r, binary.LittleEndian, &recordV7.Histogram)
 		if err != nil {
 			return err
+		}
+		record.LTC = recordV7.ltc2.normalize()
+		record.Histogram = make([]int, qm.Bins)
+		for i := range recordV7.Histogram {
+			record.Histogram[i] = int(recordV7.Histogram[i])
 		}
 		qm.Records = append(qm.Records, record)
 	}

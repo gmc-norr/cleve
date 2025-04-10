@@ -6,6 +6,7 @@ import (
 
 func init() {
 	DbCmd.AddCommand(indexCmd)
+	DbCmd.AddCommand(initCmd)
 }
 
 var DbCmd = &cobra.Command{

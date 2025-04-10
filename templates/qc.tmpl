@@ -1,10 +1,10 @@
 {{ define "qc" }}
 {{ template "header" . }}
-<h2 class="text-3xl my-4">Sequencing QC</h2>
+<h2 class="text-3xl mx-6 my-4">Sequencing QC</h2>
 
 {{ template "qc_table" . }}
 
-<section class="my-8">
+<section id="run-qc-chart" class="mx-6 my-8">
     <h2 class="text-3xl my-4">Charts</h2>
     <form id="chart-form"
         autocomplete="off"
@@ -13,15 +13,17 @@
         hx-trigger="change, keyup delay:300ms from:input[name=run_id_query], change from:select[name=platform]"
         hx-swap="innerHtml ignoreTitle:true"
         hx-include="#qc-table-form">
+        <input type="hidden" name="page_size" value="{{ .filter.PageSize }}" />
+        <input type="hidden" name="page" value="{{ .filter.Page }}" />
         <label for="chart-data-select">Chart type:</label>
         <select id="chart-data-select" name="chart-data">
-            <option value="q30"{{ if eq .chart_config.chart_data "q30" }} selected{{ end }}>%&ge;Q30</option>
-            <option value="error_rate"{{ if eq .chart_config.chart_data "error_rate" }} selected{{ end }}>Error rate</option>
+            <option value="q30"{{ if eq .chart_config.ChartData "q30" }} selected{{ end }}>%&ge;Q30</option>
+            <option value="error_rate"{{ if eq .chart_config.ChartData "error_rate" }} selected{{ end }}>Error rate</option>
         </select>
         <label for="chart-type-select">Chart type:</label>
         <select id="chart-type-select" name="chart-type">
-            <option value="bar"{{ if eq .chart_config.chart_type "bar" }} selected{{ end }}>Bar chart</option>
-            <option value="line"{{ if eq .chart_config.chart_type "line" }} selected{{ end }}>Line chart</option>
+            <option value="bar"{{ if eq .chart_config.ChartData "bar" }} selected{{ end }}>Bar chart</option>
+            <option value="line"{{ if eq .chart_config.ChartType "line" }} selected{{ end }}>Line chart</option>
         </select>
     </form>
     <div id="chart-container"

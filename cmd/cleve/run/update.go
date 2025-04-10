@@ -3,9 +3,12 @@ package run
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 )
@@ -16,6 +19,20 @@ var (
 	updateCmd   = &cobra.Command{
 		Use:   "update [flags] run_id",
 		Short: "Update a sequencing run",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			path, _ := cmd.Flags().GetString("path")
+			if path == "" {
+				return
+			}
+			if !filepath.IsAbs(path) {
+				cobra.CheckErr("path needs to be absolute")
+			}
+			if info, err := os.Stat(path); err != nil {
+				cobra.CheckErr(err)
+			} else if !info.IsDir() {
+				cobra.CheckErr("path needs to be a directory")
+			}
+		},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("run id is required")
@@ -38,6 +55,32 @@ var (
 				didSomething = true
 			}
 
+			newPath, _ := cmd.Flags().GetString("path")
+			if newPath != "" {
+				log.Printf("Updating path of run %s to %s", args[0], newPath)
+				if err := db.SetRunPath(args[0], newPath); err != nil {
+					log.Fatalf("error: %s", err)
+				}
+				didSomething = true
+			}
+
+			reloadQc, _ := cmd.Flags().GetBool("reload-qc")
+			if reloadQc {
+				log.Printf("Updating QC data for run %s", args[0])
+				run, err := db.Run(args[0], false)
+				if err != nil {
+					log.Fatalf("error: %s", err)
+				}
+				qc, err := interop.InteropFromDir(run.Path)
+				if err != nil {
+					log.Fatalf("error: %s", err)
+				}
+				if err := db.UpdateRunQC(qc.Summarise()); err != nil {
+					log.Fatalf("error: %s", err)
+				}
+				didSomething = true
+			}
+
 			if !didSomething {
 				log.Printf("No changes made to run %s", args[0])
 			}
@@ -52,6 +95,8 @@ func init() {
 	}
 	stateString := strings.Join(allowedStates, ", ")
 	updateCmd.Flags().StringVar(&stateArg, "state", "", "Run state (one of "+stateString+")")
+	updateCmd.Flags().StringP("path", "p", "", "Absolute path to the run")
+	updateCmd.Flags().Bool("reload-qc", false, "Reload QC data for run")
 
 	cobra.OnInitialize(func() {
 		if stateArg != "" {

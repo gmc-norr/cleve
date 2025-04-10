@@ -1,11 +1,10 @@
 package cleve
 
-type QcResultItem struct {
-	InteropQC `bson:",inline" json:",inline"`
-	Run       Run `bson:"run" json:"run"`
-}
+import (
+	"github.com/gmc-norr/cleve/interop"
+)
 
 type QcResult struct {
 	PaginationMetadata `bson:"metadata" json:"metadata"`
-	Qc                 []QcResultItem `bson:"qc" json:"qc"`
+	InteropSummary     []interop.InteropSummary `bson:"interop" json:"interop"`
 }

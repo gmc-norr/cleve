@@ -1,11 +1,11 @@
 package gin
 
 import (
-	"math"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve/charts"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 )
 
@@ -17,9 +17,6 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 
-		// Get all results
-		filter.PageSize = 0
-
 		qc, err := db.RunQCs(filter)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -28,17 +25,17 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 
 		switch config.ChartData {
 		case "q30":
-			plotData := charts.RunStats[float64]{
-				Data:  make([]charts.RunStat[float64], 0),
+			plotData := charts.RunStats[interop.OptionalFloat]{
+				Data:  make([]charts.RunStat[interop.OptionalFloat], 0),
 				Label: "%>=Q30",
 				Type:  config.ChartType,
 			}
-			for _, q := range qc.Qc {
-				q30 := float64(q.InteropSummary.RunSummary["Total"].PercentQ30)
-				datapoint := charts.RunStat[float64]{
-					RunID: q.RunID,
+			for _, q := range qc.InteropSummary {
+				q30 := q.RunSummary.PercentQ30
+				datapoint := charts.RunStat[interop.OptionalFloat]{
+					RunID: q.RunId,
 				}
-				if !math.IsNaN(q30) {
+				if !q30.IsNaN() {
 					datapoint.Value = &q30
 				}
 				plotData.Data = append(plotData.Data, datapoint)
@@ -53,17 +50,17 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				return
 			}
 		case "error_rate":
-			plotData := charts.RunStats[float64]{
-				Data:  make([]charts.RunStat[float64], 0),
+			plotData := charts.RunStats[interop.OptionalFloat]{
+				Data:  make([]charts.RunStat[interop.OptionalFloat], 0),
 				Label: "Error rate",
 				Type:  config.ChartType,
 			}
-			for _, q := range qc.Qc {
-				errorRate := float64(q.InteropSummary.RunSummary["Total"].ErrorRate)
-				datapoint := charts.RunStat[float64]{
-					RunID: q.RunID,
+			for _, q := range qc.InteropSummary {
+				errorRate := q.RunSummary.ErrorRate
+				datapoint := charts.RunStat[interop.OptionalFloat]{
+					RunID: q.RunId,
 				}
-				if !math.IsNaN(errorRate) {
+				if !errorRate.IsNaN() {
 					datapoint.Value = &errorRate
 				}
 				plotData.Data = append(plotData.Data, datapoint)

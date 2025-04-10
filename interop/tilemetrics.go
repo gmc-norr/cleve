@@ -5,22 +5,22 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"os"
 )
 
 type TileCode int
 
 const (
-	TileClusterCountOccupied          = 0
-	TileReadNumber                    = 1 // not part of the original spec
-	TileClusterDensity                = 100
-	TileClusterDensityPf              = 101
-	TileClusterCount                  = 102
-	TileClusterCountPf                = 103
-	TilePhasing                       = 200
-	TilePrephasing                    = 201
-	TilePercentAligned                = 300
-	TileControlLane          TileCode = 400
+	TileClusterCountOccupied = 0
+	TileClusterDensity       = 100
+	TileClusterDensityPf     = 101
+	TileClusterCount         = 102
+	TileClusterCountPf       = 103
+	TilePhasing              = 200
+	TilePrephasing           = 201
+	TilePercentAligned       = 300
+	TileControlLane          = 400
 )
 
 type TileRecord struct {
@@ -28,6 +28,7 @@ type TileRecord struct {
 	ClusterCount   int
 	PfClusterCount int
 	Density        float64
+	PercentAligned map[int]float64 // Percent aligned to PhiX for each read
 }
 
 type TileMetrics struct {
@@ -71,6 +72,55 @@ func (m TileMetrics) PfClusters() int {
 	return sum
 }
 
+func (m TileMetrics) ReadPercentAligned() map[int]map[int]float64 {
+	readPercentAligned := make(map[int]map[int]float64)
+	counts := make(map[int]map[int]int)
+	for _, r := range m.Records {
+		for read, v := range r.PercentAligned {
+			if math.IsNaN(v) {
+				continue
+			}
+			if _, ok := readPercentAligned[read]; !ok {
+				readPercentAligned[read] = make(map[int]float64)
+				counts[read] = make(map[int]int)
+			}
+			readPercentAligned[read][r.Lane] += v
+			counts[read][r.Lane]++
+		}
+	}
+	for read := range readPercentAligned {
+		for lane := range readPercentAligned[read] {
+			readPercentAligned[read][lane] /= float64(counts[read][lane])
+		}
+	}
+	return readPercentAligned
+}
+
+func (m TileMetrics) LanePercentAligned() map[int]float64 {
+	lanePercentAligned := make(map[int]float64)
+	counts := make(map[int]int)
+	readPercentAligned := m.ReadPercentAligned()
+	for read := range readPercentAligned {
+		for lane, v := range readPercentAligned[read] {
+			lanePercentAligned[lane] += v
+			counts[lane]++
+		}
+	}
+	for lane := range lanePercentAligned {
+		lanePercentAligned[lane] /= float64(counts[lane])
+	}
+	return lanePercentAligned
+}
+
+func (m TileMetrics) PercentAligned() float64 {
+	sum := 0.0
+	laneAligned := m.LanePercentAligned()
+	for _, v := range laneAligned {
+		sum += v
+	}
+	return sum / float64(len(laneAligned))
+}
+
 func (m TileMetrics) LaneDensity() map[int]float64 {
 	laneDensities := make(map[int]float64)
 	laneCounts := make(map[int]int, m.LaneCount)
@@ -89,6 +139,16 @@ func (m TileMetrics) LaneDensity() map[int]float64 {
 		laneDensities[lane] /= float64(laneCounts[lane])
 	}
 	return laneDensities
+}
+
+func (m TileMetrics) RunDensity() float64 {
+	runDensity := 0.0
+	n := 0
+	for _, d := range m.LaneDensity() {
+		runDensity += d
+		n++
+	}
+	return runDensity / float64(n)
 }
 
 // FractionPassingFilter returns the fraction of clusters passing filters.
@@ -112,7 +172,7 @@ type rawTileV3 struct {
 }
 
 func parseTileMetricRecordsV2(r io.Reader, tm *TileMetrics) error {
-	tiles := make(map[[2]uint16]TileRecord)
+	tiles := make(map[[2]uint16]*TileRecord)
 	for {
 		rt := rawTileV2{}
 		err := binary.Read(r, binary.LittleEndian, &rt)
@@ -123,38 +183,48 @@ func parseTileMetricRecordsV2(r io.Reader, tm *TileMetrics) error {
 			return err
 		}
 		key := [2]uint16{rt.Lane, rt.Tile}
-		t, ok := tiles[key]
-		if !ok {
-			t = TileRecord{
-				LT: rt.lt1.normalize(),
+		if _, ok := tiles[key]; !ok {
+			tiles[key] = &TileRecord{
+				LT:             rt.lt1.normalize(),
+				PercentAligned: make(map[int]float64),
 			}
-			tiles[key] = t
 		}
+		t := tiles[key]
+
 		switch rt.Code {
+		case TileControlLane:
+			continue
 		case TileClusterCount:
 			if t.ClusterCount != 0 {
 				return fmt.Errorf("cluster count already set for tile %s", t.TileName())
 			}
 			t.ClusterCount = int(rt.Value)
-			tiles[key] = t
 		case TileClusterCountPf:
 			if t.PfClusterCount != 0 {
 				return fmt.Errorf("pf cluster count already set for tile %s", t.TileName())
 			}
 			t.PfClusterCount = int(rt.Value)
-			tiles[key] = t
 		case TileClusterDensity:
 			if t.Density != 0 {
 				return fmt.Errorf("cluster density already set for tile %s", t.TileName())
 			}
 			t.Density = float64(rt.Value)
-			tiles[key] = t
+		case TileClusterDensityPf:
+			continue
+		default:
+			if rt.Code%TilePercentAligned < 100 {
+				readIndex := int(rt.Code % TilePercentAligned)
+				t.PercentAligned[readIndex+1] = float64(rt.Value)
+			} else if rt.Code%TilePhasing < 100 {
+			} else {
+				return fmt.Errorf("unknown tile code: %d", rt.Code)
+			}
 		}
 	}
 	lanes := make(map[int]bool)
 	tm.Records = make([]TileRecord, 0, len(tiles))
 	for key, t := range tiles {
-		tm.Records = append(tm.Records, t)
+		tm.Records = append(tm.Records, *t)
 		lanes[int(key[0])] = true
 	}
 	tm.LaneCount = len(lanes)
@@ -162,7 +232,7 @@ func parseTileMetricRecordsV2(r io.Reader, tm *TileMetrics) error {
 }
 
 func parseTileMetricRecordsV3(r io.Reader, tm *TileMetrics) error {
-	lanes := make(map[int]bool)
+	records := make(map[int]map[int]*TileRecord)
 	for {
 		t := rawTileV3{}
 		err := binary.Read(r, binary.LittleEndian, &t.lt2)
@@ -173,26 +243,40 @@ func parseTileMetricRecordsV3(r io.Reader, tm *TileMetrics) error {
 			return err
 		}
 
+		lane := int(t.Lane)
+		tile := int(t.Tile)
+
+		if _, ok := records[lane]; !ok {
+			records[lane] = make(map[int]*TileRecord)
+		}
+		if _, ok := records[lane][tile]; !ok {
+			records[lane][tile] = &TileRecord{
+				LT:             t.lt2.normalize(),
+				PercentAligned: make(map[int]float64),
+			}
+		}
+
 		_ = binary.Read(r, binary.LittleEndian, &t.Code)
 		switch t.Code {
 		case 't':
 			_ = binary.Read(r, binary.LittleEndian, &t.ClusterCount)
 			_ = binary.Read(r, binary.LittleEndian, &t.PfClusterCount)
-			tm.Records = append(tm.Records, TileRecord{
-				LT:             t.lt2.normalize(),
-				ClusterCount:   int(t.ClusterCount),
-				PfClusterCount: int(t.PfClusterCount),
-			})
-			lanes[int(t.Lane)] = true
+			records[lane][tile].ClusterCount = int(t.ClusterCount)
+			records[lane][tile].PfClusterCount = int(t.PfClusterCount)
 		case 'r':
-			// Discard these for now
 			_ = binary.Read(r, binary.LittleEndian, &t.ReadNumber)
 			_ = binary.Read(r, binary.LittleEndian, &t.PercentAligned)
+			records[lane][tile].PercentAligned[int(t.ReadNumber)] = float64(t.PercentAligned)
 		default:
 			return fmt.Errorf("invalid tile code: %d", t.Code)
 		}
 	}
-	tm.LaneCount = len(lanes)
+	tm.LaneCount = len(records)
+	for lane := range records {
+		for _, record := range records[lane] {
+			tm.Records = append(tm.Records, *record)
+		}
+	}
 	return nil
 }
 

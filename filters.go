@@ -69,6 +69,7 @@ func (f RunFilter) UrlParams() string {
 
 // QC filtering.
 type QcFilter struct {
+	RunId      string    `form:"run_id"`
 	RunIdQuery string    `form:"run_id_query"`
 	Platform   string    `form:"platform"`
 	StartDate  time.Time `form:"start_time"`
@@ -87,6 +88,11 @@ func NewQcFilter() QcFilter {
 func (f QcFilter) UrlParams() string {
 	s := "?"
 	sep := ""
+
+	if f.RunId != "" {
+		s = fmt.Sprintf("%s%srun_id=%s", s, sep, f.RunId)
+		sep = "&"
+	}
 
 	if f.RunIdQuery != "" {
 		s = fmt.Sprintf("%s%srun_id_query=%s", s, sep, f.RunIdQuery)
@@ -146,5 +152,13 @@ func (f SampleFilter) UrlParams() string {
 	if f.Analysis != "" {
 		p += fmt.Sprintf("%sanalysis=%s", sep, f.Analysis)
 	}
+	if f.Page != 0 {
+		p = fmt.Sprintf("%s%spage=%d", p, sep, f.Page)
+		sep = "&"
+	}
+	if f.PageSize != 0 {
+		p = fmt.Sprintf("%s%spage_size=%d", p, sep, f.PageSize)
+	}
+
 	return p
 }

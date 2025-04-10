@@ -3,12 +3,13 @@ package charts
 import (
 	"fmt"
 
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/go-echarts/go-echarts/v2/render"
 )
 
-type RunStats[T float64 | int] struct {
+type RunStats[T interop.OptionalFloat | float64 | int] struct {
 	Data  []RunStat[T]
 	Label string
 	Type  string
@@ -17,7 +18,7 @@ type RunStats[T float64 | int] struct {
 // Use a pointer for the value so that missing values
 // are properly represented. Otherwise they would default
 // to zero, and that's not right.
-type RunStat[T float64 | int] struct {
+type RunStat[T interop.OptionalFloat | float64 | int] struct {
 	RunID string
 	Value *T
 }
@@ -50,7 +51,7 @@ func (d ScatterData) Plot() (render.Renderer, error) {
 	return ScatterChart(d), nil
 }
 
-func LineChart[T float64 | int](d RunStats[T]) *charts.Line {
+func LineChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.Line {
 	chart := charts.NewLine()
 	chart.SetGlobalOptions(
 		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
@@ -70,7 +71,7 @@ func LineChart[T float64 | int](d RunStats[T]) *charts.Line {
 	return chart
 }
 
-func BarChart[T float64 | int](d RunStats[T]) *charts.Bar {
+func BarChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.Bar {
 	chart := charts.NewBar()
 	chart.SetGlobalOptions(
 		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
@@ -99,7 +100,7 @@ func ScatterChart(d ScatterData) *charts.Scatter {
 	series := make(map[any][]opts.ScatterData)
 	for _, k := range d.Data {
 		sd := opts.ScatterData{
-			Value:      []interface{}{k.X, k.Y},
+			Value:      []any{k.X, k.Y},
 			Symbol:     "circle",
 			SymbolSize: 5,
 		}

@@ -4,7 +4,7 @@
 {{ $total_pages := .metadata.TotalPages }}
 {{ $start_sample := addInt (multiplyInt (subtractInt .metadata.Page 1) .metadata.PageSize) 1 }}
 
-<section class="mt-4 mb-8">
+<section class="mx-6 mb-4 mb-8">
     <p>Here are QC data from the sequencing for runs that have completed.</p>
 
     <p id="table-counts">
@@ -12,14 +12,14 @@
         Page {{ .metadata.Page }} / {{ .metadata.TotalPages }}
     </p>
 
-    <div id="table-nav">
+    <div class="my-2" id="table-nav">
         <button type="button"
             class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
-            hx-get="/qc?page={{ subtractInt $current_page 1 }}"
-            hx-include="#qc-table-form"
+            hx-get="/qc?page={{ subtractInt $current_page 1 }}&page_size={{ $filter.PageSize }}"
+            hx-include="#qc-table-form,#chart-form"
             hx-select="#qc-table-body"
             hx-target="#qc-table-body"
-            hx-select-oob="#table-counts,#table-nav"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
             hx-swap="outerHTML"
             {{ if eq $current_page 1 }}disabled{{ end }}>
             Previous
@@ -27,11 +27,11 @@
         {{ range N 1 (addInt .metadata.TotalPages 1) }}
         <button type="button"
             class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
-            hx-get="/qc?page={{ . }}"
-            hx-include="#qc-table-form"
+            hx-get="/qc?page={{ . }}&page_size={{ $filter.PageSize }}"
+            hx-include="#qc-table-form,#chart-form"
             hx-select="#qc-table-body"
             hx-target="#qc-table-body"
-            hx-select-oob="#table-counts,#table-nav"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
             hx-swap="outerHTML"
             {{ if eq $current_page .}}disabled{{ end }}>
             {{ . }}
@@ -39,11 +39,11 @@
         {{ end }}
         <button type="button"
             class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
-            hx-get="/qc?page={{ addInt $current_page 1 }}"
-            hx-include="#qc-table-form"
+            hx-get="/qc?page={{ addInt $current_page 1 }}&page_size={{ $filter.PageSize }}"
+            hx-include="#qc-table-form,#chart-form"
             hx-select="#qc-table-body"
             hx-target="#qc-table-body"
-            hx-select-oob="#table-counts,#table-nav"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
             hx-swap="outerHTML"
             {{ if eq $current_page $total_pages }}disabled{{ end }}>
             Next
@@ -64,12 +64,11 @@
                     <th>Sequencing date</th>
                     <th>Platform</th>
                     <th>Flowcell</th>
-                    <th>Yield (Gbp)</th>
-                    <th>%&ge;Q30</th>
-                    <th>% Aligned to PhiX</th>
-                    <th>Error rate</th>
-                    <th>% Occupied</th>
-                    <th>Cycle 1 intensity</th>
+                    <th class="text-right">Yield (Gbp)</th>
+                    <th class="text-right">%&ge;Q30</th>
+                    <th class="text-right">Aligned to PhiX (%)</th>
+                    <th class="text-right">Error rate (%)</th>
+                    <th class="text-right">Occupied (%)</th>
                 </tr>
                 <tr>
                     <th><input class="w-full border border-slate-300" type="text" name="run_id_query" placeholder="Run ID filter" value="{{ $filter.RunIdQuery }}"></input></th>
@@ -83,27 +82,29 @@
                         </select>
                     </th>
                     <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
+                    <th class="text-right"></th>
+                    <th class="text-right"></th>
+                    <th class="text-right"></th>
+                    <th class="text-right"></th>
                 </tr>
             </thead>
 
             <tbody class="border-y border-slate-500" id="qc-table-body">
                 {{ range .qc }}
                 <tr class="hover:bg-accent-100">
-                    <td><a class="text-accent-900" href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
-                    <td>{{ .Run.RunInfo.Date.Local.Format "2006-01-02" }}</td>
-                    <td>{{ .Run.Platform }}</td>
-                    <td>{{ .Run.RunInfo.FlowcellName }}</td>
-                    <td>{{ multiply (toFloat .InteropSummary.RunSummary.Total.Yield) 1e-9 | printf "%.2f" }}</td>
-                    <td>{{ .InteropSummary.RunSummary.Total.PercentQ30 }}</td>
-                    <td>{{ .InteropSummary.RunSummary.Total.PercentAligned | printf "%.2f" }}</td>
-                    <td>{{ .InteropSummary.RunSummary.Total.ErrorRate | printf "%.2f" }}</td>
-                    <td>{{ .InteropSummary.RunSummary.Total.PercentOccupied }}</td>
-                    <td>{{ .InteropSummary.RunSummary.Total.IntensityC1 }}</td>
+                    <td><a class="text-accent-900" href="/runs/{{ .RunId }}">{{ .RunId }}</a></td>
+                    {{ if .Date.IsZero }}
+                    <td colspan="8" class="text-center">Unsupported QC version in the database, update the run</td>
+                    {{ else }}
+                    <td>{{ .Date.Local.Format "2006-01-02" }}</td>
+                    <td>{{ .Platform }}</td>
+                    <td>{{ .Flowcell }}</td>
+                    <td class="text-right">{{ multiply (toFloat .RunSummary.Yield) 1e-9 | printf "%.2f" }}</td>
+                    <td class="text-right">{{ .RunSummary.PercentQ30 | printf "%.2f" }}</td>
+                    <td class="text-right">{{ .RunSummary.PercentAligned | printf "%.2f" }}</td>
+                    <td class="text-right">{{ .RunSummary.ErrorRate | printf "%.2f" }}</td>
+                    <td class="text-right">{{ .RunSummary.PercentOccupied | printf "%.2f" }}</td>
+                    {{ end }}
                 </tr>
                 {{ end }}
             </tbody>
