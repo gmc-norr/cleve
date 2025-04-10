@@ -89,7 +89,7 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		var message *UserMessage
-		if qc.Date.IsZero() {
+		if hasQc && qc.Date.IsZero() {
 			m := NewUserMessage(
 				"The stored QC data for this run is of an unsupported version. Update this run to view it.",
 				"warning",
