@@ -2,6 +2,7 @@
 
 ## [0.4.0](https://github.com/gmc-norr/cleve/compare/v0.3.0...v0.4.0) (2025-04-10)
 
+This version contains quite a lot of things despite the relatively short list of changes. The representation of runs and run QC has changed fundamentally. While the runs are backwards compatible, the run QC is not. Old data will be presented with a message that the QC data needs to be updated. For this there is functionality added to the CLI through `cleve run update`. There are things that are not quite finished, and there are still some things that need some cleaning, and there are separate issues for these things that will be addressed in coming versions.
 
 ### Features
 
