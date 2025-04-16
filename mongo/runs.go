@@ -14,19 +14,15 @@ import (
 )
 
 func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
+	var r cleve.RunResult
 	var pipeline mongo.Pipeline
 
 	pipeline = append(pipeline, bson.D{
-		{
-			Key: "$set", Value: bson.D{
-				{
-					Key: "schema_version",
-					Value: bson.D{
-						{Key: "$ifNull", Value: bson.A{"$schema_version", 1}},
-					},
-				},
-			},
-		},
+		{Key: "$set", Value: bson.D{
+			{Key: "schema_version", Value: bson.D{
+				{Key: "$ifNull", Value: bson.A{"$schema_version", 1}},
+			}},
+		}},
 	})
 
 	pipeline = append(pipeline, bson.D{
@@ -93,15 +89,13 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 
 	// Sort state history chronologically
 	pipeline = append(pipeline, bson.D{
-		{
-			Key: "$set", Value: bson.D{
-				{Key: "state_history", Value: bson.D{
-					{Key: "$sortArray", Value: bson.M{
-						"input": "$state_history", "sortBy": bson.D{{Key: "time", Value: -1}},
-					}},
+		{Key: "$set", Value: bson.D{
+			{Key: "state_history", Value: bson.D{
+				{Key: "$sortArray", Value: bson.M{
+					"input": "$state_history", "sortBy": bson.D{{Key: "time", Value: -1}},
 				}},
-			},
-		},
+			}},
+		}},
 	})
 
 	// Filter on most recent state
@@ -223,92 +217,68 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		})
 	}
 
-	runFacet := mongo.Pipeline{}
+	r.PaginationMetadata = cleve.PaginationMetadata{
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}
+	metaPipeline := append(pipeline, bson.D{
+		{Key: "$count", Value: "total_count"},
+	})
+
+	cursor, err := db.RunCollection().Aggregate(context.TODO(), metaPipeline)
+	if err != nil {
+		return r, err
+	}
+
+	if !cursor.Next(context.TODO()) {
+		// No runs in result
+		r.PaginationMetadata.TotalCount = 0
+	}
+	if err := cursor.Decode(&r.PaginationMetadata); r.TotalCount > 0 && err != nil {
+		return r, err
+	}
+	if r.PageSize > 0 {
+		r.TotalPages = r.TotalCount/r.PageSize + 1
+	} else {
+		r.TotalPages = 1
+	}
 
 	// Skip
 	if filter.Page > 0 {
-		runFacet = append(runFacet, bson.D{
+		pipeline = append(pipeline, bson.D{
 			{Key: "$skip", Value: filter.PageSize * (filter.Page - 1)},
 		})
 	}
 
 	// Limit
 	if filter.PageSize > 0 {
-		runFacet = append(runFacet, bson.D{
+		pipeline = append(pipeline, bson.D{
 			{Key: "$limit", Value: filter.PageSize},
 		})
 	}
 
-	// Facetting
-	pipeline = append(pipeline, bson.D{
-		{Key: "$facet", Value: bson.M{
-			"metadata": bson.A{
-				bson.D{{Key: "$count", Value: "total_count"}},
-			},
-			"runs": runFacet,
-		}},
-	})
-
-	pipeline = append(pipeline, bson.D{
-		{
-			Key: "$project",
-			Value: bson.M{
-				"metadata": bson.M{
-					"$arrayElemAt": bson.A{"$metadata", 0},
-				},
-				"runs": 1,
-			},
-		},
-	})
-
-	pipeline = append(pipeline, bson.D{
-		{
-			Key: "$set",
-			Value: bson.M{
-				"metadata.count": bson.M{
-					"$size": "$runs",
-				},
-				"metadata.page":      filter.Page,
-				"metadata.page_size": filter.PageSize,
-				"metadata.total_pages": bson.M{
-					"$cond": bson.M{
-						"if": bson.M{
-							"$gt": bson.A{
-								filter.PageSize,
-								0,
-							},
-						},
-						"then": bson.M{
-							"$ceil": bson.M{
-								"$divide": bson.A{
-									"$metadata.total_count",
-									filter.PageSize,
-								},
-							},
-						},
-						"else": 1,
-					},
-				},
-			},
-		},
-	})
-
-	cursor, err := db.RunCollection().Aggregate(context.TODO(), pipeline)
+	cursor, err = db.RunCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return cleve.RunResult{}, err
+		return r, err
 	}
 	defer cursor.Close(context.TODO())
 
-	cursor.Next(context.TODO())
-	var r cleve.RunResult
-	err = cursor.Decode(&r)
-	if err != nil {
-		return cleve.RunResult{}, err
+	for cursor.Next(context.TODO()) {
+		var run cleve.Run
+		err = cursor.Decode(&run)
+		if err != nil {
+			return r, err
+		}
+		r.Count++
+		r.Runs = append(r.Runs, &run)
 	}
+
+	fmt.Printf("%+v\n", r.PaginationMetadata)
 	if r.TotalCount == 0 {
 		// No results found. Represent this as a single page
 		// with an empty slice of runs.
 		r.TotalPages = 1
+		r.Runs = make([]*cleve.Run, 0)
 	}
 	if r.Page > r.TotalPages {
 		return r, PageOutOfBoundsError{
