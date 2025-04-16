@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
@@ -111,20 +110,11 @@ func AddRunQcHandler(db RunQCGetterSetter) gin.HandlerFunc {
 			return
 		}
 
-		interopPath := fmt.Sprintf("%s/InterOp", run.Path)
-		if _, err := os.Stat(interopPath); os.IsNotExist(err) {
-			ctx.AbortWithStatusJSON(
-				http.StatusInternalServerError,
-				gin.H{"error": fmt.Sprintf("interop directory not found for run %s: %s", runId, interopPath)},
-			)
-			return
-		}
-
-		qc, err := interop.InteropFromDir(interopPath)
+		qc, err := interop.InteropFromDir(run.Path)
 		if err != nil {
 			ctx.AbortWithStatusJSON(
-				http.StatusConflict,
-				gin.H{"error": fmt.Errorf("failed to read interop data for %s: %w", runId, err)},
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to read interop data for %s: %s", runId, err)},
 			)
 			return
 		}

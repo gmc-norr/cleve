@@ -102,11 +102,11 @@ func InteropFromDir(rundir string) (Interop, error) {
 	// Mandatory files
 	i.runinfoFile, err = alternativeFile(i.dir, "RunInfo.xml")
 	if err != nil {
-		return i, err
+		return i, fmt.Errorf("failed to read RunInfo.xml: %w", err)
 	}
 	i.runparamsFile, err = alternativeFile(i.dir, "RunParameters.xml", "runParameters.xml")
 	if err != nil {
-		return i, err
+		return i, fmt.Errorf("failed to read RunParameters.xml: %w", err)
 	}
 
 	// Optional files
