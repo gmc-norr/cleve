@@ -113,8 +113,8 @@ func AddRunQcHandler(db RunQCGetterSetter) gin.HandlerFunc {
 		qc, err := interop.InteropFromDir(run.Path)
 		if err != nil {
 			ctx.AbortWithStatusJSON(
-				http.StatusConflict,
-				gin.H{"error": fmt.Errorf("failed to read interop data for %s: %w", runId, err)},
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to read interop data for %s: %s", runId, err)},
 			)
 			return
 		}
