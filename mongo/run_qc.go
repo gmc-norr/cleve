@@ -102,137 +102,83 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 		})
 	}
 
-	qcFacet := mongo.Pipeline{}
+	qc.PaginationMetadata = cleve.PaginationMetadata{
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}
+	metaPipeline := append(
+		pipeline,
+		bson.D{{Key: "$count", Value: "total_count"}},
+	)
+	cursor, err := db.RunQCCollection().Aggregate(context.TODO(), metaPipeline)
+	if err != nil {
+		return qc, err
+	}
+	defer cursor.Close(context.TODO())
+
+	if !cursor.Next(context.TODO()) {
+		// No documents
+		qc.PaginationMetadata.TotalCount = 0
+	}
+	if err := cursor.Decode(&qc.PaginationMetadata); qc.PaginationMetadata.TotalCount > 0 && err != nil {
+		return qc, err
+	}
+	if qc.PageSize > 0 {
+		qc.TotalPages = qc.TotalCount/qc.PageSize + 1
+	} else {
+		qc.TotalPages = 1
+	}
 
 	// Sort by date, descending
-	qcFacet = append(qcFacet, bson.D{
+	pipeline = append(pipeline, bson.D{
 		{Key: "$sort", Value: bson.D{
 			{Key: "date", Value: -1},
 			{Key: "run_id", Value: -1},
 		}},
 	})
 
-	// Skip
+	// Pagination
 	if filter.Page > 0 && filter.PageSize > 0 {
-		qcFacet = append(qcFacet, bson.D{
-			{Key: "$skip", Value: filter.PageSize * (filter.Page - 1)},
-		})
+		pipeline = append(
+			pipeline,
+			bson.D{{Key: "$skip", Value: (filter.Page - 1) * filter.PageSize}},
+		)
 	}
 
-	// Limit
 	if filter.PageSize > 0 {
-		qcFacet = append(qcFacet, bson.D{
-			{Key: "$limit", Value: filter.PageSize},
-		})
+		pipeline = append(
+			pipeline,
+			bson.D{{Key: "$limit", Value: filter.PageSize}},
+		)
 	}
 
-	// Facet to get both metadata and qc
-	pipeline = append(pipeline, bson.D{
-		{Key: "$facet", Value: bson.M{
-			"metadata": bson.A{
-				bson.D{{Key: "$count", Value: "total_count"}},
-			},
-			"interop": qcFacet,
-		}},
-	})
-
-	pipeline = append(pipeline, bson.D{
-		{
-			Key: "$project",
-			Value: bson.M{
-				"metadata": bson.M{
-					"$arrayElemAt": bson.A{"$metadata", 0},
-				},
-				"interop": 1,
-			},
-		},
-	})
-
-	pipeline = append(pipeline, bson.D{
-		{
-			Key: "$set",
-			Value: bson.M{
-				"metadata.count": bson.M{
-					"$size": "$interop",
-				},
-				"metadata.page":      filter.Page,
-				"metadata.page_size": filter.PageSize,
-				"metadata.total_pages": bson.M{
-					"$cond": bson.M{
-						"if": bson.M{
-							"$gt": bson.A{
-								filter.PageSize,
-								0,
-							},
-						},
-						"then": bson.M{
-							"$ceil": bson.M{
-								"$divide": bson.A{
-									"$metadata.total_count",
-									filter.PageSize,
-								},
-							},
-						},
-						"else": 1,
-					},
-				},
-			},
-		},
-	})
-
-	cursor, err := db.RunQCCollection().Aggregate(context.TODO(), pipeline)
+	cursor, err = db.RunQCCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return qc, err
 	}
 	defer cursor.Close(context.TODO())
 
-	cursor.Next(context.TODO())
-
-	var raw bson.Raw
-	if err := cursor.Decode(&raw); err != nil {
-		return qc, err
-	}
-
-	var pagination struct {
-		cleve.PaginationMetadata `bson:"metadata"`
-	}
-	if err := bson.Unmarshal(raw, &pagination); err != nil {
-		return qc, err
-	}
-	qc.PaginationMetadata = pagination.PaginationMetadata
-
-	rawQc := raw.Lookup("interop")
-	if rawQc.Type != bson.TypeArray {
-		return qc, fmt.Errorf("expected interop to be an array")
-	}
-
-	rawQcArray := rawQc.Array()
-	rawQcElems, _ := rawQcArray.Elements()
-	qc.InteropSummary = make([]interop.InteropSummary, qc.Count)
-
-	for i, elem := range rawQcElems {
-		var schemaVersion struct {
-			Version int `bson:"schema_version"`
+	for cursor.Next(context.TODO()) {
+		var auxQc struct {
+			Version int                    `bson:"schema_version"`
+			Qc      interop.InteropSummary `bson:",inline"`
 		}
 
-		if err := bson.Unmarshal(elem.Value().Document(), &schemaVersion); err != nil {
+		if err := cursor.Decode(&auxQc); err != nil {
 			return qc, err
 		}
 
-		var interop interop.InteropSummary
-		if err := bson.Unmarshal(elem.Value().Document(), &interop); err != nil {
-			return qc, err
+		if auxQc.Version < 2 {
+			auxQc.Qc.Date = time.Time{}
 		}
 
-		if schemaVersion.Version < 2 {
-			interop.Date = time.Time{}
-		}
-
-		qc.InteropSummary[i] = interop
+		qc.PaginationMetadata.Count++
+		qc.InteropSummary = append(qc.InteropSummary, auxQc.Qc)
 	}
 
 	if qc.TotalCount == 0 {
 		qc.TotalPages = 1
+		qc.InteropSummary = make([]interop.InteropSummary, 0)
 	}
 	if qc.Page > qc.TotalPages {
 		return qc, PageOutOfBoundsError{
