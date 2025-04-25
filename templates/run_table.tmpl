@@ -75,6 +75,9 @@
             </thead>
 
             <tbody class="border-y border-slate-500" id="runtable-body">
+                {{ if not .runs.Runs }}
+                <tr><td colspan="7" class="text-center">No results to show</td></tr>
+                {{ end }}
                 {{ range .runs.Runs }}
                 <tr class="hover:bg-accent-100">
                     <td><a class="text-accent-900" href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
