@@ -101,7 +101,6 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 		if err != nil {
 			qc.Page = 1
 			qc.TotalPages = 1
-			fmt.Printf("%+v\n", qc.PaginationMetadata)
 			return qc, fmt.Errorf("error getting platform: %w", err)
 		}
 		platformNames := append(platform.Aliases, platform.Name)
