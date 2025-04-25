@@ -2,13 +2,12 @@
 {{ $filter := .filter }}
 {{ $current_page := .metadata.Page }}
 {{ $total_pages := .metadata.TotalPages }}
-{{ $start_sample := addInt (multiplyInt (subtractInt .metadata.Page 1) .metadata.PageSize) 1 }}
 
 <section class="mx-6 mb-4 mb-8">
     <p>Here are QC data from the sequencing for runs that have completed.</p>
 
     <p id="table-counts">
-        Showing runs {{ $start_sample }} &ndash; {{ subtractInt (addInt $start_sample .metadata.Count) 1 }} of {{ .metadata.TotalCount }} runs
+        Showing {{ .metadata.Count}} of {{ .metadata.TotalCount }} runs
         Page {{ .metadata.Page }} / {{ .metadata.TotalPages }}
     </p>
 
