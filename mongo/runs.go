@@ -14,8 +14,15 @@ import (
 )
 
 func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
-	var r cleve.RunResult
-	var pipeline mongo.Pipeline
+	var (
+		r        cleve.RunResult
+		pipeline mongo.Pipeline
+	)
+
+	r.PaginationMetadata = cleve.PaginationMetadata{
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}
 
 	pipeline = append(pipeline, bson.D{
 		{Key: "$set", Value: bson.D{
@@ -77,7 +84,9 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 	if filter.Platform != "" {
 		platform, err := db.Platform(filter.Platform)
 		if err != nil {
-			return cleve.RunResult{}, err
+			r.Page = 1
+			r.TotalPages = 1
+			return r, fmt.Errorf("%w: %w", err, ErrNoDocuments)
 		}
 		platformNames := append(platform.Aliases, platform.Name)
 		pipeline = append(pipeline, bson.D{
@@ -217,10 +226,6 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		})
 	}
 
-	r.PaginationMetadata = cleve.PaginationMetadata{
-		Page:     filter.Page,
-		PageSize: filter.PageSize,
-	}
 	metaPipeline := append(pipeline, bson.D{
 		{Key: "$count", Value: "total_count"},
 	})

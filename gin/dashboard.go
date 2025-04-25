@@ -24,7 +24,7 @@ func NewUserMessage(text, class string) UserMessage {
 
 func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
 	runs, err := db.Runs(filter)
-	if err != nil {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return gin.H{"error": err.Error()}, err
 	}
 
@@ -126,7 +126,7 @@ func DashboardRunTable(db *mongo.DB) gin.HandlerFunc {
 			c.HTML(http.StatusNotFound, "error404", dashboardData)
 			return
 		}
-		if err != nil {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			c.HTML(http.StatusInternalServerError, "error500", dashboardData)
 			return
 		}
