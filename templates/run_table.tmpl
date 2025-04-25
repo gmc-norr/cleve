@@ -55,19 +55,27 @@
                     <th><input class="w-full border border-slate-300" type="search" name="run_id_query" placeholder="Filter by run ID" value="{{ .run_filter.RunIdQuery }}" /></th>
                     <th>
                         <select name="platform">
-                            <option value="" {{ if eq $run_filter.Platform "" }}selected{{ end }}>All</option>
+                            {{ $knownPlatform := false }}
+                            <option value="" {{ if eq $run_filter.Platform "" }}selected{{ $knownPlatform = true }}{{ end }}>All</option>
                             {{ range .platforms }}
-                            <option value="{{ . }}" {{ if eq $run_filter.Platform . }}selected{{ end }}>{{ . }}</option>
+                            <option value="{{ . }}" {{ if eq $run_filter.Platform . }}selected{{ $knownPlatform = true }}{{ end }}>{{ . }}</option>
+                            {{ end }}
+                            {{ if not $knownPlatform }}
+                            <option value="{{ $run_filter.Platform }}" selected>{{ $run_filter.Platform }}</option>
                             {{ end }}
                         </select>
                     <th/>
                     <th/>
                     <th>
                         <select name="state">
-                            <option value="" {{ if eq $run_filter.State "" }}selected{{ end }}>All</option>
-                            <option value="ready" {{ if eq $run_filter.State "ready" }}selected{{ end }}>Ready</option>
-                            <option value="pending" {{ if eq $run_filter.State "pending" }}selected{{ end }}>Pending</option>
-                            <option value="error" {{ if eq $run_filter.State "error" }}selected{{ end }}>Error</option>
+                            {{ $knownState := false }}
+                            <option value="" {{ if eq $run_filter.State "" }}selected{{ $knownState = true }}{{ end }}>All</option>
+                            <option value="ready" {{ if eq $run_filter.State "ready" }}selected{{ $knownState = true }}{{ end }}>Ready</option>
+                            <option value="pending" {{ if eq $run_filter.State "pending" }}selected{{ $knownState = true }}{{ end }}>Pending</option>
+                            <option value="error" {{ if eq $run_filter.State "error" }}selected{{ $knownState = true }}{{ end }}>Error</option>
+                            {{ if not $knownState }}
+                            <option value="{{ $run_filter.State }}" selected>{{ $run_filter.State }}</option>
+                            {{ end }}
                         </select>
                     </th>
                     </th>
