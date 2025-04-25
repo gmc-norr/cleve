@@ -19,6 +19,7 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		pipeline mongo.Pipeline
 	)
 
+	r.Runs = make([]*cleve.Run, 0)
 	r.PaginationMetadata = cleve.PaginationMetadata{
 		Page:     filter.Page,
 		PageSize: filter.PageSize,
