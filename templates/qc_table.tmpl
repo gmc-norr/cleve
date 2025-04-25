@@ -89,6 +89,9 @@
             </thead>
 
             <tbody class="border-y border-slate-500" id="qc-table-body">
+                {{ if not .qc }}
+                <tr><td colspan="10" class="text-center">No results to show</td></tr>
+                {{ end }}
                 {{ range .qc }}
                 <tr class="hover:bg-accent-100">
                     <td><a class="text-accent-900" href="/runs/{{ .RunId }}">{{ .RunId }}</a></td>
