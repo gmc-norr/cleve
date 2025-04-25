@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,10 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		qc, err := db.RunQCs(filter)
+		if errors.Is(err, mongo.ErrNoDocuments) || qc.Count == 0 {
+			c.String(http.StatusOK, "No data to plot")
+			return
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

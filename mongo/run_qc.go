@@ -48,8 +48,15 @@ func (db DB) UpdateRunQC(qc interop.InteropSummary) error {
 }
 
 func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
-	var pipeline mongo.Pipeline
-	var qc cleve.QcResult
+	var (
+		pipeline mongo.Pipeline
+		qc       cleve.QcResult
+	)
+
+	qc.PaginationMetadata = cleve.PaginationMetadata{
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}
 
 	pipeline = append(pipeline, bson.D{
 		{
@@ -92,7 +99,9 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	if filter.Platform != "" {
 		platform, err := db.Platform(filter.Platform)
 		if err != nil {
-			return qc, err
+			qc.Page = 1
+			qc.TotalPages = 1
+			return qc, fmt.Errorf("error getting platform: %w", err)
 		}
 		platformNames := append(platform.Aliases, platform.Name)
 		pipeline = append(pipeline, bson.D{
@@ -102,10 +111,6 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 		})
 	}
 
-	qc.PaginationMetadata = cleve.PaginationMetadata{
-		Page:     filter.Page,
-		PageSize: filter.PageSize,
-	}
 	metaPipeline := append(
 		pipeline,
 		bson.D{{Key: "$count", Value: "total_count"}},

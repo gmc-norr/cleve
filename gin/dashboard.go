@@ -2,6 +2,7 @@ package gin
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,7 @@ func NewUserMessage(text, class string) UserMessage {
 
 func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
 	runs, err := db.Runs(filter)
-	if err != nil {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return gin.H{"error": err.Error()}, err
 	}
 
@@ -67,8 +68,8 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 		runId := c.Param("runId")
 		run, err := db.Run(runId, false)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				c.HTML(http.StatusNotFound, "error404", gin.H{"error": "run not found"})
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.HTML(http.StatusNotFound, "error404", gin.H{"error": fmt.Sprintf("run with id %q not found", runId)})
 				c.Abort()
 				return
 			}
@@ -125,7 +126,7 @@ func DashboardRunTable(db *mongo.DB) gin.HandlerFunc {
 			c.HTML(http.StatusNotFound, "error404", dashboardData)
 			return
 		}
-		if err != nil {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			c.HTML(http.StatusInternalServerError, "error500", dashboardData)
 			return
 		}
@@ -150,7 +151,7 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError.Error()})
 			return
 		}
-		if err != nil {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

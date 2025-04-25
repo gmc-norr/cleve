@@ -14,8 +14,16 @@ import (
 )
 
 func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
-	var r cleve.RunResult
-	var pipeline mongo.Pipeline
+	var (
+		r        cleve.RunResult
+		pipeline mongo.Pipeline
+	)
+
+	r.Runs = make([]*cleve.Run, 0)
+	r.PaginationMetadata = cleve.PaginationMetadata{
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}
 
 	pipeline = append(pipeline, bson.D{
 		{Key: "$set", Value: bson.D{
@@ -77,7 +85,9 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 	if filter.Platform != "" {
 		platform, err := db.Platform(filter.Platform)
 		if err != nil {
-			return cleve.RunResult{}, err
+			r.Page = 1
+			r.TotalPages = 1
+			return r, fmt.Errorf("%w: %w", err, ErrNoDocuments)
 		}
 		platformNames := append(platform.Aliases, platform.Name)
 		pipeline = append(pipeline, bson.D{
@@ -217,10 +227,6 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		})
 	}
 
-	r.PaginationMetadata = cleve.PaginationMetadata{
-		Page:     filter.Page,
-		PageSize: filter.PageSize,
-	}
 	metaPipeline := append(pipeline, bson.D{
 		{Key: "$count", Value: "total_count"},
 	})
@@ -273,7 +279,6 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		r.Runs = append(r.Runs, &run)
 	}
 
-	fmt.Printf("%+v\n", r.PaginationMetadata)
 	if r.TotalCount == 0 {
 		// No results found. Represent this as a single page
 		// with an empty slice of runs.
@@ -301,7 +306,7 @@ func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
 	}
 
 	if runs.Count == 0 {
-		return nil, fmt.Errorf("run not found")
+		return nil, mongo.ErrNoDocuments
 	}
 	if runs.Count > 1 {
 		// We don't expect more than one matching run when filtering on run ID.

@@ -2,13 +2,12 @@
 {{ $filter := .filter }}
 {{ $current_page := .metadata.Page }}
 {{ $total_pages := .metadata.TotalPages }}
-{{ $start_sample := addInt (multiplyInt (subtractInt .metadata.Page 1) .metadata.PageSize) 1 }}
 
 <section class="mx-6 mb-4 mb-8">
     <p>Here are QC data from the sequencing for runs that have completed.</p>
 
     <p id="table-counts">
-        Showing runs {{ $start_sample }} &ndash; {{ subtractInt (addInt $start_sample .metadata.Count) 1 }} of {{ .metadata.TotalCount }} runs
+        Showing {{ .metadata.Count}} of {{ .metadata.TotalCount }} runs
         Page {{ .metadata.Page }} / {{ .metadata.TotalPages }}
     </p>
 
@@ -52,7 +51,7 @@
 
     <form id="qc-table-form"
         hx-get="/qc"
-        hx-trigger="keyup delay:300ms from:input[name=run_id_query], change from:select[name=platform]"
+        hx-trigger="search, keyup changed delay:300ms from:input[name=run_id_query], change from:select[name=platform]"
         hx-select="#qc-table-body"
         hx-target="#qc-table-body"
         hx-select-oob="#table-counts,#table-nav"
@@ -71,13 +70,17 @@
                     <th class="text-right">Occupied (%)</th>
                 </tr>
                 <tr>
-                    <th><input class="w-full border border-slate-300" type="text" name="run_id_query" placeholder="Run ID filter" value="{{ $filter.RunIdQuery }}"></input></th>
+                    <th><input class="w-full border border-slate-300" type="search" name="run_id_query" placeholder="Run ID filter" value="{{ $filter.RunIdQuery }}"></input></th>
                     <th></th>
                     <th>
                         <select name="platform">
-                            <option value=""{{ if eq $filter.Platform "" }} selected{{ end }}>All</option>
+                            {{ $knownPlatform := false }}
+                            <option value=""{{ if eq $filter.Platform "" }} selected{{ $knownPlatform = true }}{{ end }}>All</option>
                             {{ range .platforms }}
-                            <option value="{{ . }}"{{ if eq $filter.Platform . }} selected{{ end }}>{{ . }}</option>
+                            <option value="{{ . }}"{{ if eq $filter.Platform . }} selected{{ $knownPlatform = true }}{{ end }}>{{ . }}</option>
+                            {{ end }}
+                            {{ if not $knownPlatform }}
+                            <option value="{{ $filter.Platform }}" selected>{{ $filter.Platform }}</option>
                             {{ end }}
                         </select>
                     </th>
@@ -90,6 +93,9 @@
             </thead>
 
             <tbody class="border-y border-slate-500" id="qc-table-body">
+                {{ if not .qc }}
+                <tr><td colspan="10" class="text-center">No results to show</td></tr>
+                {{ end }}
                 {{ range .qc }}
                 <tr class="hover:bg-accent-100">
                     <td><a class="text-accent-900" href="/runs/{{ .RunId }}">{{ .RunId }}</a></td>
