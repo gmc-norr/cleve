@@ -65,6 +65,10 @@ func AllRunQcHandler(db RunQCGetter) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": oobError.Error()})
 			return
 		}
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
