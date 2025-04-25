@@ -58,7 +58,6 @@ func AllRunQcHandler(db RunQCGetter) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		filter.Platform = ctx.Param("platformName")
 
 		qc, err := db.RunQCs(filter)
 		var oobError mongo.PageOutOfBoundsError

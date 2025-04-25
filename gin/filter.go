@@ -26,5 +26,8 @@ func getQcFilter(c *gin.Context) (cleve.QcFilter, error) {
 	if err := c.BindQuery(&filter); err != nil {
 		return filter, err
 	}
+	if p, ok := c.Params.Get("platformName"); ok {
+		filter.Platform = p
+	}
 	return filter, filter.Validate()
 }
