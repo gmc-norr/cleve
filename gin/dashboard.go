@@ -2,6 +2,7 @@ package gin
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -67,8 +68,8 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 		runId := c.Param("runId")
 		run, err := db.Run(runId, false)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				c.HTML(http.StatusNotFound, "error404", gin.H{"error": "run not found"})
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.HTML(http.StatusNotFound, "error404", gin.H{"error": fmt.Sprintf("run with id %q not found", runId)})
 				c.Abort()
 				return
 			}

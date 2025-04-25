@@ -1,12 +1,14 @@
 {{ define "error404" }}
 {{ template "header" }}
-<h1 class="text-4xl mb-4">404 Page not found</h1>
-<p class="error my-4">
-    {{ if .error }}
-    Error: {{ .error }}
-    {{ else }}
-    The requested document could not be found.
-    {{ end }}
-</p>
+<section class="mx-6">
+    <h1 class="text-4xl mb-4">404 Page not found</h1>
+    <p class="error my-4">
+        {{ if .error }}
+        Error: {{ .error }}
+        {{ else }}
+        The requested document could not be found.
+        {{ end }}
+    </p>
+</section>
 {{ template "footer" }}
 {{ end }}

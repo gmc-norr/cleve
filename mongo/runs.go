@@ -273,7 +273,6 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		r.Runs = append(r.Runs, &run)
 	}
 
-	fmt.Printf("%+v\n", r.PaginationMetadata)
 	if r.TotalCount == 0 {
 		// No results found. Represent this as a single page
 		// with an empty slice of runs.
@@ -301,7 +300,7 @@ func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
 	}
 
 	if runs.Count == 0 {
-		return nil, fmt.Errorf("run not found")
+		return nil, mongo.ErrNoDocuments
 	}
 	if runs.Count > 1 {
 		// We don't expect more than one matching run when filtering on run ID.
