@@ -151,7 +151,7 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError.Error()})
 			return
 		}
-		if err != nil {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
