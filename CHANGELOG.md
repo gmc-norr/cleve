@@ -2,6 +2,9 @@
 
 ## [0.4.2](https://github.com/gmc-norr/cleve/compare/v0.4.1...v0.4.2) (2025-04-28)
 
+This release addresses an issue with the document size in the database queries exceeding the maximum size. Queries have been modified to allow for requests of a large number of runs and associated QC data. Some issues with the response for some API endpoints have also been addressed by returning more appropriate HTTP status codes along with better messages.
+
+Another thing that was done that will improve reliability is to host all external JavaScript locally instead of relying on CDNs.
 
 ### Bug Fixes
 
