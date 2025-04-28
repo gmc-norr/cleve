@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.2](https://github.com/gmc-norr/cleve/compare/v0.4.1...v0.4.2) (2025-04-28)
+
+
+### Bug Fixes
+
+* better status codes for various server side errors ([#84](https://github.com/gmc-norr/cleve/issues/84)) ([ef3d963](https://github.com/gmc-norr/cleve/commit/ef3d963e11b0f427bc50842f8128f2bf68974314))
+* mongo document size issue with large page sizes ([#80](https://github.com/gmc-norr/cleve/issues/80)) ([508310b](https://github.com/gmc-norr/cleve/commit/508310b8faa4093d853564b32279274666643a86))
+
 ## [0.4.1](https://github.com/gmc-norr/cleve/compare/v0.4.0...v0.4.1) (2025-04-16)
 
 
