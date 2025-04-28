@@ -1,45 +1,18 @@
 {{ define "run_table" }}
-{{ $run_filter := .run_filter }}
-{{ $current_page := .runs.PaginationMetadata.Page }}
-{{ $total_pages := .runs.PaginationMetadata.TotalPages }}
-<p class="mx-6" id="table-counts">
-    Showing {{ .runs.PaginationMetadata.Count}} of {{ .runs.PaginationMetadata.TotalCount }} runs
-    Page {{ .runs.PaginationMetadata.Page }} / {{ .runs.PaginationMetadata.TotalPages }}
-</p>
+{{ $filter := .filter }}
 
-<div class="mx-6 my-2" id="table-nav">
-    <button type="button" class="table-nav-item disabled:bg-gray-400 bg-accent-900 text-white py-1 px-2"
-        hx-get="/runtable?page={{ subtractInt $current_page 1 }}&page_size={{ $run_filter.PageSize }}"
-        hx-include="form"
-        hx-select="#runtable-body"
-        hx-target="#runtable-body"
-        hx-select-oob="#table-counts,#table-nav"
-        hx-swap="outerHTML"
-        {{ if eq $current_page 1 }}disabled{{ end }}>Previous</button>
+<section class="mx-6 mb-6 overflow-x-auto">
 
-    {{ range N 1 (addInt .runs.PaginationMetadata.TotalPages 1) }}
-    <button type="button" class="table-nav-item w-10 disabled:bg-gray-400 bg-accent-900 text-white p-1"
-        hx-get="/runtable?page={{ . }}&page_size={{ $run_filter.PageSize }}"
-        hx-include="form"
-        hx-select="#runtable-body"
-        hx-target="#runtable-body"
-        hx-select-oob="#table-counts,#table-nav"
-        hx-swap="outerHTML"
-        {{ if eq $current_page . }}disabled{{ end }}>{{ . }}</button>
-    {{ end }}
+    {{ template "pagination" . }}
 
-    <button type="button" class="table-nav-item disabled:bg-gray-400 bg-accent-900 text-white py-1 px-2"
-        hx-get="/runtable?page={{ addInt $current_page 1 }}&page_size={{ $run_filter.PageSize }}"
-        hx-include="form"
-        hx-select="#runtable-body"
-        hx-target="#runtable-body"
-        hx-select-oob="#table-counts,#table-nav"
-        hx-swap="outerHTML"
-        {{ if eq $current_page $total_pages }}disabled{{ end }}>Next</button>
-</div>
-
-<div class="mx-6 mb-6 overflow-x-auto">
-    <form hx-get="/runtable" hx-target="#runtable-body" hx-select="#runtable-body" hx-swap="outerHTML" hx-trigger="search, keyup changed delay:300ms from:input[name=run_id_query], change from:select[name=platform], change from:select[name=state]" hx-select-oob="#table-counts,#table-nav">
+    <form
+        id="table-form"
+        hx-get="/runtable"
+        hx-select="table > tbody > tr"
+        hx-target="table > tbody"
+        hx-swap="innerHTML"
+        hx-trigger="search, keyup changed delay:300ms from:input[name=run_id_query], change from:select[name=platform], change from:select[name=state]"
+        hx-select-oob="#table-counts,#table-nav">
         <table class="w-full">
             <thead class="text-left">
                 <tr class="border-b border-slate-500">
@@ -52,16 +25,16 @@
                     <th>Path</th>
                 </tr>
                 <tr>
-                    <th><input class="w-full border border-slate-300" type="search" name="run_id_query" placeholder="Filter by run ID" value="{{ .run_filter.RunIdQuery }}" /></th>
+                    <th><input class="w-full border border-slate-300" type="search" name="run_id_query" placeholder="Filter by run ID" value="{{ .filter.RunIdQuery }}" /></th>
                     <th>
                         <select name="platform">
                             {{ $knownPlatform := false }}
-                            <option value="" {{ if eq $run_filter.Platform "" }}selected{{ $knownPlatform = true }}{{ end }}>All</option>
+                            <option value="" {{ if eq $filter.Platform "" }}selected{{ $knownPlatform = true }}{{ end }}>All</option>
                             {{ range .platforms }}
-                            <option value="{{ . }}" {{ if eq $run_filter.Platform . }}selected{{ $knownPlatform = true }}{{ end }}>{{ . }}</option>
+                            <option value="{{ . }}" {{ if eq $filter.Platform . }}selected{{ $knownPlatform = true }}{{ end }}>{{ . }}</option>
                             {{ end }}
                             {{ if not $knownPlatform }}
-                            <option value="{{ $run_filter.Platform }}" selected>{{ $run_filter.Platform }}</option>
+                            <option value="{{ $filter.Platform }}" selected>{{ $filter.Platform }}</option>
                             {{ end }}
                         </select>
                     <th/>
@@ -69,12 +42,12 @@
                     <th>
                         <select name="state">
                             {{ $knownState := false }}
-                            <option value="" {{ if eq $run_filter.State "" }}selected{{ $knownState = true }}{{ end }}>All</option>
-                            <option value="ready" {{ if eq $run_filter.State "ready" }}selected{{ $knownState = true }}{{ end }}>Ready</option>
-                            <option value="pending" {{ if eq $run_filter.State "pending" }}selected{{ $knownState = true }}{{ end }}>Pending</option>
-                            <option value="error" {{ if eq $run_filter.State "error" }}selected{{ $knownState = true }}{{ end }}>Error</option>
+                            <option value="" {{ if eq $filter.State "" }}selected{{ $knownState = true }}{{ end }}>All</option>
+                            <option value="ready" {{ if eq $filter.State "ready" }}selected{{ $knownState = true }}{{ end }}>Ready</option>
+                            <option value="pending" {{ if eq $filter.State "pending" }}selected{{ $knownState = true }}{{ end }}>Pending</option>
+                            <option value="error" {{ if eq $filter.State "error" }}selected{{ $knownState = true }}{{ end }}>Error</option>
                             {{ if not $knownState }}
-                            <option value="{{ $run_filter.State }}" selected>{{ $run_filter.State }}</option>
+                            <option value="{{ $filter.State }}" selected>{{ $filter.State }}</option>
                             {{ end }}
                         </select>
                     </th>
@@ -83,10 +56,10 @@
             </thead>
 
             <tbody class="border-y border-slate-500" id="runtable-body">
-                {{ if not .runs.Runs }}
+                {{ if not .runs }}
                 <tr><td colspan="7" class="text-center">No results to show</td></tr>
                 {{ end }}
-                {{ range .runs.Runs }}
+                {{ range .runs }}
                 <tr class="hover:bg-accent-100">
                     <td><a class="text-accent-900" href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
                     <td>{{ .Platform }}</td>

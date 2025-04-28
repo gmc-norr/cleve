@@ -34,7 +34,7 @@ func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
 	}
 	platformNames := platforms.Names()
 
-	return gin.H{"runs": runs, "platforms": platformNames, "run_filter": filter}, nil
+	return gin.H{"runs": runs.Runs, "metadata": runs.PaginationMetadata, "platforms": platformNames, "filter": filter}, nil
 }
 
 func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
@@ -46,15 +46,15 @@ func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		dashboardData, err := getDashboardData(db, filter)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err})
+			return
+		}
 		dashboardData["version"] = cleve.GetVersion()
 
 		var oobError mongo.PageOutOfBoundsError
 		if errors.As(err, &oobError) {
 			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError})
-			return
-		}
-		if err != nil {
-			c.HTML(http.StatusInternalServerError, "error500", dashboardData)
 			return
 		}
 
