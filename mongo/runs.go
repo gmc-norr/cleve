@@ -244,7 +244,10 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		return r, err
 	}
 	if r.PageSize > 0 {
-		r.TotalPages = r.TotalCount/r.PageSize + 1
+		r.TotalPages = r.TotalCount / r.PageSize
+		if r.TotalCount%r.PageSize > 0 {
+			r.TotalPages += 1
+		}
 	} else {
 		r.TotalPages = 1
 	}

@@ -129,7 +129,10 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 		return qc, err
 	}
 	if qc.PageSize > 0 {
-		qc.TotalPages = qc.TotalCount/qc.PageSize + 1
+		qc.TotalPages = qc.TotalCount / qc.PageSize
+		if qc.TotalCount%qc.PageSize > 0 {
+			qc.TotalPages += 1
+		}
 	} else {
 		qc.TotalPages = 1
 	}
