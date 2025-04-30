@@ -19,7 +19,22 @@
             {{ if eq $metadata.Page 1 }}disabled{{ end }}>
             Previous
         </button>
-        {{ range N 1 (addInt $metadata.TotalPages 1) }}
+        {{ if gt $metadata.Page 3 }}
+        <button type="button"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
+            hx-get="?page=1&page_size={{ $filter.PageSize }}"
+            hx-include="#table-form,#chart-form"
+            hx-select="table > tbody"
+            hx-target="table > tbody"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
+            hx-swap="outerHTML">
+            1
+        </button>
+        {{ if gt $metadata.Page 4 }}
+        <span>&hellip;</span>
+        {{ end }}
+        {{ end }}
+        {{ range N (maxInt 1 (subtractInt $metadata.Page 2)) (addInt (minInt ($metadata.TotalPages) (addInt $metadata.Page 2)) 1) }}
         <button type="button"
             class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
             hx-get="?page={{ . }}&page_size={{ $filter.PageSize }}"
@@ -30,6 +45,21 @@
             hx-swap="outerHTML"
             {{ if eq $metadata.Page .}}disabled{{ end }}>
             {{ . }}
+        </button>
+        {{ end }}
+        {{ if lt $metadata.Page (subtractInt $metadata.TotalPages 2) }}
+        {{ if lt $metadata.Page (subtractInt $metadata.TotalPages 3) }}
+        <span>&hellip;</span>
+        {{ end }}
+        <button type="button"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
+            hx-get="?page={{ $metadata.TotalPages }}&page_size={{ $filter.PageSize }}"
+            hx-include="#table-form,#chart-form"
+            hx-select="table > tbody"
+            hx-target="table > tbody"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
+            hx-swap="outerHTML">
+            {{ $metadata.TotalPages }}
         </button>
         {{ end }}
         <button type="button"

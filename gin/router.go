@@ -77,6 +77,14 @@ func subtractInt(x, y int) int {
 	return x - y
 }
 
+func maxInt(x, y int) int {
+	return max(x, y)
+}
+
+func minInt(x, y int) int {
+	return min(x, y)
+}
+
 func multiply(x, y float64) float64 {
 	return x * y
 }
@@ -139,6 +147,8 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 		"addInt":      addInt,
 		"subtract":    subtract,
 		"subtractInt": subtractInt,
+		"maxInt":      maxInt,
+		"minInt":      minInt,
 		"multiply":    multiply,
 		"multiplyInt": multiplyInt,
 		"title":       title,
