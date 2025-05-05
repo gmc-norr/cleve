@@ -80,7 +80,7 @@ type QcFilter struct {
 func NewQcFilter() QcFilter {
 	return QcFilter{
 		PaginationFilter: PaginationFilter{
-			PageSize: 5,
+			PageSize: 10,
 		},
 	}
 }
