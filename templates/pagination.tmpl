@@ -7,7 +7,7 @@
         Page {{ .metadata.Page }} / {{ .metadata.TotalPages }}
     </p>
 
-    <div class="my-2" id="table-nav">
+    <nav class="my-2 max-w-lg" id="table-nav">
         <button type="button"
             class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
             hx-get="?page={{ subtractInt $metadata.Page 1 }}&page_size={{ $filter.PageSize }}"
@@ -21,7 +21,7 @@
         </button>
         {{ if gt $metadata.Page 3 }}
         <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2 min-w-fit text-center"
             hx-get="?page=1&page_size={{ $filter.PageSize }}"
             hx-include="#table-form,#chart-form"
             hx-select="table > tbody"
@@ -30,13 +30,15 @@
             hx-swap="outerHTML">
             1
         </button>
-        {{ if gt $metadata.Page 4 }}
-        <span>&hellip;</span>
-        {{ end }}
+            {{ if gt $metadata.Page 4 }}
+            <div class="inline-block text-black py-1 px-2 text-center">
+                <span>&hellip;</span>
+            </div>
+            {{ end }}
         {{ end }}
         {{ range N (maxInt 1 (subtractInt $metadata.Page 2)) (addInt (minInt ($metadata.TotalPages) (addInt $metadata.Page 2)) 1) }}
         <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2 min-w-fit text-center"
             hx-get="?page={{ . }}&page_size={{ $filter.PageSize }}"
             hx-include="#table-form,#chart-form"
             hx-select="table > tbody"
@@ -48,11 +50,13 @@
         </button>
         {{ end }}
         {{ if lt $metadata.Page (subtractInt $metadata.TotalPages 2) }}
-        {{ if lt $metadata.Page (subtractInt $metadata.TotalPages 3) }}
-        <span>&hellip;</span>
-        {{ end }}
+            {{ if lt $metadata.Page (subtractInt $metadata.TotalPages 3) }}
+            <div class="inline-block text-black py-1 px-2 text-center">
+                <span>&hellip;</span>
+            </div>
+            {{ end }}
         <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2 min-w-fit text-center"
             hx-get="?page={{ $metadata.TotalPages }}&page_size={{ $filter.PageSize }}"
             hx-include="#table-form,#chart-form"
             hx-select="table > tbody"
@@ -63,7 +67,7 @@
         </button>
         {{ end }}
         <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2 text-center"
             hx-get="?page={{ addInt $metadata.Page 1 }}&page_size={{ $filter.PageSize }}"
             hx-include="#table-form,#chart-form"
             hx-select="table > tbody"
@@ -73,5 +77,5 @@
             {{ if eq $metadata.Page $metadata.TotalPages }}disabled{{ end }}>
             Next
         </button>
-    </div>
+    </nav>
 {{ end }}
