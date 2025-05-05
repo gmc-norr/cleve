@@ -319,8 +319,17 @@
   .list-none {
     list-style-type: none;
   }
+  .grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .grid-rows-1 {
+    grid-template-rows: repeat(1, minmax(0, 1fr));
+  }
   .items-center {
     align-items: center;
+  }
+  .gap-2 {
+    gap: calc(var(--spacing) * 2);
   }
   .truncate {
     overflow: hidden;
@@ -436,9 +445,6 @@
   }
   .text-accent-900 {
     color: var(--color-accent-900);
-  }
-  .text-black {
-    color: var(--color-black);
   }
   .text-white {
     color: var(--color-white);

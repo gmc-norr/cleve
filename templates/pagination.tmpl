@@ -7,7 +7,18 @@
         Page {{ .metadata.Page }} / {{ .metadata.TotalPages }}
     </p>
 
-    <nav class="my-2 max-w-lg" id="table-nav">
+    <nav class="my-2 grid grid-rows-1 grid-cols-4 gap-2 max-w-lg" id="table-nav">
+        <button type="button"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
+            hx-get="?page=1&page_size={{ $filter.PageSize }}"
+            hx-include="#table-form,#chart-form"
+            hx-select="table > tbody"
+            hx-target="table > tbody"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
+            hx-swap="outerHTML"
+            {{ if eq $metadata.Page 1 }}disabled{{ end }}>
+            &laquo; First
+        </button>
         <button type="button"
             class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
             hx-get="?page={{ subtractInt $metadata.Page 1 }}&page_size={{ $filter.PageSize }}"
@@ -17,55 +28,8 @@
             hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
             hx-swap="outerHTML"
             {{ if eq $metadata.Page 1 }}disabled{{ end }}>
-            Previous
+            &lsaquo; Previous
         </button>
-        {{ if gt $metadata.Page 3 }}
-        <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2 min-w-fit text-center"
-            hx-get="?page=1&page_size={{ $filter.PageSize }}"
-            hx-include="#table-form,#chart-form"
-            hx-select="table > tbody"
-            hx-target="table > tbody"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
-            hx-swap="outerHTML">
-            1
-        </button>
-            {{ if gt $metadata.Page 4 }}
-            <div class="inline-block text-black py-1 px-2 text-center">
-                <span>&hellip;</span>
-            </div>
-            {{ end }}
-        {{ end }}
-        {{ range N (maxInt 1 (subtractInt $metadata.Page 2)) (addInt (minInt ($metadata.TotalPages) (addInt $metadata.Page 2)) 1) }}
-        <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2 min-w-fit text-center"
-            hx-get="?page={{ . }}&page_size={{ $filter.PageSize }}"
-            hx-include="#table-form,#chart-form"
-            hx-select="table > tbody"
-            hx-target="table > tbody"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
-            hx-swap="outerHTML"
-            {{ if eq $metadata.Page .}}disabled{{ end }}>
-            {{ . }}
-        </button>
-        {{ end }}
-        {{ if lt $metadata.Page (subtractInt $metadata.TotalPages 2) }}
-            {{ if lt $metadata.Page (subtractInt $metadata.TotalPages 3) }}
-            <div class="inline-block text-black py-1 px-2 text-center">
-                <span>&hellip;</span>
-            </div>
-            {{ end }}
-        <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2 min-w-fit text-center"
-            hx-get="?page={{ $metadata.TotalPages }}&page_size={{ $filter.PageSize }}"
-            hx-include="#table-form,#chart-form"
-            hx-select="table > tbody"
-            hx-target="table > tbody"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
-            hx-swap="outerHTML">
-            {{ $metadata.TotalPages }}
-        </button>
-        {{ end }}
         <button type="button"
             class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2 text-center"
             hx-get="?page={{ addInt $metadata.Page 1 }}&page_size={{ $filter.PageSize }}"
@@ -75,7 +39,18 @@
             hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
             hx-swap="outerHTML"
             {{ if eq $metadata.Page $metadata.TotalPages }}disabled{{ end }}>
-            Next
+            Next &rsaquo;
+        </button>
+        <button type="button"
+            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2 min-w-fit text-center"
+            hx-get="?page={{ $metadata.TotalPages }}&page_size={{ $filter.PageSize }}"
+            hx-include="#table-form,#chart-form"
+            hx-select="table > tbody"
+            hx-target="table > tbody"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
+            hx-swap="outerHTML"
+            {{ if eq $metadata.Page $metadata.TotalPages }}disabled{{ end }}>
+            Last &raquo;
         </button>
     </nav>
 {{ end }}
