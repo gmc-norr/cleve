@@ -1,61 +1,18 @@
 {{ define "qc_table" }}
 {{ $filter := .filter }}
-{{ $current_page := .metadata.Page }}
-{{ $total_pages := .metadata.TotalPages }}
 
 <section class="mx-6 mb-4 mb-8">
     <p>Here are QC data from the sequencing for runs that have completed.</p>
 
-    <p id="table-counts">
-        Showing {{ .metadata.Count}} of {{ .metadata.TotalCount }} runs
-        Page {{ .metadata.Page }} / {{ .metadata.TotalPages }}
-    </p>
+    {{ template "pagination" . }}
 
-    <div class="my-2" id="table-nav">
-        <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
-            hx-get="/qc?page={{ subtractInt $current_page 1 }}&page_size={{ $filter.PageSize }}"
-            hx-include="#qc-table-form,#chart-form"
-            hx-select="#qc-table-body"
-            hx-target="#qc-table-body"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
-            hx-swap="outerHTML"
-            {{ if eq $current_page 1 }}disabled{{ end }}>
-            Previous
-        </button>
-        {{ range N 1 (addInt .metadata.TotalPages 1) }}
-        <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
-            hx-get="/qc?page={{ . }}&page_size={{ $filter.PageSize }}"
-            hx-include="#qc-table-form,#chart-form"
-            hx-select="#qc-table-body"
-            hx-target="#qc-table-body"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
-            hx-swap="outerHTML"
-            {{ if eq $current_page .}}disabled{{ end }}>
-            {{ . }}
-        </button>
-        {{ end }}
-        <button type="button"
-            class="disabled:bg-gray-400 bg-accent-900 text-white table-nav-item py-1 px-2"
-            hx-get="/qc?page={{ addInt $current_page 1 }}&page_size={{ $filter.PageSize }}"
-            hx-include="#qc-table-form,#chart-form"
-            hx-select="#qc-table-body"
-            hx-target="#qc-table-body"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
-            hx-swap="outerHTML"
-            {{ if eq $current_page $total_pages }}disabled{{ end }}>
-            Next
-        </button>
-    </div>
-
-    <form id="qc-table-form"
+    <form id="table-form"
         hx-get="/qc"
         hx-trigger="search, keyup changed delay:300ms from:input[name=run_id_query], change from:select[name=platform]"
-        hx-select="#qc-table-body"
-        hx-target="#qc-table-body"
+        hx-select="table > tbody > tr"
+        hx-target="table > tbody"
         hx-select-oob="#table-counts,#table-nav"
-        hx-swap="outerHTML">
+        hx-swap="innerHTML">
         <table class="w-full text-left">
             <thead>
                 <tr class="border-b border-slate-500">
