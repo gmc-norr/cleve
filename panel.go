@@ -6,15 +6,20 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"slices"
 	"strings"
+	"time"
 )
 
 type GenePanel struct {
 	Id          string
 	Name        string
 	Version     string
+	Date        time.Time
 	Description string
+	Categories  []string
 	Genes       []Gene
+	Archived    bool
 }
 
 type Gene struct {
@@ -30,6 +35,13 @@ func NewGenePanel(name string, description string) GenePanel {
 		Description: description,
 		Version:     "1.0",
 		Genes:       make([]Gene, 0),
+	}
+}
+
+func (p *GenePanel) AddCategory(category string) {
+	cat := strings.ToLower(strings.TrimSpace(category))
+	if !slices.Contains(p.Categories, cat) {
+		p.Categories = append(p.Categories, cat)
 	}
 }
 
@@ -74,8 +86,17 @@ func genePanelFromText(r io.Reader, delim rune) (GenePanel, error) {
 				p.Id = value
 			case "version":
 				p.Version = value
+			case "date":
+				p.Date, err = time.Parse("2006-01-02", value)
+				if err != nil {
+					return p, fmt.Errorf("error parsing date on line %d: %w", line, err)
+				}
 			case "description":
 				p.Description = value
+			case "categories":
+				for cat := range strings.SplitSeq(value, ",") {
+					p.AddCategory(cat)
+				}
 			default:
 				slog.Warn("unknown metadata field", "key", key)
 			}

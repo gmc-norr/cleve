@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +33,12 @@ in the header as key-value pairs: '##key=value'. Supported keys are:
 - id: Internal ID of the panel (aliases: panel_id)
 - name: The name of the panel (aliases: display_name)
 - version: Panel version
+- date: Creation date of the panel (ISO)
 - description: Free-text description of the panel
+- categories: Comma-separated list of categories that the panel belongs to
+
+If any of the metadata are given as parameters on the command line, these take precedenc
+over what is in the file.
 `,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -54,24 +61,57 @@ in the header as key-value pairs: '##key=value'. Supported keys are:
 		}
 		cobra.CheckErr(parseError)
 
-		if p.Name == "" {
+		if name, _ := cmd.Flags().GetString("name"); name != "" {
+			p.Name = name
+		} else if p.Name == "" {
 			fname := filepath.Base(f.Name())
 			stem := fname[:len(fname)-len(filepath.Ext(fname))]
 			p.Name = filepath.Base(stem)
 		}
-		if p.Id == "" {
+		if id, _ := cmd.Flags().GetString("id"); id != "" {
+			p.Id = id
+		} else if p.Id == "" {
 			p.Id = strings.ToLower(p.Name)
 		}
-		if p.Version == "" {
+		if version, _ := cmd.Flags().GetString("version"); version != "" {
+			p.Version = version
+		} else if p.Version == "" {
 			p.Version = "1.0"
 		}
+		if description, _ := cmd.Flags().GetString("description"); description != "" {
+			p.Description = description
+		}
+		if date, _ := cmd.Flags().GetString("date"); date != "" {
+			p.Date, err = time.Parse("2006-01-02", date)
+			cobra.CheckErr(err)
+		} else if p.Date.IsZero() {
+			p.Date = time.Now()
+		}
+		if categories, _ := cmd.Flags().GetStringSlice("categories"); len(categories) != 0 {
+			for _, cat := range categories {
+				p.AddCategory(cat)
+			}
+		}
+		if len(p.Categories) == 0 {
+			cobra.CheckErr("at least one category is needed for the gene panel")
+		}
 
-		fmt.Printf("%+v\n", p)
+		fmt.Printf("%#v\n", p)
+
+		db, err := mongo.Connect()
+		cobra.CheckErr(err)
+
+		err = db.CreatePanel(p)
+		cobra.CheckErr(err)
 	},
 }
 
 func init() {
-	addCmd.Flags().StringP("name", "n", "", "name of the new panel, defaults to the name of the definition file")
 	addCmd.Flags().StringP("id", "i", "", "ID for the new panel, defaults to a slug of the name of the definition file")
+	addCmd.Flags().StringP("name", "n", "", "name of the new panel, defaults to the name of the definition file")
+	addCmd.Flags().StringP("version", "v", "", "version for the new panel")
+	addCmd.Flags().StringP("description", "d", "", "free-text description of the new panel")
+	addCmd.Flags().StringSlice("categories", make([]string, 0), "comma-separated list of categories that the panel should belong to")
+	addCmd.Flags().String("date", "", "creation date of the panel")
 	addCmd.Flags().StringP("filetype", "f", "tsv", "filetype of the panel definition file")
 }
