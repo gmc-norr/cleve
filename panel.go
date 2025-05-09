@@ -12,14 +12,18 @@ import (
 )
 
 type GenePanel struct {
-	Id          string
-	Name        string
-	Version     string
-	Date        time.Time
-	Description string
-	Categories  []string
-	Genes       []Gene
-	Archived    bool
+	GenePanelVersion `bson:",inline"`
+	Id               string
+	Name             string
+	Description      string
+	Categories       []string
+	Genes            []Gene
+	Archived         bool
+}
+
+type GenePanelVersion struct {
+	Version string
+	Date    time.Time
 }
 
 type Gene struct {
@@ -30,10 +34,13 @@ type Gene struct {
 
 func NewGenePanel(name string, description string) GenePanel {
 	return GenePanel{
+		GenePanelVersion: GenePanelVersion{
+			Version: "1.0",
+			Date:    time.Now(),
+		},
 		Id:          name,
 		Name:        name,
 		Description: description,
-		Version:     "1.0",
 		Genes:       make([]Gene, 0),
 	}
 }
