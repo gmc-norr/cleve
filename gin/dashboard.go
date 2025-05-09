@@ -34,7 +34,7 @@ func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
 	}
 	platformNames := platforms.Names()
 
-	return gin.H{"runs": runs.Runs, "metadata": runs.PaginationMetadata, "platforms": platformNames, "filter": filter}, nil
+	return gin.H{"runs": runs.Runs, "metadata": runs.PaginationMetadata, "platforms": platformNames, "filter": filter, "cleve_version": cleve.GetVersion()}, nil
 }
 
 func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
@@ -50,7 +50,6 @@ func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err})
 			return
 		}
-		dashboardData["version"] = cleve.GetVersion()
 
 		var oobError mongo.PageOutOfBoundsError
 		if errors.As(err, &oobError) {
@@ -108,7 +107,7 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 			}
 		}
 
-		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet, "chart_config": GetRunChartConfig(c), "version": cleve.GetVersion(), "message": message})
+		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet, "chart_config": GetRunChartConfig(c), "cleve_version": cleve.GetVersion(), "message": message})
 	}
 }
 
@@ -164,6 +163,6 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		platformNames := platforms.Names()
 
 		c.Header("Hx-Push-Url", filter.UrlParams())
-		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "chart_config": chartConfig, "version": cleve.GetVersion()})
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "chart_config": chartConfig, "cleve_version": cleve.GetVersion()})
 	}
 }

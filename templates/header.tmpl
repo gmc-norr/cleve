@@ -13,11 +13,12 @@
             <ul class="list-none">
                 <li class="inline-block bg-accent-200 text-accent-900 mr-2 font-bold"><a class="px-4 py-2" href="/runs">Runs</a></li>
                 <li class="inline-block bg-accent-200 text-accent-900 mr-2 font-bold"><a class="px-4 py-2" href="/qc">QC</a></li>
+                <li class="inline-block bg-accent-200 text-accent-900 mr-2 font-bold"><a class="px-4 py-2" href="/panels">Gene panels</a></li>
             </ul>
         </nav>
-        {{ if .version }}
+        {{ if .cleve_version }}
         <div class="absolute top-0 right-0 text-sm mt-1 mr-2">
-            <p>cleve {{ .version }}</p>
+            <p>cleve {{ .cleve_version }}</p>
         </div>
         {{ end }}
     </header>
