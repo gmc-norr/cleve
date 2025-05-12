@@ -146,6 +146,10 @@ func (db DB) PanelVersions(id string) ([]cleve.GenePanelVersion, error) {
 		versions = append(versions, v)
 	}
 
+	if len(versions) == 0 {
+		return versions, ErrNoDocuments
+	}
+
 	return versions, nil
 }
 
