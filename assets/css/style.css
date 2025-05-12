@@ -444,6 +444,9 @@
   .bg-amber-600 {
     background-color: var(--color-amber-600);
   }
+  .bg-red-600 {
+    background-color: var(--color-red-600);
+  }
   .bg-slate-200 {
     background-color: var(--color-slate-200);
   }

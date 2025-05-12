@@ -75,7 +75,10 @@
 {{ $panelId := .panel.Id }}
 {{ $panelVersion := .panel.Version }}
 <header>
-    <h3 class="text-2xl">{{ .panel.Name }} ({{ .panel.Genes | len }} genes)</h3>
+    <h3 class="text-2xl">
+        {{ .panel.Name }} ({{ .panel.Genes | len }} genes)
+        {{ if .panel.Archived }}<span class="inline-block py-1 px-2 rounded-md bg-red-600 text-white">Archived</span>{{ end }}
+    </h3>
     <select class="my-2"
             name="version"
             hx-get="/panels/{{ $panelId }}"
