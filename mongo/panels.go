@@ -16,11 +16,17 @@ import (
 // is returned, based on creation date. Control what panels are returned
 // with the filter that is passed in.
 func (db DB) Panels(filter cleve.PanelFilter) ([]cleve.GenePanel, error) {
-	var pipeline mongo.Pipeline
-	var panels []cleve.GenePanel
+	var (
+		pipeline mongo.Pipeline
+		panels   []cleve.GenePanel
+	)
 
-	matchFields := bson.D{
-		{Key: "archived", Value: filter.Archived},
+	matchFields := bson.D{}
+
+	if !filter.Archived {
+		matchFields = append(matchFields, bson.E{
+			Key: "archived", Value: false,
+		})
 	}
 	if filter.Category != "" {
 		matchFields = append(matchFields, bson.E{
