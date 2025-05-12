@@ -68,6 +68,10 @@ func (db DB) KeyCollection() *mongo.Collection {
 	return db.Collection("keys")
 }
 
+func (db DB) PanelCollection() *mongo.Collection {
+	return db.Collection("panels")
+}
+
 func (db DB) RunQCCollection() *mongo.Collection {
 	return db.Collection("run_qc")
 }
@@ -98,6 +102,12 @@ func (db *DB) SetIndexes() error {
 		return fmt.Errorf("failed to set index on samplesheets, does the collection exist? %w", err)
 	}
 	log.Printf("Set index %s on samplesheets", name)
+
+	name, err = db.SetPanelIndex()
+	if err != nil {
+		return fmt.Errorf("failed to set index on panels, does the collection exist? %w", err)
+	}
+	log.Printf("Set index %s on panels", name)
 
 	return nil
 }
@@ -136,6 +146,12 @@ func (db *DB) Init(ctx context.Context) error {
 	if err := createCollection("samples"); err != nil {
 		return err
 	}
+	if err := createCollection("panels"); err != nil {
+		return err
+	}
+	if _, err := db.SetPanelIndex(); err != nil {
+		return err
+	}
 	if err := createCollection("samplesheets"); err != nil {
 		return err
 	}
@@ -161,10 +177,16 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 		return nil, err
 	}
 
+	panelIndex, err := db.PanelIndex()
+	if err != nil {
+		return nil, err
+	}
+
 	indexes := make(map[string][]map[string]string)
 	indexes["runs"] = runIndex
 	indexes["run_qc"] = runQcIndex
 	indexes["samplesheets"] = sampleSheetIndex
+	indexes["panels"] = panelIndex
 
 	return indexes, nil
 }
