@@ -1,7 +1,12 @@
 {{ define "error500" }}
 {{ template "header" . }}
-<h1>Internal server error</h1>
-<p>Something went wrong on our side. We're looking into it.</p>
-<p><pre>{{ .error }}</pre></p>
+<section class="mx-6">
+    <h1 class="text-4xl mb-4">500 Internal Server Error</h1>
+    <p class="error my-4">
+        {{ if .error }}
+        Error: {{ .error }}
+        {{ end }}
+    </p>
+</section>
 {{ template "footer" }}
 {{ end }}
