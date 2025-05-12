@@ -19,6 +19,7 @@ type GenePanel struct {
 	Categories       []string
 	Genes            []Gene
 	Archived         bool
+	ArchivedAt       time.Time `bson:",omitzero"`
 }
 
 type GenePanelVersion struct {
@@ -33,15 +34,17 @@ type Gene struct {
 }
 
 func NewGenePanel(name string, description string) GenePanel {
+	n := time.Now()
 	return GenePanel{
 		GenePanelVersion: GenePanelVersion{
 			Version: "1.0",
-			Date:    time.Now(),
+			Date:    n,
 		},
 		Id:          name,
 		Name:        name,
 		Description: description,
 		Genes:       make([]Gene, 0),
+		ArchivedAt:  n,
 	}
 }
 

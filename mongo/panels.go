@@ -229,7 +229,16 @@ func (db DB) CreatePanel(p cleve.GenePanel) error {
 // ArchivePanel archives a panel given an ID. All existing versions of the panel are
 // archived.
 func (db DB) ArchivePanel(id string) error {
-	res, err := db.PanelCollection().UpdateMany(context.TODO(), bson.D{{Key: "id", Value: id}}, bson.D{{Key: "$set", Value: bson.D{{Key: "archived", Value: true}}}})
+	res, err := db.PanelCollection().UpdateMany(
+		context.TODO(),
+		bson.D{{Key: "id", Value: id}},
+		[]bson.D{
+			{{Key: "$addFields", Value: bson.D{
+				{Key: "archived", Value: true},
+				{Key: "archivedat", Value: time.Now()},
+			}}},
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -242,7 +251,17 @@ func (db DB) ArchivePanel(id string) error {
 // UnarchivePanel unarchives a panel given an ID. All existing versions of the panel are
 // unarchived.
 func (db DB) UnarchivePanel(id string) error {
-	res, err := db.PanelCollection().UpdateMany(context.TODO(), bson.D{{Key: "id", Value: id}}, bson.D{{Key: "$set", Value: bson.D{{Key: "archived", Value: false}}}})
+	res, err := db.PanelCollection().UpdateMany(
+		context.TODO(),
+		bson.D{{Key: "id", Value: id}},
+		[]bson.D{
+			{{Key: "$addFields", Value: bson.D{
+				{Key: "archived", Value: false},
+			}}},
+			{{Key: "$project", Value: bson.D{
+				{Key: "archivedat", Value: 0},
+			}}},
+		})
 	if err != nil {
 		return err
 	}
