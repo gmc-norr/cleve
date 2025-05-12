@@ -162,3 +162,18 @@ func (f SampleFilter) UrlParams() string {
 
 	return p
 }
+
+type PanelFilter struct {
+	Category  string `form:"category"`
+	Name      string `form:"name"`
+	NameQuery string `form:"name-query"`
+	Gene      string `form:"gene"`
+	GeneQuery string `form:"gene-query"`
+	HGNC      string `form:"hgnc"`
+	Version   string `form:"version"`
+	Archived  bool
+}
+
+func NewPanelFilter() PanelFilter {
+	return PanelFilter{}
+}
