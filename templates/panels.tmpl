@@ -93,7 +93,7 @@
         <option
             value="{{ .Version }}"
             {{ if eq .Version $panelVersion }} selected{{ end }}>
-            v{{ .Version }} ({{ .Date.Format "2006-01-02" }})
+            v{{ .Version }} ({{ .Date.Local.Format "2006-01-02" }})
         </option>
         {{ end }}
     </select>
@@ -122,6 +122,6 @@
 <table>
 
 <p class="my-4 text-xs">
-    {{ .panel.Name }} v{{ .panel.Version }} created on {{ .panel.Date.Format "2006-01-02" }}
+    {{ .panel.Name }} v{{ .panel.Version }} created on {{ .panel.Date.Local.Format "2006-01-02" }}
 </p>
 {{ end }}
