@@ -109,7 +109,7 @@
     <tbody>
         {{ range .panel.Genes }}
         <tr class="hover:bg-accent-100 border-b border-gray-200">
-            <td class="px-2 text-left">{{ .Symbol }}</td>
+            <td class="px-2 text-left italic">{{ .Symbol }}</td>
             <td class="px-2 text-right"><a class="text-accent-900" href="https://genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:{{ .HGNC }}">{{ .HGNC }}</a></td>
         </tr>
         {{ end }}
