@@ -219,8 +219,27 @@ func (db DB) CreatePanel(p cleve.GenePanel) error {
 // ArchivePanel archives a panel given an ID. All existing versions of the panel are
 // archived.
 func (db DB) ArchivePanel(id string) error {
-	_, err := db.PanelCollection().UpdateMany(context.TODO(), bson.D{{Key: "id", Value: id}}, bson.D{{Key: "$set", Value: bson.D{{Key: "archived", Value: true}}}})
-	return err
+	res, err := db.PanelCollection().UpdateMany(context.TODO(), bson.D{{Key: "id", Value: id}}, bson.D{{Key: "$set", Value: bson.D{{Key: "archived", Value: true}}}})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return ErrNoDocuments
+	}
+	return nil
+}
+
+// UnarchivePanel unarchives a panel given an ID. All existing versions of the panel are
+// unarchived.
+func (db DB) UnarchivePanel(id string) error {
+	res, err := db.PanelCollection().UpdateMany(context.TODO(), bson.D{{Key: "id", Value: id}}, bson.D{{Key: "$set", Value: bson.D{{Key: "archived", Value: false}}}})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return ErrNoDocuments
+	}
+	return nil
 }
 
 // PanelIndex returns the the current indexes for the panel collection.
