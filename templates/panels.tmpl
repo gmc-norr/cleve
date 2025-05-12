@@ -1,0 +1,119 @@
+{{ define "panel-list" }}
+{{ $filter := .filter }}
+<aside class="min-w-3xs">
+    <form
+        class="grid grid-cols-1 mb-2"
+        hx-get="/panel-list"
+        hx-select="#panel-list"
+        hx-target="#panel-list"
+        hx-indicator="#spinner"
+        hx-trigger="search, change from:select[name=category], keyup changed delay:300ms from:input[type=search]">
+        <label for="category" class="block text-sm/6 font-medium text-gray-900" title="Only show panels belonging to a specific category.">
+            Category
+        </label>
+        <select name="category" id="category" class="border-1 rounded-md border-gray-500">
+            <option value=""{{ if eq "" $filter.Category }} selected{{ end }}>All</option>
+            {{ range .categories }}
+            <option value="{{ . }}"{{ if eq . $filter.Category }} selected{{ end }}>{{ . }}</option>
+            {{ end }}
+        </select>
+        <label for="name-query" class="block text-sm/6 font-medium text-gray-900" title="Search for a panel with a specific name.">
+            Name
+        </label>
+        <input id="name-query" class="border-1 rounded-md border-gray-500 px-1" name="name-query" type="search" placeholder="Panel name" value="{{ .filter.Name }}" />
+        <label for="gene" class="block text-sm/6 font-medium text-gray-900" title="Search for a panel containing a particular gene. Only exact matches will be returned (case insentitive).">
+            Gene
+        </label>
+        <input id="gene" class="border-1 rounded-md border-gray-500 px-1" name="gene" type="search" placeholder="Gene symbol" value="{{ .filter.Gene }}" />
+    </form>
+    <div id="panel-list" class="my-2">
+        {{ $nPanels := .panels | len }}
+        <p class="text-xs my-2">
+        {{ if not .panels }}
+            No gene panels available
+        {{ else }}
+            Showing {{ $nPanels }} panel{{ if ne $nPanels 1 }}s{{ end }}
+        {{ end }}
+        </p>
+        <ul id="panel-list">
+            {{ range .panels }}
+            <li>
+                <a
+                    class="cursor-pointer text-accent-900"
+                    title="{{ .Name }} v{{ .Version }}"
+                    href="/panels/{{ .Id }}"
+                    hx-get="/panels/{{ .Id }}"
+                    hx-indicator="#spinner"
+                    hx-target="#panel-info">
+                    {{ .Name }}
+                </a>
+            </li>
+            {{ end }}
+    </div>
+</aside>
+{{ end }}
+
+{{ define "panels" }}
+{{ template "header" . }}
+<h2 class="text-3xl mx-6 my-4">Gene panels <img id="spinner" class="inline-block size-[.8em] htmx-indicator animate-spin" src="/static/img/spinner.svg"></h2>
+
+<div class="flex mx-6 gap-12">
+    {{ template "panel-list" . }}
+
+    <section id="panel-info" class="max-w-4xl">
+        {{ if .panel }}
+        {{ template "panel-info" . }}
+        {{ else }}
+        <p>Here all available gene panels are presented. Select a panel on the left to show more details.</p>
+        {{ end }}
+    </section>
+</div>
+{{ template "footer" . }}
+{{ end }}
+
+{{ define "panel-info" }}
+{{ $panelId := .panel.Id }}
+{{ $panelVersion := .panel.Version }}
+<header>
+    <h3 class="text-2xl">{{ .panel.Name }} ({{ .panel.Genes | len }} genes)</h3>
+    <select class="my-2"
+            name="version"
+            hx-get="/panels/{{ $panelId }}"
+            hx-target="#panel-info"
+            hx-indicator="#spinner">
+        {{ range .versions }}
+        <option
+            value="{{ .Version }}"
+            {{ if eq .Version $panelVersion }} selected{{ end }}>
+            v{{ .Version }} ({{ .Date.Format "2006-01-02" }})
+        </option>
+        {{ end }}
+    </select>
+    <div class="my-2 flex flex-wrap gap-2 text-sm text-slate-600">
+        {{ range .panel.Categories }}<span class="flex-none px-3 py-1 bg-slate-200 rounded-full">{{ . | printf "%s" }}</span>{{ end }}
+    </div>
+</header>
+
+<p class="my-4">{{ .panel.Description }}</p>
+
+<table class="table-auto my-4 min-w-2xs">
+    <thead class="bg-accent-900 text-accent-100">
+        <tr>
+            <th class="px-2 text-left">Symbol</th>
+            <th class="px-2 text-right">HGNC ID</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range .panel.Genes }}
+        <tr class="hover:bg-accent-100 border-b border-gray-200">
+            <td class="px-2 text-left">{{ .Symbol }}</td>
+            <td class="px-2 text-right"><a class="text-accent-900" href="https://genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:{{ .HGNC }}">{{ .HGNC }}</a></td>
+        </tr>
+        {{ end }}
+    </tbody>
+<table>
+
+<p class="my-4 text-xs">
+    {{ .panel.Name }} v{{ .panel.Version }} created on {{ .panel.Date.Format "2006-01-02" }}
+</p>
+{{ end }}

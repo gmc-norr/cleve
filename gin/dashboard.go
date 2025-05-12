@@ -3,6 +3,7 @@ package gin
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -59,6 +60,100 @@ func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 
 		c.Header("Hx-Push-Url", filter.UrlParams())
 		c.HTML(http.StatusOK, "dashboard", dashboardData)
+	}
+}
+
+func DashboardPanelListHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if err := c.Request.ParseForm(); err != nil {
+			slog.Error("failed to parse form data", "error", err)
+		}
+		filter, err := getPanelFilter(c)
+		slog.Info("getting panel list", "filter", filter)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err})
+			c.Abort()
+			return
+		}
+		categories, err := db.PanelCategories()
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err})
+			c.Abort()
+			return
+		}
+		panels, err := db.Panels(filter)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err})
+			c.Abort()
+			return
+		}
+		c.HTML(http.StatusOK, "panel-list", gin.H{"filter": filter, "categories": categories, "panels": panels})
+	}
+}
+
+func DashboardPanelHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		panelId := c.Param("panelId")
+		if err := c.Request.ParseForm(); err != nil {
+			slog.Error("failed to parse form data", "error", err)
+		}
+		filter, err := getPanelFilter(c)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err})
+			c.Abort()
+			return
+		}
+		d := gin.H{
+			"cleve_version": cleve.GetVersion(),
+		}
+		panels, err := db.Panels(filter)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err})
+			c.Abort()
+			return
+		}
+		categories, err := db.PanelCategories()
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err})
+			c.Abort()
+			return
+		}
+		d["panels"] = panels
+		d["categories"] = categories
+
+		if panelId != "" {
+			versions, err := db.PanelVersions(panelId)
+			if err != nil {
+				if errors.Is(err, mongo.ErrNoDocuments) {
+					c.HTML(http.StatusNotFound, "error404", gin.H{"error": fmt.Sprintf("No panel found with id %q", panelId)})
+					c.Abort()
+					return
+				}
+				c.HTML(http.StatusInternalServerError, "error505", gin.H{"error": err})
+				c.Abort()
+				return
+			}
+			d["versions"] = versions
+			if filter.Version == "" {
+				filter.Version = versions[0].Version
+				d["version"] = filter.Version
+			}
+
+			panel, err := db.Panel(panelId, filter.Version)
+			if err != nil {
+				d["error"] = fmt.Sprintf("No panel with id %q was found", panelId)
+				c.HTML(http.StatusNotFound, "error404", d)
+				c.Abort()
+				return
+			}
+			d["panel"] = panel
+		}
+		c.Header("HX-Push-Url", "/panels/"+panelId+"?version="+filter.Version)
+		if c.GetHeader("HX-Request") == "true" {
+			c.HTML(http.StatusOK, "panel-info", d)
+			return
+		}
+		c.HTML(http.StatusOK, "panels", d)
 	}
 }
 
