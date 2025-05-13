@@ -13,18 +13,18 @@ import (
 
 type GenePanel struct {
 	GenePanelVersion `bson:",inline"`
-	Id               string
-	Name             string
-	Description      string
-	Categories       []string
-	Genes            []Gene
-	Archived         bool
-	ArchivedAt       time.Time `bson:",omitzero"`
+	Id               string    `json:"id"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description"`
+	Categories       []string  `json:"categories"`
+	Genes            []Gene    `json:"genes,omitzero"`
+	Archived         bool      `json:"archived"`
+	ArchivedAt       time.Time `bson:",omitzero" json:"archived_at,omitzero"`
 }
 
 type GenePanelVersion struct {
-	Version string
-	Date    time.Time
+	Version string    `json:"version"`
+	Date    time.Time `json:"date"`
 }
 
 type Gene struct {

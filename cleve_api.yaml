@@ -10,6 +10,8 @@ sections:
     description: Sample information.
   - name: samplesheet
     description: Samplesheet information for sequencing runs.
+  - name: panels
+    description: Information gene panels.
   - name: platforms
     description: Information on sequencing platforms.
 endpoints:
@@ -320,6 +322,49 @@ endpoints:
         type: string
         description: ID of the run
         required: true
+
+  - path: /panels
+    method: GET
+    section: panels
+    description: >
+      Get all gene panels. There are multiple versions of a panel, the most recent is returned.
+      Archived panels are ignored by default.
+    query_params:
+      - key: archived
+        type: bool
+        description: Also return archived gene panels
+        default: false
+      - key: category
+        type: string
+        description: Only return panels belonging to this category
+        default: ""
+      - key: gene
+        type: string
+        description: Only return panels that has this gene symbol on it (case insensitive)
+        default: ""
+      - key: gene_query
+        type: regex
+        description: Only return panels that has at least one gene matching a regular expression
+        default: ""
+      - key: name_query
+        type: regex
+        description: Only return panels whose name matches a regular expression
+        default: ""
+
+  - path: /panels/{panelId}
+    method: GET
+    section: panels
+    description: Get a single gene panel by ID.
+    params:
+      - key: panelId
+        type: string
+        description: panel ID
+        required: true
+    query_params:
+      - key: version
+        type: string
+        description: Return a specific version of a panel
+        default: ""
 
   - path: /platforms
     method: GET

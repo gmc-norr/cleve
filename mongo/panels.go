@@ -114,11 +114,39 @@ func (db DB) Panels(filter cleve.PanelFilter) ([]cleve.GenePanel, error) {
 	return panels, nil
 }
 
-// Panel returns a specific gene panel given an ID and a version. If the panel
-// does not exist, an error is returned.
+// Panel returns a specific gene panel given an ID and a version. If the ID
+// is the empty string, the most recent version of the panel is returned.
+// If the panel does not exist, an error is returned.
 func (db DB) Panel(id string, version string) (cleve.GenePanel, error) {
 	var p cleve.GenePanel
-	err := db.PanelCollection().FindOne(context.TODO(), bson.D{{Key: "id", Value: id}, {Key: "version", Value: version}}).Decode(&p)
+	matchFields := bson.D{
+		{Key: "id", Value: id},
+	}
+	if version != "" {
+		matchFields = append(matchFields, bson.E{Key: "version", Value: version})
+	}
+	pipeline := mongo.Pipeline([]bson.D{
+		{{Key: "$match", Value: matchFields}},
+	})
+	if version == "" {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$sort", Value: bson.D{
+				{Key: "date", Value: -1},
+			}},
+		}, bson.D{{Key: "$limit", Value: 1}})
+	}
+	cursor, err := db.PanelCollection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return p, err
+	}
+	defer cursor.Close(context.TODO())
+	if ok := cursor.Next(context.TODO()); !ok {
+		return p, ErrNoDocuments
+	}
+	if cursor.Next(context.TODO()) {
+		return p, fmt.Errorf("expected one document, found more than that")
+	}
+	err = cursor.Decode(&p)
 	return p, err
 }
 
