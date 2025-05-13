@@ -174,6 +174,8 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/", DashboardHandler(db))
 	r.GET("/runs", DashboardHandler(db))
 	r.GET("/runs/:runId", DashboardRunHandler(db))
+	r.GET("/panels", DashboardPanelHandler(db))
+	r.GET("/panels/:panelId", DashboardPanelHandler(db))
 	r.GET("/qc", DashboardQCHandler(db))
 	r.GET("/qc/charts/global", GlobalChartsHandler(db))
 	r.GET("/qc/charts/run/:runId", RunChartsHandler(db))
@@ -181,6 +183,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	hxEndpoints := r.Group("/")
 	hxEndpoints.Use(hxMiddleware())
 	hxEndpoints.GET("/runtable", DashboardRunTable(db))
+	hxEndpoints.GET("/panel-list", DashboardPanelListHandler(db))
 
 	// API endpoints
 	r.GET("/api", func(c *gin.Context) {
@@ -193,6 +196,8 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	r.GET("/api/runs/:runId/analysis/:analysisId", AnalysisHandler(db))
 	r.GET("/api/runs/:runId/samplesheet", RunSampleSheetHandler(db))
 	r.GET("/api/runs/:runId/qc", RunQcHandler(db))
+	r.GET("/api/panels", PanelsHandler(db))
+	r.GET("/api/panels/:panelId", PanelHandler(db))
 	r.GET("/api/platforms", PlatformsHandler(db))
 	r.GET("/api/platforms/:platformName", GetPlatformHandler(db))
 	r.GET("/api/qc/:platformName", AllRunQcHandler(db))
