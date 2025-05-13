@@ -21,6 +21,7 @@ func (db DB) Panels(filter cleve.PanelFilter) ([]cleve.GenePanel, error) {
 		panels   []cleve.GenePanel
 	)
 
+	panels = make([]cleve.GenePanel, 0)
 	matchFields := bson.D{}
 
 	if !filter.Archived {
