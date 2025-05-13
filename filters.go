@@ -166,12 +166,12 @@ func (f SampleFilter) UrlParams() string {
 type PanelFilter struct {
 	Category  string `form:"category"`
 	Name      string `form:"name"`
-	NameQuery string `form:"name-query"`
+	NameQuery string `form:"name_query"`
 	Gene      string `form:"gene"`
-	GeneQuery string `form:"gene-query"`
+	GeneQuery string `form:"gene_query"`
 	HGNC      string `form:"hgnc"`
 	Version   string `form:"version"`
-	Archived  bool
+	Archived  bool   `form:"archived"`
 }
 
 func NewPanelFilter() PanelFilter {
