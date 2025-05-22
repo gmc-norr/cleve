@@ -82,10 +82,11 @@ over what is in the file.
 			p.Description = description
 		}
 		if date, _ := cmd.Flags().GetString("date"); date != "" {
-			p.Date, err = time.Parse("2006-01-02", date)
+			d, err := time.Parse("2006-01-02", date)
 			cobra.CheckErr(err)
+			p.Date = cleve.Time{Time: d}
 		} else if p.Date.IsZero() {
-			p.Date = time.Now()
+			p.Date = cleve.Time{Time: time.Now()}
 		}
 		if categories, _ := cmd.Flags().GetStringSlice("categories"); len(categories) != 0 {
 			for _, cat := range categories {

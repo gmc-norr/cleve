@@ -7,24 +7,53 @@ import (
 	"io"
 	"log/slog"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 )
 
+type Time struct {
+	time.Time
+}
+
+func (t *Time) UnmarshalJSON(data []byte) error {
+	layouts := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05MST",
+		"2006-01-02 15:04:05 MST",
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+		"20060102",
+		"060102",
+	}
+	for _, l := range layouts {
+		rawTime, err := strconv.Unquote(string(data))
+		if err != nil {
+			return err
+		}
+		d, err := time.Parse(l, rawTime)
+		if err == nil {
+			*t = Time{d}
+			return nil
+		}
+	}
+	return fmt.Errorf("failed to parse time %s", string(data))
+}
+
 type GenePanel struct {
-	GenePanelVersion `bson:",inline"`
-	Id               string    `json:"id"`
-	Name             string    `json:"name"`
-	Description      string    `json:"description"`
-	Categories       []string  `json:"categories"`
-	Genes            []Gene    `json:"genes,omitzero"`
-	Archived         bool      `json:"archived"`
-	ArchivedAt       time.Time `bson:",omitzero" json:"archived_at,omitzero"`
+	GenePanelVersion `bson:",inline" json:",inline"`
+	Id               string   `json:"id"`
+	Name             string   `json:"name"`
+	Description      string   `json:"description"`
+	Categories       []string `json:"categories"`
+	Genes            []Gene   `json:"genes,omitzero"`
+	Archived         bool     `json:"archived"`
+	ArchivedAt       Time     `bson:",omitzero" json:"archived_at,omitzero"`
 }
 
 type GenePanelVersion struct {
-	Version string    `json:"version"`
-	Date    time.Time `json:"date"`
+	Version string `json:"version"`
+	Date    Time   `json:"date"`
 }
 
 type Gene struct {
@@ -34,7 +63,7 @@ type Gene struct {
 }
 
 func NewGenePanel(name string, description string) GenePanel {
-	n := time.Now()
+	n := Time{time.Now()}
 	return GenePanel{
 		GenePanelVersion: GenePanelVersion{
 			Version: "1.0",
@@ -97,10 +126,11 @@ func genePanelFromText(r io.Reader, delim rune) (GenePanel, error) {
 			case "version":
 				p.Version = value
 			case "date":
-				p.Date, err = time.Parse("2006-01-02", value)
+				t, err := time.Parse("2006-01-02", value)
 				if err != nil {
 					return p, fmt.Errorf("error parsing date on line %d: %w", line, err)
 				}
+				p.Date = Time{t}
 			case "description":
 				p.Description = value
 			case "categories":
