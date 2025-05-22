@@ -351,6 +351,50 @@ endpoints:
         description: Only return panels whose name matches a regular expression
         default: ""
 
+  - path: /panels
+    method: POST
+    section: panels
+    description: >
+      Create a new gene panel. The request body should be a JSON representation of the panel to
+      create.
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+      - key: Content-Type
+        type: string
+        description: MIME type of the request data. Currently only `application/json` is accepted.
+    params:
+      - key: id
+        type: string
+        description: ID of the panel
+        required: true
+      - key: name
+        type: string
+        description: Name of the panel
+        required: true
+      - key: version
+        type: string
+        description: The version of the panel
+        required: true
+      - key: date
+        type: string
+        description: Panel creation date. Should be connected to the version.
+        required: false
+      - key: categories
+        type: array
+        description: An array of strings with the categories to which the panel belongs
+        required: false
+      - key: description
+        type: string
+        description: Description of the panel
+        required: false
+      - key: genes
+        type: array
+        description: An array of gene objects with the mandatory key `hgnc` (string), and the optional keys `symbol` (string) and `aliases` (array of strings). At least one gene is required.
+        required: true
+
   - path: /panels/{panelId}
     method: GET
     section: panels
