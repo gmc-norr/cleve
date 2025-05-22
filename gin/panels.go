@@ -68,20 +68,39 @@ func AddPanelHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		var p cleve.GenePanel
+		layouts := []string{
+			time.RFC3339,
+			"2006-01-02T15:04:05",
+			"2006-01-02 15:04:05",
+			"2006-01-02",
+		}
+		var p struct {
+			Date            string `json:"date"`
+			cleve.GenePanel `json:",inline"`
+		}
 		if err := c.ShouldBindJSON(&p); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing panel"})
 			return
 		}
-		if p.Date.IsZero() {
-			p.Date = cleve.Time{Time: time.Now()}
+		for _, l := range layouts {
+			var err error
+			p.GenePanel.Date, err = time.Parse(l, p.Date)
+			if err == nil {
+				break
+			}
 		}
-		slog.Info("adding panel", "panel", p)
+		if p.Date != "" && p.GenePanel.Date.IsZero() {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "failed to parse date", "date": p.Date})
+			return
+		}
+		if p.GenePanel.Date.IsZero() {
+			p.GenePanel.Date = time.Now()
+		}
 		if err := p.Validate(); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if err := db.CreatePanel(p); err != nil {
+		if err := db.CreatePanel(p.GenePanel); err != nil {
 			if mongo.IsDuplicateKeyError(err) {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "a panel with this id and version already exists"})
 				return
