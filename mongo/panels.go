@@ -303,6 +303,30 @@ func (db DB) UnarchivePanel(id string) error {
 	return nil
 }
 
+// DeletePanel deletes either a single version of a panel if both `name` and `version` are,
+// given. If `version` is the empty string, then all versions of a panel ID are deleted.
+// Returns the number of documents deleted and an error.
+func (db DB) DeletePanel(id string, version string) (int, error) {
+	var err error
+	var res *mongo.DeleteResult
+	deleteAll := version == ""
+	if deleteAll {
+		res, err = db.PanelCollection().DeleteMany(
+			context.TODO(),
+			bson.D{{Key: "id", Value: id}},
+		)
+	} else {
+		res, err = db.PanelCollection().DeleteOne(
+			context.TODO(),
+			bson.D{
+				{Key: "id", Value: id},
+				{Key: "version", Value: version},
+			},
+		)
+	}
+	return int(res.DeletedCount), err
+}
+
 // PanelIndex returns the the current indexes for the panel collection.
 func (db DB) PanelIndex() ([]map[string]string, error) {
 	cursor, err := db.RunCollection().Indexes().List(context.TODO())

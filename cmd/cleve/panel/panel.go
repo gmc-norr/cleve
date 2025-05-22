@@ -6,6 +6,7 @@ func init() {
 	PanelCmd.AddCommand(addCmd)
 	PanelCmd.AddCommand(archiveCmd)
 	PanelCmd.AddCommand(listCmd)
+	PanelCmd.AddCommand(deleteCmd)
 }
 
 var PanelCmd = &cobra.Command{
