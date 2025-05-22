@@ -84,6 +84,22 @@ func (p *GenePanel) AddCategory(category string) {
 	}
 }
 
+func (p GenePanel) Validate() error {
+	if p.Id == "" {
+		return errors.New("panel must have an id")
+	}
+	if p.Name == "" {
+		return errors.New("panel must have a name")
+	}
+	if p.Version == "" {
+		return errors.New("panel must have a version")
+	}
+	if len(p.Genes) == 0 {
+		return errors.New("panel must contain at least one gene")
+	}
+	return nil
+}
+
 func parseKeyValue(s string) (string, string, error) {
 	elems := strings.SplitN(s, "=", 2)
 	if len(elems) != 2 {

@@ -1,7 +1,6 @@
 package panel
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -93,16 +92,16 @@ over what is in the file.
 				p.AddCategory(cat)
 			}
 		}
-		if len(p.Categories) == 0 {
-			cobra.CheckErr("at least one category is needed for the gene panel")
-		}
-
-		fmt.Printf("%#v\n", p)
+		err = p.Validate()
+		cobra.CheckErr(err)
 
 		db, err := mongo.Connect()
 		cobra.CheckErr(err)
 
 		err = db.CreatePanel(p)
+		if mongo.IsDuplicateKeyError(err) {
+			cobra.CheckErr("a panel with this id and version already exists")
+		}
 		cobra.CheckErr(err)
 	},
 }
