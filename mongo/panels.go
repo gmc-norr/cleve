@@ -2,7 +2,9 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/gmc-norr/cleve"
@@ -234,11 +236,12 @@ func (db DB) PanelCategories() ([]string, error) {
 		Categories []string
 	}
 	var c aux
-	if err := cursor.Decode(&c); err != nil {
-		return categories, err
-	}
+	err = cursor.Decode(&c)
 
-	return c.Categories, nil
+	if errors.Is(err, io.EOF) {
+		return c.Categories, nil
+	}
+	return c.Categories, err
 }
 
 // CreatePanel takes adds a new gene panel to the database. If a panel with the
