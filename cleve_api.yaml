@@ -410,6 +410,16 @@ endpoints:
         description: Return a specific version of a panel
         default: ""
 
+  - path: /panels/{panelId}/archive
+    method: PATCH
+    section: panels
+    description: Archive all versions of a panel
+    params:
+      - key: panelId
+        type: string
+        description: panel ID
+        required: true
+
   - path: /platforms
     method: GET
     section: platforms

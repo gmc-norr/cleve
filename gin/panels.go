@@ -111,3 +111,31 @@ func AddPanelHandler(db *mongo.DB) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"message": "successfully created the panel", "id": p.Id, "name": p.Name, "version": p.Version})
 	}
 }
+
+func ArchivePanelHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		panelId := c.Param("panelId")
+		p, err := db.Panel(panelId, "")
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "panel not found", "id": panelId})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if p.Archived {
+			c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": "panel is already archived", "id": panelId})
+			return
+		}
+		if err := db.ArchivePanel(panelId); err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "panel not found", "id": panelId})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "panel archived", "id": panelId})
+	}
+}
