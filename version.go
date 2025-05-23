@@ -29,8 +29,11 @@ func (v Version) Equal(other Version) bool {
 }
 
 func (v Version) String() string {
+	if v.IsZero() {
+		return ""
+	}
 	if v.hasPatch {
-		return fmt.Sprintf("%d.%d.%.d", v.Major, v.Minor, v.Patch)
+		return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch)
 	}
 	return fmt.Sprintf("%d.%d", v.Major, v.Minor)
 }

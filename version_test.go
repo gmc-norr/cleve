@@ -125,21 +125,25 @@ func TestVersionIsZero(t *testing.T) {
 		name   string
 		v      Version
 		isZero bool
+		string string
 	}{
 		{
 			name:   "zero version",
 			v:      Version{},
 			isZero: true,
+			string: "",
 		},
 		{
 			name:   "zero version with haspatch",
 			v:      Version{hasPatch: true},
 			isZero: true,
+			string: "",
 		},
 		{
 			name:   "non-zero version",
 			v:      Version{Major: 1, hasPatch: true},
 			isZero: false,
+			string: "1.0.0",
 		},
 	}
 
@@ -147,6 +151,9 @@ func TestVersionIsZero(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			if c.v.IsZero() != c.isZero {
 				t.Errorf("expected IsZero to be %t, got %t", c.isZero, c.v.IsZero())
+			}
+			if c.string != c.v.String() {
+				t.Errorf("expected version string %q, got %q", c.string, c.v.String())
 			}
 		})
 	}
