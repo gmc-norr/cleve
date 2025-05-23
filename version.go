@@ -38,6 +38,10 @@ func (v Version) String() string {
 	return fmt.Sprintf("%d.%d", v.Major, v.Minor)
 }
 
+func (v Version) MarshalJSON() ([]byte, error) {
+	return []byte(strconv.Quote(v.String())), nil
+}
+
 func NewMinorVersion(major int, minor int) Version {
 	return Version{
 		Major:    major,
