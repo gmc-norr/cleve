@@ -106,11 +106,18 @@ func (db DB) Panels(filter cleve.PanelFilter) ([]cleve.GenePanel, error) {
 	}
 
 	for cursor.Next(context.TODO()) {
-		p := cleve.GenePanel{}
+		var p struct {
+			Version         string
+			cleve.GenePanel `bson:",inline"`
+		}
 		if err := cursor.Decode(&p); err != nil {
 			return panels, err
 		}
-		panels = append(panels, p)
+		p.GenePanel.Version, err = cleve.ParseVersion(p.Version)
+		if err != nil {
+			return panels, err
+		}
+		panels = append(panels, p.GenePanel)
 	}
 
 	return panels, nil
@@ -120,7 +127,10 @@ func (db DB) Panels(filter cleve.PanelFilter) ([]cleve.GenePanel, error) {
 // is the empty string, the most recent version of the panel is returned.
 // If the panel does not exist, an error is returned.
 func (db DB) Panel(id string, version string) (cleve.GenePanel, error) {
-	var p cleve.GenePanel
+	var p struct {
+		Version         string
+		cleve.GenePanel `bson:",inline"`
+	}
 	matchFields := bson.D{
 		{Key: "id", Value: id},
 	}
@@ -139,17 +149,20 @@ func (db DB) Panel(id string, version string) (cleve.GenePanel, error) {
 	}
 	cursor, err := db.PanelCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return p, err
+		return p.GenePanel, err
 	}
 	defer cursor.Close(context.TODO())
 	if ok := cursor.Next(context.TODO()); !ok {
-		return p, ErrNoDocuments
+		return p.GenePanel, ErrNoDocuments
 	}
 	if cursor.Next(context.TODO()) {
-		return p, fmt.Errorf("expected one document, found more than that")
+		return p.GenePanel, fmt.Errorf("expected one document, found more than that")
 	}
-	err = cursor.Decode(&p)
-	return p, err
+	if err := cursor.Decode(&p); err != nil {
+		return p.GenePanel, err
+	}
+	p.GenePanel.Version, err = cleve.ParseVersion(p.Version)
+	return p.GenePanel, err
 }
 
 // PanelVersions returns a slice of panel versions that exist for a given panel ID.
@@ -176,11 +189,18 @@ func (db DB) PanelVersions(id string) ([]cleve.GenePanelVersion, error) {
 	}
 
 	for cursor.Next(context.TODO()) {
-		var v cleve.GenePanelVersion
+		var v struct {
+			Version                string
+			cleve.GenePanelVersion `bson:",inline"`
+		}
 		if err := cursor.Decode(&v); err != nil {
 			return versions, err
 		}
-		versions = append(versions, v)
+		v.GenePanelVersion.Version, err = cleve.ParseVersion(v.Version)
+		if err != nil {
+			return versions, err
+		}
+		versions = append(versions, v.GenePanelVersion)
 	}
 
 	if len(versions) == 0 {
@@ -249,9 +269,11 @@ func (db DB) PanelCategories() ([]string, error) {
 func (db DB) CreatePanel(p cleve.GenePanel) error {
 	auxPanel := struct {
 		ImportedAt      time.Time
+		Version         string
 		cleve.GenePanel `bson:",inline"`
 	}{
 		ImportedAt: time.Now().UTC(),
+		Version:    p.Version.String(),
 		GenePanel:  p,
 	}
 	_, err := db.PanelCollection().InsertOne(context.TODO(), auxPanel)

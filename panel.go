@@ -27,7 +27,7 @@ type GenePanel struct {
 }
 
 type GenePanelVersion struct {
-	Version string    `json:"version"`
+	Version Version   `bson:"-" json:"version"`
 	Date    time.Time `json:"date"`
 }
 
@@ -41,7 +41,7 @@ func NewGenePanel(name string, description string) GenePanel {
 	n := time.Now()
 	return GenePanel{
 		GenePanelVersion: GenePanelVersion{
-			Version: "1.0",
+			Version: NewMinorVersion(1, 0),
 			Date:    n,
 		},
 		Id:          name,
@@ -66,7 +66,7 @@ func (p GenePanel) Validate() error {
 	if p.Name == "" {
 		return errors.New("panel must have a name")
 	}
-	if p.Version == "" {
+	if p.Version.IsZero() {
 		return errors.New("panel must have a version")
 	}
 	if len(p.Genes) == 0 {
@@ -115,7 +115,13 @@ func genePanelFromText(r io.Reader, delim rune) (GenePanel, error) {
 			case "panel_id", "id":
 				p.Id = value
 			case "version":
-				p.Version = value
+				p.Version, err = ParseVersion(value)
+				if err != nil {
+					return p, fmt.Errorf("error parsing version on line %d: %w", line, err)
+				}
+				if p.Version.HasPatch() {
+					return p, fmt.Errorf("version must only have major and minor numbers")
+				}
 			case "date":
 				p.Date, err = time.Parse("2006-01-02", value)
 				if err != nil {

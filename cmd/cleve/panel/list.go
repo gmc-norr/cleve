@@ -31,7 +31,7 @@ var listCmd = &cobra.Command{
 		fmt.Fprintln(w, "id\tname\tversion\tarchived")
 		fmt.Fprintln(w, "--\t----\t-------\t--------")
 		for _, p := range panels {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%t\n", p.Id, p.Name, p.Version, p.Archived)
+			fmt.Fprintf(w, "%s\t%s\t%s\t%t\n", p.Id, p.Name, p.Version.String(), p.Archived)
 		}
 		w.Flush()
 	},

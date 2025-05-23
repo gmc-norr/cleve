@@ -73,9 +73,13 @@ over what is in the file.
 			p.Id = strings.ToLower(p.Name)
 		}
 		if version, _ := cmd.Flags().GetString("version"); version != "" {
-			p.Version = version
-		} else if p.Version == "" {
-			p.Version = "1.0"
+			p.Version, err = cleve.ParseVersion(version)
+			cobra.CheckErr(err)
+			if p.Version.HasPatch() {
+				cobra.CheckErr("version numbers may only contain major and minor numbers")
+			}
+		} else if p.Version.IsZero() {
+			p.Version = cleve.NewMinorVersion(1, 0)
 		}
 		if description, _ := cmd.Flags().GetString("description"); description != "" {
 			p.Description = description

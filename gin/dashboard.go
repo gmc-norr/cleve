@@ -135,7 +135,7 @@ func DashboardPanelHandler(db *mongo.DB) gin.HandlerFunc {
 			}
 			d["versions"] = versions
 			if filter.Version == "" {
-				filter.Version = versions[0].Version
+				filter.Version = versions[0].Version.String()
 				d["version"] = filter.Version
 			}
 
