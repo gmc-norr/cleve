@@ -26,13 +26,13 @@ func GetAPIDoc() []byte {
 
 //go:generate sh -c "git describe --tags > version.txt || printf '' > version.txt"
 //go:embed version.txt
-var Version string
-var LastRelease string = "v0.4.3" // x-release-please-version
+var version string
+var lastRelease string = "v0.4.3" // x-release-please-version
 
 func GetVersion() string {
-	v := strings.TrimSpace(Version)
+	v := strings.TrimSpace(version)
 	if v == "" {
-		return LastRelease
+		return lastRelease
 	}
 	return v
 }

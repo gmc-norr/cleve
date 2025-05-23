@@ -1,6 +1,11 @@
 package mongo
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var ConflictError = errors.New("conflicting operation")
 
 type PageOutOfBoundsError struct {
 	page       int
