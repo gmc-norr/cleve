@@ -100,9 +100,14 @@ func AddPanelHandler(db *mongo.DB) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
 		if err := db.CreatePanel(p.GenePanel); err != nil {
 			if mongo.IsDuplicateKeyError(err) {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "a panel with this id and version already exists"})
+				return
+			}
+			if errors.Is(err, mongo.ConflictError) {
+				c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": err.Error(), "id": p.Id})
 				return
 			}
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

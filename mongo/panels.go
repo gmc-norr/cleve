@@ -267,6 +267,19 @@ func (db DB) PanelCategories() ([]string, error) {
 // CreatePanel takes adds a new gene panel to the database. If a panel with the
 // same ID and version already exists, an error is returned.
 func (db DB) CreatePanel(p cleve.GenePanel) error {
+	existingPanel, err := db.Panel(p.Id, "")
+	if err != nil && err != mongo.ErrNoDocuments {
+		return err
+	}
+	if existingPanel.Archived {
+		return fmt.Errorf("%w: panel is archived", ConflictError)
+	}
+	if existingPanel.Date.After(p.Date) {
+		return fmt.Errorf("%w: a newer version of this panel already exists", ConflictError)
+	}
+	if time.Now().Before(p.Date) {
+		return fmt.Errorf("%w: panel cannot have a creation date in the future", ConflictError)
+	}
 	auxPanel := struct {
 		ImportedAt      time.Time
 		Version         string
@@ -276,7 +289,7 @@ func (db DB) CreatePanel(p cleve.GenePanel) error {
 		Version:    p.Version.String(),
 		GenePanel:  p,
 	}
-	_, err := db.PanelCollection().InsertOne(context.TODO(), auxPanel)
+	_, err = db.PanelCollection().InsertOne(context.TODO(), auxPanel)
 	return err
 }
 
