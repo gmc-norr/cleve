@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,7 +33,7 @@ type GenePanelVersion struct {
 }
 
 type Gene struct {
-	HGNC    string
+	HGNC    int
 	Symbol  string
 	Aliases []string
 }
@@ -160,13 +161,17 @@ func genePanelFromText(r io.Reader, delim rune) (GenePanel, error) {
 			for i, val := range rec {
 				switch header[i] {
 				case "hgnc", "hgnc_id":
-					g.HGNC = val
+					hgnc, err := strconv.Atoi(val)
+					if err != nil {
+						return p, fmt.Errorf("failed to parse HGNC ID: %w", err)
+					}
+					g.HGNC = hgnc
 				case "hgnc_symbol", "symbol":
 					g.Symbol = val
 				}
 			}
 
-			if g.HGNC == "" {
+			if g.HGNC == 0 {
 				return p, fmt.Errorf("missing HGNC ID for record on line %d", line+1)
 			}
 
