@@ -73,6 +73,11 @@ func (p GenePanel) Validate() error {
 	if len(p.Genes) == 0 {
 		return errors.New("panel must contain at least one gene")
 	}
+	for _, g := range p.Genes {
+		if g.HGNC == 0 {
+			return errors.New("missing HGNC ID for at least one gene")
+		}
+	}
 	return nil
 }
 
