@@ -158,3 +158,69 @@ func TestVersionIsZero(t *testing.T) {
 		})
 	}
 }
+
+func TestComparisons(t *testing.T) {
+	testcases := []struct {
+		name  string
+		v1    Version
+		v2    Version
+		older bool
+		newer bool
+	}{
+		{
+			name:  "minor version v1 older",
+			v1:    NewMinorVersion(1, 2),
+			v2:    NewMinorVersion(1, 3),
+			older: true,
+			newer: false,
+		},
+		{
+			name:  "minor version v1 newer",
+			v1:    NewMinorVersion(2, 3),
+			v2:    NewMinorVersion(1, 12),
+			older: false,
+			newer: true,
+		},
+		{
+			name:  "patch version v1 older",
+			v1:    NewPatchVersion(1, 2, 15),
+			v2:    NewPatchVersion(1, 3, 2),
+			older: true,
+			newer: false,
+		},
+		{
+			name:  "patch version v1 newer",
+			v1:    NewPatchVersion(1, 2, 15),
+			v2:    NewPatchVersion(1, 2, 2),
+			older: false,
+			newer: true,
+		},
+		{
+			name:  "compare minor version with patch version",
+			v1:    NewMinorVersion(2, 3),
+			v2:    NewPatchVersion(1, 12, 0),
+			older: false,
+			newer: false,
+		},
+		{
+			name:  "compare same version",
+			v1:    NewPatchVersion(2, 3, 5),
+			v2:    NewPatchVersion(2, 3, 5),
+			older: false,
+			newer: false,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			older := c.v1.OlderThan(c.v2)
+			newer := c.v1.NewerThan(c.v2)
+			if c.older != older {
+				t.Errorf("expected older to be %t", c.older)
+			}
+			if c.newer != newer {
+				t.Errorf("expected newer to be %t", c.newer)
+			}
+		})
+	}
+}

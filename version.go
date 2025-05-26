@@ -21,6 +21,54 @@ func (v Version) IsZero() bool {
 	return v.Major == 0 && v.Minor == 0 && v.Patch == 0
 }
 
+// OlderThan checks if version `v` is older than verson `other`. Only returns
+// `true` if `v` is strictly smaller than `other`. If the versions are identical
+// `false` is returned. If one of the versions has a patch version number and the
+// other doesn't, false is returned.
+func (v Version) OlderThan(other Version) bool {
+	if v.hasPatch != other.hasPatch {
+		return false
+	}
+	if v.Major < other.Major {
+		return true
+	} else if v.Major != other.Major {
+		return false
+	}
+	if v.Minor < other.Minor {
+		return true
+	} else if v.Minor != other.Minor {
+		return false
+	}
+	if v.hasPatch && other.hasPatch && v.Patch < other.Patch {
+		return true
+	}
+	return false
+}
+
+// NewerThan checks if version `v` is newer than verson `other`. Only returns
+// `true` if `v` is strictly larger than `other`. If the versions are identical
+// `false` is returned. If one of the versions has a patch version number and the
+// other doesn't, false is returned.
+func (v Version) NewerThan(other Version) bool {
+	if v.hasPatch != other.hasPatch {
+		return false
+	}
+	if v.Major > other.Major {
+		return true
+	} else if v.Major != other.Major {
+		return false
+	}
+	if v.Minor > other.Minor {
+		return true
+	} else if v.Minor != other.Minor {
+		return false
+	}
+	if v.hasPatch && other.hasPatch && v.Patch > other.Patch {
+		return true
+	}
+	return false
+}
+
 func (v Version) Equal(other Version) bool {
 	return v.Major == other.Major &&
 		v.Minor == other.Minor &&
