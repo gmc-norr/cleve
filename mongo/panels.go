@@ -274,8 +274,11 @@ func (db DB) CreatePanel(p cleve.GenePanel) error {
 	if existingPanel.Archived {
 		return fmt.Errorf("%w: panel is archived", ConflictError)
 	}
+	if existingPanel.Version.NewerThan(p.Version) {
+		return fmt.Errorf("%w: a newer version of this panel already exists, most recent version is %s", ConflictError, existingPanel.Version)
+	}
 	if existingPanel.Date.After(p.Date) {
-		return fmt.Errorf("%w: a newer version of this panel already exists", ConflictError)
+		return fmt.Errorf("%w: a version with a more recent creation date already exists", ConflictError)
 	}
 	if time.Now().Before(p.Date) {
 		return fmt.Errorf("%w: panel cannot have a creation date in the future", ConflictError)
