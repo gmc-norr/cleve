@@ -87,26 +87,42 @@
     {{ if not .qc.IndexSummary.Indexes }}
     <p>No indexing information found.</p>
     {{ else }}
-    <table class="my-6">
-        <thead class="bg-accent-900 text-accent-100">
-            <tr>
-                <th class="px-2">Sample</th>
-                <th class="px-2">Index</th>
-                <th class="px-2 text-right">Reads (M)</th>
-                <th class="px-2 text-right">% PF reads</th>
-            </tr>
-        </thead>
-        <tbody class="bg-accent-100">
-            {{ range $s := .qc.IndexSummary.Indexes }}
-                <tr>
-                    <td class="px-2">{{ $s.Sample }}</td>
-                    <td class="px-2">{{ $s.Index }}</td>
-                    <td class="px-2 text-right">{{ toFloat $s.ReadCount | multiply 1e-6 | printf "%.2f" }}</td>
-                    <td class="px-2 text-right">{{ $s.PercentReads | printf "%.2f" }}</td>
-                </tr>
-            {{ end }}
-        </tbody>
-    </table>
+    <div class="flex items-start gap-6 my-6">
+        <div class="max-h-[35lvh] overflow-y-auto">
+            <table class="shrink-0">
+                <thead>
+                    <tr class="sticky top-0 bg-accent-900 text-accent-100">
+                        <th class="px-2">Sample</th>
+                        <th class="px-2">Index</th>
+                        <th class="px-2 text-right">Reads (M)</th>
+                        <th class="px-2 text-right">% PF reads</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-accent-100">
+                    {{ range $s := .qc.IndexSummary.Indexes }}
+                        <tr>
+                            <td class="px-2">{{ $s.Sample }}</td>
+                            <td class="px-2">{{ $s.Index }}</td>
+                            <td class="px-2 text-right">{{ toFloat $s.ReadCount | multiply 1e-6 | printf "%.2f" }}</td>
+                            <td class="px-2 text-right">{{ $s.PercentReads | printf "%.2f" }}</td>
+                        </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <form hx-get="/qc/charts/run/{{ .run.RunID }}/index" hx-trigger="change select[name=y]" hx-target="next div">
+                <label>
+                    Y-axis:
+                    <select class="border rounded-md" name="y">
+                        <option value="percent-pf-reads" selected>%PF Reads</option>
+                        <option value="m-reads">Number of reads (M)</option>
+                    </select>
+                </label>
+            </form>
+            <div hx-get="/qc/charts/run/{{ .run.RunID }}/index" hx-trigger="load" hx-include="select[name=y]"></div>
+        </div>
+    </div>
     {{ end }}
 </section>
 
