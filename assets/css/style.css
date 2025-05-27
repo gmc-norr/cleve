@@ -217,6 +217,9 @@
   .relative {
     position: relative;
   }
+  .sticky {
+    position: sticky;
+  }
   .top-0 {
     top: calc(var(--spacing) * 0);
   }
@@ -314,6 +317,9 @@
     width: .8em;
     height: .8em;
   }
+  .max-h-\[35lvh\] {
+    max-height: 35lvh;
+  }
   .max-h-lvh {
     max-height: 100lvh;
   }
@@ -399,6 +405,9 @@
   }
   .overflow-x-auto {
     overflow-x: auto;
+  }
+  .overflow-y-auto {
+    overflow-y: auto;
   }
   .overflow-y-scroll {
     overflow-y: scroll;
