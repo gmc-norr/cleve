@@ -111,7 +111,11 @@
             </table>
         </div>
         <div>
-            <form hx-get="/qc/charts/run/{{ .run.RunID }}/index" hx-trigger="change select[name=y]" hx-target="next div">
+            <form
+                hx-get="/qc/charts/run/{{ .run.RunID }}/index"
+                hx-trigger="change"
+                hx-swap="innerHTML ignoreTitle:true"
+                hx-target="next div">
                 <label>
                     Y-axis:
                     <select class="border rounded-md" name="y">
@@ -120,7 +124,12 @@
                     </select>
                 </label>
             </form>
-            <div hx-get="/qc/charts/run/{{ .run.RunID }}/index" hx-trigger="load" hx-include="select[name=y]"></div>
+            <div
+                hx-get="/qc/charts/run/{{ .run.RunID }}/index"
+                hx-trigger="load"
+                hx-swap="innerHTML ignoreTitle:true"
+                hx-include="select[name=y]">
+            </div>
         </div>
     </div>
     {{ end }}
