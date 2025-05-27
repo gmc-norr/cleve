@@ -3,7 +3,6 @@ package gin
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -22,7 +21,6 @@ func PanelsHandler(db *mongo.DB) gin.HandlerFunc {
 			)
 			return
 		}
-		slog.Info("api panels", "filter", filter)
 		panels, err := db.Panels(filter)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
