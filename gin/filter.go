@@ -31,3 +31,11 @@ func getQcFilter(c *gin.Context) (cleve.QcFilter, error) {
 	}
 	return filter, filter.Validate()
 }
+
+func getPanelFilter(c *gin.Context) (cleve.PanelFilter, error) {
+	filter := cleve.NewPanelFilter()
+	if err := c.BindQuery(&filter); err != nil {
+		return filter, err
+	}
+	return filter, nil
+}

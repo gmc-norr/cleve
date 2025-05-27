@@ -6,6 +6,7 @@ import (
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/cmd/cleve/db"
 	"github.com/gmc-norr/cleve/cmd/cleve/key"
+	"github.com/gmc-norr/cleve/cmd/cleve/panel"
 	"github.com/gmc-norr/cleve/cmd/cleve/platform"
 	"github.com/gmc-norr/cleve/cmd/cleve/run"
 	"github.com/gmc-norr/cleve/cmd/cleve/samplesheet"
@@ -32,6 +33,7 @@ func init() {
 	rootCmd.AddCommand(run.RunCmd)
 	rootCmd.AddCommand(db.DbCmd)
 	rootCmd.AddCommand(key.KeyCmd)
+	rootCmd.AddCommand(panel.PanelCmd)
 	rootCmd.AddCommand(platform.PlatformCmd)
 	rootCmd.AddCommand(samplesheet.SampleSheetCmd)
 }
