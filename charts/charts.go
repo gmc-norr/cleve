@@ -10,9 +10,11 @@ import (
 )
 
 type RunStats[T interop.OptionalFloat | float64 | int] struct {
-	Data  []RunStat[T]
-	Label string
-	Type  string
+	Data   []RunStat[T]
+	XLabel string
+	YLabel string
+	Label  string
+	Type   string
 }
 
 // Use a pointer for the value so that missing values
@@ -75,6 +77,8 @@ func BarChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.Ba
 	chart := charts.NewBar()
 	chart.SetGlobalOptions(
 		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
+		charts.WithXAxisOpts(opts.XAxis{Name: d.XLabel}),
+		charts.WithYAxisOpts(opts.YAxis{Name: d.YLabel}),
 	)
 	xLabels := make([]string, 0)
 	barData := make([]opts.BarData, 0)
