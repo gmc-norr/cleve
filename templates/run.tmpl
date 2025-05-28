@@ -102,7 +102,7 @@
                     {{ range $s := .qc.IndexSummary.Indexes }}
                         <tr>
                             <td class="px-2">{{ $s.Sample }}</td>
-                            <td class="px-2">{{ $s.Index }}</td>
+                            <td class="px-2 font-mono">{{ $s.Index }}</td>
                             <td class="px-2 text-right">{{ toFloat $s.ReadCount | multiply 1e-6 | printf "%.2f" }}</td>
                             <td class="px-2 text-right">{{ $s.PercentReads | printf "%.2f" }}</td>
                         </tr>
