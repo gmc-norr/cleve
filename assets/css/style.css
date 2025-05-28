@@ -317,8 +317,8 @@
     width: .8em;
     height: .8em;
   }
-  .max-h-\[35lvh\] {
-    max-height: 35lvh;
+  .max-h-\[50lvh\] {
+    max-height: 50lvh;
   }
   .max-h-lvh {
     max-height: 100lvh;
@@ -506,6 +506,9 @@
   }
   .text-right {
     text-align: right;
+  }
+  .font-mono {
+    font-family: var(--font-mono);
   }
   .text-2xl {
     font-size: var(--text-2xl);
