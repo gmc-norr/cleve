@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/gmc-norr/cleve/compare/v0.4.3...v0.5.0) (2025-05-28)
+
+
+### Features
+
+* add handling of gene panels ([#88](https://github.com/gmc-norr/cleve/issues/88)) ([8fc0bce](https://github.com/gmc-norr/cleve/commit/8fc0bced11023474e957e39bb899b865c460e15b))
+* add plot for the index summary ([#91](https://github.com/gmc-norr/cleve/issues/91)) ([ac7b7fb](https://github.com/gmc-norr/cleve/commit/ac7b7fbaccbf92b4455a2f3209e9a058999054f0))
+
+
+### Bug Fixes
+
+* ignore page title when fetching index plots ([#93](https://github.com/gmc-norr/cleve/issues/93)) ([999dd2b](https://github.com/gmc-norr/cleve/commit/999dd2b08f01699c937dbbddd2d09fdf6a07ae1f))
+* prevent the index table to shrink horizontally ([999dd2b](https://github.com/gmc-norr/cleve/commit/999dd2b08f01699c937dbbddd2d09fdf6a07ae1f))
+* use monospaced font for index sequences in index table ([999dd2b](https://github.com/gmc-norr/cleve/commit/999dd2b08f01699c937dbbddd2d09fdf6a07ae1f))
+
 ## [0.4.3](https://github.com/gmc-norr/cleve/compare/v0.4.2...v0.4.3) (2025-05-05)
 
 
