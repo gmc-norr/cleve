@@ -56,7 +56,7 @@ func (d ScatterData) Plot() (render.Renderer, error) {
 func LineChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.Line {
 	chart := charts.NewLine()
 	chart.SetGlobalOptions(
-		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
 	)
 	xLabels := make([]string, 0)
 	lineData := make([]opts.LineData, 0)
@@ -67,7 +67,7 @@ func LineChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.L
 
 	chart.SetXAxis(xLabels).
 		AddSeries(d.Label, lineData, charts.WithLineChartOpts(
-			opts.LineChart{ShowSymbol: true, SymbolSize: 5},
+			opts.LineChart{ShowSymbol: opts.Bool(true), SymbolSize: 5},
 		))
 
 	return chart
@@ -76,7 +76,7 @@ func LineChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.L
 func BarChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.Bar {
 	chart := charts.NewBar()
 	chart.SetGlobalOptions(
-		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
 		charts.WithXAxisOpts(opts.XAxis{Name: d.XLabel}),
 		charts.WithYAxisOpts(opts.YAxis{Name: d.YLabel}),
 	)
@@ -96,8 +96,8 @@ func BarChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.Ba
 func ScatterChart(d ScatterData) *charts.Scatter {
 	chart := charts.NewScatter()
 	chart.SetGlobalOptions(
-		charts.WithLegendOpts(opts.Legend{Show: true}),
-		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
+		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true)}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
 		charts.WithXAxisOpts(opts.XAxis{Name: d.XLabel}),
 		charts.WithYAxisOpts(opts.YAxis{Name: d.YLabel}),
 	)
