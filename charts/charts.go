@@ -40,6 +40,8 @@ type ScatterData struct {
 	Data     []ScatterDatum
 	XLabel   string
 	YLabel   string
+	XLimit   [2]float64
+	YLimit   [2]float64
 	Grouping string
 }
 
@@ -95,11 +97,21 @@ func BarChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.Ba
 
 func ScatterChart(d ScatterData) *charts.Scatter {
 	chart := charts.NewScatter()
+	xOpts := opts.XAxis{Name: d.XLabel}
+	if d.XLimit[0] != d.XLimit[1] {
+		xOpts.Min = d.XLimit[0]
+		xOpts.Max = d.XLimit[1]
+	}
+	yOpts := opts.YAxis{Name: d.YLabel}
+	if d.YLimit[0] != d.YLimit[1] {
+		yOpts.Min = d.YLimit[0]
+		yOpts.Max = d.YLimit[1]
+	}
 	chart.SetGlobalOptions(
 		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true)}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
-		charts.WithXAxisOpts(opts.XAxis{Name: d.XLabel}),
-		charts.WithYAxisOpts(opts.YAxis{Name: d.YLabel}),
+		charts.WithXAxisOpts(xOpts),
+		charts.WithYAxisOpts(yOpts),
 	)
 	series := make(map[any][]opts.ScatterData)
 	for _, k := range d.Data {

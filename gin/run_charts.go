@@ -81,7 +81,10 @@ func RunChartsHandler(db RunQCGetter) gin.HandlerFunc {
 			return
 		}
 
-		plotData := charts.ScatterData{}
+		plotData := charts.ScatterData{
+			XLimit: [2]float64{0, 100},
+			YLimit: [2]float64{0, 100},
+		}
 
 		switch config.XData {
 		case "percent_occupied":
