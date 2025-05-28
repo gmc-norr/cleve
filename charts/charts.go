@@ -112,6 +112,8 @@ func ScatterChart(d ScatterData) *charts.Scatter {
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
 		charts.WithXAxisOpts(xOpts),
 		charts.WithYAxisOpts(yOpts),
+		charts.WithDataZoomOpts(opts.DataZoom{Orient: "vertical", Type: "slider"}),
+		charts.WithDataZoomOpts(opts.DataZoom{Orient: "horizontal", Type: "slider"}),
 	)
 	series := make(map[any][]opts.ScatterData)
 	for _, k := range d.Data {
