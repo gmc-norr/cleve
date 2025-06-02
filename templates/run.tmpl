@@ -39,30 +39,84 @@
         </tr>
     </table>
     {{ if .hasQc }}
-    <div class="flex my-6">
-        <div class="bg-accent-100 p-4 mr-2">
+    <div class="flex my-6 flex-wrap gap-2">
+        <div class="bg-accent-100 p-4 shrink-0">
             <h3 class="text-xl font-bold">Yield</h3>
             <span class="text-lg inline-block w-full text-right">{{ toFloat .qc.RunSummary.Yield | multiply 1e-9 | printf "%.2f" }} Gbp</span>
         </div>
-        <div class="bg-accent-100 p-4 mx-2">
+        <div class="bg-accent-100 p-4 shrink-0">
             <h3 class="text-xl font-bold">%&gt;=Q30</h3>
             <span class="text-lg inline-block w-full text-right">{{ .qc.RunSummary.PercentQ30 | printf "%.2f" }}%</span>
         </div>
-        <div class="bg-accent-100 p-4 mx-2">
+        <div class="bg-accent-100 p-4 shrink-0">
             <h3 class="text-xl font-bold">% Passing filter</h3>
             <span class="text-lg inline-block w-full text-right">{{ .qc.RunSummary.PercentPf | printf "%.2f" }}%</span>
         </div>
         {{ if not .qc.RunSummary.PercentOccupied.IsNaN }}
-        <div class="bg-accent-100 p-4 mx-2">
+        <div class="bg-accent-100 p-4 shrink-0">
             <h3 class="text-xl font-bold">% Occupied</h3>
             <span class="text-lg inline-block w-full text-right">{{ .qc.RunSummary.PercentOccupied | printf "%.2f" }}%</span>
         </div>
         {{ end }}
-        <div class="bg-accent-100 p-4 ml-2">
+        <div class="bg-accent-100 p-4 shrink-0">
             <h3 class="text-xl font-bold">Cluster density (K/mm<sup>2</sup>)</h3>
             <span class="text-lg inline-block w-full text-right">{{ toFloat .qc.RunSummary.Density | multiply 1e-3 | printf "%.2f" }}</span>
         </div>
     </div>
+    <div class="flex flex-col xl:flex-row gap-6 min-w-[900px]">
+        <div class="relative isolate w-[900px] h-[500px] m-auto xl:m-0">
+            <div id="run-chart-spinner" class="bg-slate-400/25 absolute pointer-events-none w-full h-full htmx-indicator flex items-center justify-center z-10">
+                <span class="flex items-center gap-2 text-4xl"><img class="inline-block size-[.8lh] animate-spin" src="/static/img/spinner.svg"> Loading chart...</span>
+            </div>
+            <div id="run-chart-container"
+                hx-get="/qc/charts/run/{{ .run.RunID }}"
+                hx-include="#chart-form"
+                hx-trigger="load"
+                hx-indicator="#run-chart-spinner"
+                hx-swap="innerHTML ignoreTitle:true">
+            </div>
+        </div>
+        <form
+            class="flex xl:flex-col justify-center xl:justify-center gap-2"
+            id="chart-form"
+            autocomplete="off"
+            hx-get="/qc/charts/run/{{ .run.RunID }}"
+            hx-target="#run-chart-container"
+            hx-trigger="change"
+            hx-indicator="#run-chart-spinner"
+            hx-swap="innerHtml ignoreTitle:true">
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">X-axis</span>
+                <select id="chart-data-x-select" class="border rounded-md" name="chart-data-x">
+                    <option value="percent_occupied"{{ if eq .chart_config.XData "percent_occupied" }} selected{{ end }}>% occupied</option>
+                    <option value="percent_pf"{{ if eq .chart_config.XData "percent_pf" }} selected{{ end }}>% passing filter</option>
+                </select>
+            </label>
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">Y-axis</span>
+                <select id="chart-data-y-select" class="border rounded-md" name="chart-data-y">
+                    <option value="percent_occupied"{{ if eq .chart_config.YData "percent_occupied" }} selected{{ end }}>% occupied</option>
+                    <option value="percent_pf"{{ if eq .chart_config.YData "percent_pf" }} selected{{ end }}>% passing filter</option>
+                </select>
+            </label>
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">Chart type</span>
+                <select id="chart-type-select" class="border rounded-md" name="chart-type">
+                    <option value="scatter"{{ if eq .chart_config.ChartType "scatter" }} selected{{ end }}>Scatter plot</option>
+                </select>
+            </label>
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">Color by</span>
+                <select id="chart-color-by-select" class="border rounded-md" name="chart-color-by">
+                    <option value="lane"{{ if eq .chart_config.ColorBy "lane" }} selected{{ end }}>Lane</option>
+                </select>
+            </label>
+        </form>
+    </div>
+    {{ else if eq $state "ready" }}
+    <p>QC data has yet to be imported for this run.</p>
+    {{ else }}
+    <p>QC data is not available until the run is ready.</p>
     {{ end }}
 </section>
 
@@ -243,67 +297,6 @@
             </table>
         </section>
         {{ end }}
-    {{ end }}
-</section>
-
-<section class="m-6 border-t">
-    <h2 class="text-2xl my-4">Charts</h2>
-
-    {{ if .hasQc }}
-    <div>
-        <form
-            class="flex gap-2"
-            id="chart-form"
-            autocomplete="off"
-            hx-get="/qc/charts/run/{{ .run.RunID }}"
-            hx-target="#run-chart-container"
-            hx-trigger="change"
-            hx-indicator="#run-chart-spinner"
-            hx-swap="innerHtml ignoreTitle:true">
-            <label class="flex flex-col">
-                <span class="text-sm font-bold">X-axis</span>
-                <select id="chart-data-x-select" class="border rounded-md" name="chart-data-x">
-                    <option value="percent_occupied"{{ if eq .chart_config.XData "percent_occupied" }} selected{{ end }}>% occupied</option>
-                    <option value="percent_pf"{{ if eq .chart_config.XData "percent_pf" }} selected{{ end }}>% passing filter</option>
-                </select>
-            </label>
-            <label class="flex flex-col">
-                <span class="text-sm font-bold">Y-axis</span>
-                <select id="chart-data-y-select" class="border rounded-md" name="chart-data-y">
-                    <option value="percent_occupied"{{ if eq .chart_config.YData "percent_occupied" }} selected{{ end }}>% occupied</option>
-                    <option value="percent_pf"{{ if eq .chart_config.YData "percent_pf" }} selected{{ end }}>% passing filter</option>
-                </select>
-            </label>
-            <label class="flex flex-col">
-                <span class="text-sm font-bold">Chart type</span>
-                <select id="chart-type-select" class="border rounded-md" name="chart-type">
-                    <option value="scatter"{{ if eq .chart_config.ChartType "scatter" }} selected{{ end }}>Scatter plot</option>
-                </select>
-            </label>
-            <label class="flex flex-col">
-                <span class="text-sm font-bold">Color by</span>
-                <select id="chart-color-by-select" class="border rounded-md" name="chart-color-by">
-                    <option value="lane"{{ if eq .chart_config.ColorBy "lane" }} selected{{ end }}>Lane</option>
-                </select>
-            </label>
-        </form>
-        <div class="relative isolate max-w-[900px] min-h-[500px]">
-            <div id="run-chart-spinner" class="bg-slate-400/25 absolute pointer-events-none w-full h-full htmx-indicator flex items-center justify-center z-10">
-                <span class="flex items-center gap-2 text-4xl"><img class="inline-block size-[.8lh] animate-spin" src="/static/img/spinner.svg"> Loading chart...</span>
-            </div>
-            <div id="run-chart-container"
-                hx-get="/qc/charts/run/{{ .run.RunID }}"
-                hx-include="#chart-form"
-                hx-trigger="load"
-                hx-indicator="#run-chart-spinner"
-                hx-swap="innerHTML ignoreTitle:true">
-            </div>
-        </div>
-    </div>
-    {{ else if eq $state "ready" }}
-    <p>QC data has yet to be imported for this run.</p>
-    {{ else }}
-    <p>QC data is not available until the run is ready.</p>
     {{ end }}
 </section>
 
