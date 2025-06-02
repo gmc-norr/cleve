@@ -59,10 +59,8 @@ func IndexChartHandler(db *mongo.DB) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		if err := p.Render(c.Writer); err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
+		s := p.RenderSnippet()
+		c.String(http.StatusOK, s.Element+s.Script)
 	}
 }
 
@@ -135,10 +133,8 @@ func RunChartsHandler(db RunQCGetter) gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			if err := p.Render(c.Writer); err != nil {
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
+			s := p.RenderSnippet()
+			c.String(http.StatusOK, s.Element+s.Script)
 		}
 	}
 }
