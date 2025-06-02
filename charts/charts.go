@@ -84,6 +84,7 @@ func LineChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.L
 func BarChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.Bar {
 	chart := charts.NewBar()
 	chart.SetGlobalOptions(
+		charts.WithInitializationOpts(opts.Initialization{Width: "900px", Height: "500px"}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
 		charts.WithXAxisOpts(opts.XAxis{Name: d.XLabel}),
 		charts.WithYAxisOpts(opts.YAxis{Name: d.YLabel}),
@@ -114,6 +115,7 @@ func ScatterChart[T cmp.Ordered](d ScatterData[T]) *charts.Scatter {
 		yOpts.Max = d.YLimit[1]
 	}
 	chart.SetGlobalOptions(
+		charts.WithInitializationOpts(opts.Initialization{Width: "900px", Height: "500px"}),
 		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true)}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
 		charts.WithXAxisOpts(xOpts),
