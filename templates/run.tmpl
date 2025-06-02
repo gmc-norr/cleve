@@ -112,13 +112,14 @@
         </div>
         <div>
             <form
+                class="flex gap-2"
                 hx-get="/qc/charts/run/{{ .run.RunID }}/index"
                 hx-trigger="change"
                 hx-swap="innerHTML ignoreTitle:true"
                 hx-target="#index-chart-container"
                 hx-indicator="#index-chart-spinner">
-                <label>
-                    Y-axis:
+                <label class="flex flex-col">
+                    <span class="text-sm font-bold">Y-axis:</span>
                     <select class="border rounded-md" name="y">
                         <option value="percent-pf-reads" selected>%PF Reads</option>
                         <option value="m-reads">Number of reads (M)</option>
@@ -250,31 +251,41 @@
 
     {{ if .hasQc }}
     <div>
-        <form id="chart-form"
+        <form
+            class="flex gap-2"
+            id="chart-form"
             autocomplete="off"
             hx-get="/qc/charts/run/{{ .run.RunID }}"
             hx-target="#run-chart-container"
             hx-trigger="change"
             hx-indicator="#run-chart-spinner"
             hx-swap="innerHtml ignoreTitle:true">
-            <label for="chart-data-x-select">X-axis:</label>
-            <select id="chart-data-x-select" name="chart-data-x">
-                <option value="percent_occupied"{{ if eq .chart_config.XData "percent_occupied" }} selected{{ end }}>% occupied</option>
-                <option value="percent_pf"{{ if eq .chart_config.XData "percent_pf" }} selected{{ end }}>% passing filter</option>
-            </select>
-            <label for="chart-data-y-select">Y-axis:</label>
-            <select id="chart-data-y-select" name="chart-data-y">
-                <option value="percent_occupied"{{ if eq .chart_config.YData "percent_occupied" }} selected{{ end }}>% occupied</option>
-                <option value="percent_pf"{{ if eq .chart_config.YData "percent_pf" }} selected{{ end }}>% passing filter</option>
-            </select>
-            <label for="chart-type-select">Chart type:</label>
-            <select id="chart-type-select" name="chart-type">
-                <option value="scatter"{{ if eq .chart_config.ChartType "scatter" }} selected{{ end }}>Scatter plot</option>
-            </select>
-            <label for="chart-color-by-select">Color by:</label>
-            <select id="chart-color-by-select" name="chart-color-by">
-                <option value="lane"{{ if eq .chart_config.ColorBy "lane" }} selected{{ end }}>Lane</option>
-            </select>
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">X-axis</span>
+                <select id="chart-data-x-select" class="border rounded-md" name="chart-data-x">
+                    <option value="percent_occupied"{{ if eq .chart_config.XData "percent_occupied" }} selected{{ end }}>% occupied</option>
+                    <option value="percent_pf"{{ if eq .chart_config.XData "percent_pf" }} selected{{ end }}>% passing filter</option>
+                </select>
+            </label>
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">Y-axis</span>
+                <select id="chart-data-y-select" class="border rounded-md" name="chart-data-y">
+                    <option value="percent_occupied"{{ if eq .chart_config.YData "percent_occupied" }} selected{{ end }}>% occupied</option>
+                    <option value="percent_pf"{{ if eq .chart_config.YData "percent_pf" }} selected{{ end }}>% passing filter</option>
+                </select>
+            </label>
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">Chart type</span>
+                <select id="chart-type-select" class="border rounded-md" name="chart-type">
+                    <option value="scatter"{{ if eq .chart_config.ChartType "scatter" }} selected{{ end }}>Scatter plot</option>
+                </select>
+            </label>
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">Color by</span>
+                <select id="chart-color-by-select" class="border rounded-md" name="chart-color-by">
+                    <option value="lane"{{ if eq .chart_config.ColorBy "lane" }} selected{{ end }}>Lane</option>
+                </select>
+            </label>
         </form>
         <div class="relative isolate max-w-[900px] min-h-[500px]">
             <div id="run-chart-spinner" class="bg-slate-400/25 absolute pointer-events-none w-full h-full htmx-indicator flex items-center justify-center z-10">

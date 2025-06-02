@@ -7,7 +7,7 @@
 <section id="run-qc-chart" class="mx-6 my-8">
     <h2 class="text-3xl my-4">Charts</h2>
     <div>
-        <form id="chart-form"
+        <form class="flex gap-2" id="chart-form"
             autocomplete="off"
             hx-get="/qc/charts/global"
             hx-target="#chart-container"
@@ -17,16 +17,20 @@
             hx-indicator="#chart-spinner">
             <input type="hidden" name="page_size" value="{{ .filter.PageSize }}" />
             <input type="hidden" name="page" value="{{ .filter.Page }}" />
-            <label for="chart-data-select">Chart type:</label>
-            <select id="chart-data-select" name="chart-data">
-                <option value="q30"{{ if eq .chart_config.ChartData "q30" }} selected{{ end }}>%&ge;Q30</option>
-                <option value="error_rate"{{ if eq .chart_config.ChartData "error_rate" }} selected{{ end }}>Error rate</option>
-            </select>
-            <label for="chart-type-select">Chart type:</label>
-            <select id="chart-type-select" name="chart-type">
-                <option value="bar"{{ if eq .chart_config.ChartData "bar" }} selected{{ end }}>Bar chart</option>
-                <option value="line"{{ if eq .chart_config.ChartType "line" }} selected{{ end }}>Line chart</option>
-            </select>
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">Chart data</span>
+                <select id="chart-data-select" class="border rounded-md" name="chart-data">
+                    <option value="q30"{{ if eq .chart_config.ChartData "q30" }} selected{{ end }}>%&ge;Q30</option>
+                    <option value="error_rate"{{ if eq .chart_config.ChartData "error_rate" }} selected{{ end }}>Error rate</option>
+                </select>
+            </label>
+            <label class="flex flex-col">
+                <span class="text-sm font-bold">Chart type</span>
+                <select id="chart-type-select" class="border rounded-md" name="chart-type">
+                    <option value="bar"{{ if eq .chart_config.ChartData "bar" }} selected{{ end }}>Bar chart</option>
+                    <option value="line"{{ if eq .chart_config.ChartType "line" }} selected{{ end }}>Line chart</option>
+                </select>
+            </label>
         </form>
         <div class="relative isolate max-w-[900px] min-h-[500px]">
             <div id="chart-spinner" class="bg-slate-400/25 absolute pointer-events-none w-full h-full htmx-indicator flex items-center justify-center z-10">
