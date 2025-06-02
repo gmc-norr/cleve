@@ -260,6 +260,9 @@
   .m-6 {
     margin: calc(var(--spacing) * 6);
   }
+  .m-auto {
+    margin: auto;
+  }
   .mx-2 {
     margin-inline: calc(var(--spacing) * 2);
   }
@@ -299,9 +302,6 @@
   .mb-8 {
     margin-bottom: calc(var(--spacing) * 8);
   }
-  .ml-2 {
-    margin-left: calc(var(--spacing) * 2);
-  }
   .block {
     display: block;
   }
@@ -331,6 +331,9 @@
     width: .8lh;
     height: .8lh;
   }
+  .h-\[500px\] {
+    height: 500px;
+  }
   .h-full {
     height: 100%;
   }
@@ -342,6 +345,9 @@
   }
   .min-h-\[500px\] {
     min-height: 500px;
+  }
+  .w-\[900px\] {
+    width: 900px;
   }
   .w-fit {
     width: fit-content;
@@ -640,6 +646,26 @@
   .disabled\:bg-gray-400 {
     &:disabled {
       background-color: var(--color-gray-400);
+    }
+  }
+  .xl\:m-0 {
+    @media (width >= 80rem) {
+      margin: calc(var(--spacing) * 0);
+    }
+  }
+  .xl\:flex-col {
+    @media (width >= 80rem) {
+      flex-direction: column;
+    }
+  }
+  .xl\:flex-row {
+    @media (width >= 80rem) {
+      flex-direction: row;
+    }
+  }
+  .xl\:justify-center {
+    @media (width >= 80rem) {
+      justify-content: center;
     }
   }
 }
