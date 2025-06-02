@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-echarts/go-echarts/v2 v2.3.3
+	github.com/go-echarts/go-echarts/v2 v2.5.4
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/google/uuid v1.4.0
 	github.com/spf13/cobra v1.8.0
