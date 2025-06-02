@@ -81,7 +81,7 @@ func RunChartsHandler(db RunQCGetter) gin.HandlerFunc {
 			return
 		}
 
-		plotData := charts.ScatterData{
+		plotData := charts.ScatterData[int]{
 			XLimit: [2]float64{0, 100},
 			YLimit: [2]float64{0, 100},
 		}
@@ -106,7 +106,7 @@ func RunChartsHandler(db RunQCGetter) gin.HandlerFunc {
 		}
 
 		for _, tile := range qc.TileSummary {
-			d := charts.ScatterDatum{}
+			d := charts.ScatterDatum[int]{}
 			switch config.XData {
 			case "percent_occupied":
 				d.X = float64(tile.PercentOccupied)
@@ -122,7 +122,7 @@ func RunChartsHandler(db RunQCGetter) gin.HandlerFunc {
 
 			switch config.ColorBy {
 			case "lane":
-				d.Color = tile.Lane
+				d.Group = tile.Lane
 			}
 
 			plotData.Data = append(plotData.Data, d)

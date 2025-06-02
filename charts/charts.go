@@ -1,7 +1,9 @@
 package charts
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/go-echarts/go-echarts/v2/charts"
@@ -36,8 +38,10 @@ func (s RunStats[T]) Plot() (render.Renderer, error) {
 	}
 }
 
-type ScatterData struct {
-	Data     []ScatterDatum
+// ScatterData represents the a dataset for a scatter chart. The generic type T
+// represents the type of the Group field for the individual data points.
+type ScatterData[T cmp.Ordered] struct {
+	Data     []ScatterDatum[T]
 	XLabel   string
 	YLabel   string
 	XLimit   [2]float64
@@ -45,13 +49,15 @@ type ScatterData struct {
 	Grouping string
 }
 
-type ScatterDatum struct {
+// ScatterDatum represents a single data point for ScatterData. The generic type T
+// represents the type of the Group field.
+type ScatterDatum[T cmp.Ordered] struct {
 	X     float64
 	Y     float64
-	Color any
+	Group T
 }
 
-func (d ScatterData) Plot() (render.Renderer, error) {
+func (d ScatterData[T]) Plot() (render.Renderer, error) {
 	return ScatterChart(d), nil
 }
 
@@ -95,7 +101,7 @@ func BarChart[T interop.OptionalFloat | float64 | int](d RunStats[T]) *charts.Ba
 	return chart
 }
 
-func ScatterChart(d ScatterData) *charts.Scatter {
+func ScatterChart[T cmp.Ordered](d ScatterData[T]) *charts.Scatter {
 	chart := charts.NewScatter()
 	xOpts := opts.XAxis{Name: d.XLabel}
 	if d.XLimit[0] != d.XLimit[1] {
@@ -115,6 +121,7 @@ func ScatterChart(d ScatterData) *charts.Scatter {
 		charts.WithDataZoomOpts(opts.DataZoom{Orient: "vertical", Type: "slider"}),
 		charts.WithDataZoomOpts(opts.DataZoom{Orient: "horizontal", Type: "slider"}),
 	)
+	labels := make([]T, 0)
 	series := make(map[any][]opts.ScatterData)
 	for _, k := range d.Data {
 		sd := opts.ScatterData{
@@ -122,11 +129,16 @@ func ScatterChart(d ScatterData) *charts.Scatter {
 			Symbol:     "circle",
 			SymbolSize: 5,
 		}
-		series[k.Color] = append(series[k.Color], sd)
+		if !slices.Contains(labels, k.Group) {
+			labels = append(labels, k.Group)
+		}
+		series[k.Group] = append(series[k.Group], sd)
 	}
 	chart.SetXAxis(nil)
-	for k, v := range series {
-		chart.AddSeries(fmt.Sprintf("%v", k), v)
+	slices.Sort(labels)
+
+	for _, k := range labels {
+		chart.AddSeries(fmt.Sprintf("%v", k), series[k])
 	}
 	return chart
 }
