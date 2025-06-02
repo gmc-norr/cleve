@@ -13,6 +13,7 @@
     --color-green-600: oklch(62.7% 0.194 149.214);
     --color-slate-200: oklch(92.9% 0.013 255.508);
     --color-slate-300: oklch(86.9% 0.022 252.894);
+    --color-slate-400: oklch(70.4% 0.04 256.788);
     --color-slate-500: oklch(55.4% 0.046 257.417);
     --color-slate-600: oklch(44.6% 0.043 257.281);
     --color-gray-200: oklch(92.8% 0.006 264.531);
@@ -199,6 +200,9 @@
   }
 }
 @layer utilities {
+  .pointer-events-none {
+    pointer-events: none;
+  }
   .collapse {
     visibility: collapse;
   }
@@ -225,6 +229,12 @@
   }
   .right-0 {
     right: calc(var(--spacing) * 0);
+  }
+  .isolate {
+    isolation: isolate;
+  }
+  .z-10 {
+    z-index: 10;
   }
   .container {
     width: 100%;
@@ -317,11 +327,21 @@
     width: .8em;
     height: .8em;
   }
+  .size-\[\.8lh\] {
+    width: .8lh;
+    height: .8lh;
+  }
+  .h-full {
+    height: 100%;
+  }
   .max-h-\[50lvh\] {
     max-height: 50lvh;
   }
   .max-h-lvh {
     max-height: 100lvh;
+  }
+  .min-h-\[500px\] {
+    min-height: 500px;
   }
   .w-fit {
     width: fit-content;
@@ -331,6 +351,9 @@
   }
   .max-w-4xl {
     max-width: var(--container-4xl);
+  }
+  .max-w-\[900px\] {
+    max-width: 900px;
   }
   .max-w-fit {
     max-width: fit-content;
@@ -343,6 +366,9 @@
   }
   .min-w-3xs {
     min-width: var(--container-3xs);
+  }
+  .min-w-\[900px\] {
+    min-width: 900px;
   }
   .min-w-fit {
     min-width: fit-content;
@@ -380,6 +406,9 @@
   .grid-rows-1 {
     grid-template-rows: repeat(1, minmax(0, 1fr));
   }
+  .flex-col {
+    flex-direction: column;
+  }
   .flex-wrap {
     flex-wrap: wrap;
   }
@@ -388,6 +417,9 @@
   }
   .items-start {
     align-items: flex-start;
+  }
+  .justify-center {
+    justify-content: center;
   }
   .gap-2 {
     gap: calc(var(--spacing) * 2);
@@ -467,6 +499,12 @@
   }
   .bg-slate-200 {
     background-color: var(--color-slate-200);
+  }
+  .bg-slate-400\/25 {
+    background-color: color-mix(in srgb, oklch(70.4% 0.04 256.788) 25%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-slate-400) 25%, transparent);
+    }
   }
   .bg-slate-500 {
     background-color: var(--color-slate-500);
