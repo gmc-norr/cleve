@@ -174,9 +174,14 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 
 func unmarshalNovaSeqV1RunParameters(data []byte) (rp interop.RunParameters, err error) {
 	type auxRunParams struct {
-		ExperimentName string `bson:"experimentname"`
-		Side           string `bson:"side"`
-		Consumables    []struct {
+		ExperimentName     string `bson:"experimentname"`
+		Side               string `bson:"side"`
+		Application        string `bson:"application"`
+		ApplicationVersion string `bson:"systemsuiteversion"`
+		Dragen             struct {
+			Version string `bson:"secondaryanalysisplatformversion"`
+		} `bson:"secondaryanalysisinfo"`
+		Consumables []struct {
 			Type           string    `bson:"type"`
 			Name           string    `bson:"name"`
 			Version        string    `bson:"version"`
@@ -197,6 +202,16 @@ func unmarshalNovaSeqV1RunParameters(data []byte) (rp interop.RunParameters, err
 	rp = interop.RunParameters{
 		ExperimentName: run.Params.ExperimentName,
 		Side:           run.Params.Side,
+	}
+	rp.Software = []interop.Software{
+		{
+			Name:    run.Params.Application,
+			Version: run.Params.ApplicationVersion,
+		},
+		{
+			Name:    "Dragen",
+			Version: run.Params.Dragen.Version,
+		},
 	}
 	for _, consumable := range run.Params.Consumables {
 		interopConsumable := interop.Consumable{
