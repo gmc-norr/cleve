@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/gmc-norr/cleve/compare/v0.5.0...v0.6.0) (2025-06-03)
+
+
+### Features
+
+* add function for updating run from CLI ([#101](https://github.com/gmc-norr/cleve/issues/101)) ([0957b55](https://github.com/gmc-norr/cleve/commit/0957b553c8e50af9f701b2b50879925f8b743936))
+
+
+### Bug Fixes
+
+* extract software versions from older run parameters ([#103](https://github.com/gmc-norr/cleve/issues/103)) ([69b077f](https://github.com/gmc-norr/cleve/commit/69b077fddec667b0ac7d23de8f9a8d411e4d810e))
+
 ## [0.5.0](https://github.com/gmc-norr/cleve/compare/v0.4.3...v0.5.0) (2025-06-03)
 
 
