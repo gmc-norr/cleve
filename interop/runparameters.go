@@ -74,10 +74,16 @@ type Consumable struct {
 	ExpirationDate time.Time `bson:"expiration_date" json:"expiration_date"`
 }
 
+type Software struct {
+	Name    string `bson:"name" json:"name"`
+	Version string `bson:"version" json:"version"`
+}
+
 type RunParameters struct {
 	ExperimentName string       `bson:"experiment_name" json:"experiment_name"`
 	Side           string       `bson:"side,omitzero" json:"side,omitzero"`
 	Flowcell       Consumable   `bson:"flowcell" json:"flowcell"`
+	Software       []Software   `bson:"software" json:"software"`
 	Consumables    []Consumable `bson:"consumables" json:"consumables"`
 }
 
@@ -85,6 +91,9 @@ type runParametersNovaSeq struct {
 	XMLName        xml.Name `xml:"RunParameters"`
 	ExperimentName string   `xml:"ExperimentName"`
 	Side           string   `xml:"Side"`
+	CCSName        string   `xml:"Application"`
+	CCSVersion     string   `xml:"SystemSuiteVersion"`
+	DragenVersion  string   `xml:"SecondaryAnalysisInfo>SecondaryAnalysisInfo>SecondaryAnalysisPlatformVersion"`
 	Consumables    []struct {
 		Type           string      `xml:"Type"`
 		Name           string      `xml:"Name"`
@@ -98,9 +107,12 @@ type runParametersNovaSeq struct {
 }
 
 type runParametersNextSeq struct {
-	XMLName        xml.Name `xml:"RunParameters"`
-	ExperimentName string   `xml:"ExperimentName"`
-	Setup          struct {
+	XMLName           xml.Name `xml:"RunParameters"`
+	ExperimentName    string   `xml:"ExperimentName"`
+	CCSVersion        string   `xml:"SystemSuiteVersion"`
+	RTAVersion        string   `xml:"RTAVersion"`
+	RunManagerVersion string   `xml:"LocalRunManagerVersion"`
+	Setup             struct {
 		Read1  int `xml:"Read1"`
 		Read2  int `xml:"Read2"`
 		Index1 int `xml:"Index1Read"`
@@ -130,6 +142,9 @@ type runParametersNextSeq struct {
 type runParametersMiSeq struct {
 	XMLName        xml.Name `xml:"RunParameters"`
 	ExperimentName string   `xml:"ExperimentName"`
+	MCSVersion     string   `xml:"MCSVersion"`
+	FPGAVersion    string   `xml:"FPGAVersion"`
+	RTAVersion     string   `xml:"RTAVersion"`
 	Flowcell       struct {
 		SerialNumber   string      `xml:"SerialNumber"`
 		PartNumber     string      `xml:"PartNumber"`
@@ -266,6 +281,14 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 		rp.Side = novaseq.Side
 		rp.ExperimentName = novaseq.ExperimentName
 
+		rp.Software = append(rp.Software, Software{
+			Name:    novaseq.CCSName,
+			Version: novaseq.CCSVersion,
+		}, Software{
+			Name:    "Dragen",
+			Version: novaseq.DragenVersion,
+		})
+
 		rp.Consumables = make([]Consumable, 0, len(novaseq.Consumables))
 		for _, c := range novaseq.Consumables {
 			if c.Type == "FlowCell" {
@@ -308,6 +331,21 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			ExpirationDate: nextseq.Flowcell.ExpirationDate.Time,
 		}
 
+		rp.Software = []Software{
+			{
+				Name:    "NextSeq Control Software",
+				Version: nextseq.CCSVersion,
+			},
+			{
+				Name:    "Realtime Analysis",
+				Version: nextseq.RTAVersion,
+			},
+			{
+				Name:    "Local Run Manager",
+				Version: nextseq.RunManagerVersion,
+			},
+		}
+
 		rp.Consumables = make([]Consumable, 2)
 		rp.Consumables[0] = Consumable{
 			Type:           "Buffer",
@@ -337,6 +375,20 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			PartNumber:     miseq.Flowcell.PartNumber,
 			LotNumber:      miseq.Flowcell.LotNumber,
 			ExpirationDate: miseq.Flowcell.ExpirationDate.Time,
+		}
+		rp.Software = []Software{
+			{
+				Name:    "MiSeq Control Software",
+				Version: miseq.MCSVersion,
+			},
+			{
+				Name:    "Realtime Analysis",
+				Version: miseq.RTAVersion,
+			},
+			{
+				Name:    "FPGA",
+				Version: miseq.FPGAVersion,
+			},
 		}
 		rp.Consumables = make([]Consumable, 2)
 		rp.Consumables[0] = Consumable{
