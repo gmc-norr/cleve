@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.5.0](https://github.com/gmc-norr/cleve/compare/v0.4.3...v0.5.0) (2025-06-03)
+
+
+### Features
+
+* add handling of gene panels ([#88](https://github.com/gmc-norr/cleve/issues/88)) ([8fc0bce](https://github.com/gmc-norr/cleve/commit/8fc0bced11023474e957e39bb899b865c460e15b))
+* add loading indicators to plots ([#95](https://github.com/gmc-norr/cleve/issues/95)) ([066baa4](https://github.com/gmc-norr/cleve/commit/066baa413f0706e02e1fd67e3c7375280b685be9))
+* add plot for the index summary ([#91](https://github.com/gmc-norr/cleve/issues/91)) ([ac7b7fb](https://github.com/gmc-norr/cleve/commit/ac7b7fbaccbf92b4455a2f3209e9a058999054f0))
+* add sequencer software versions to database ([#97](https://github.com/gmc-norr/cleve/issues/97)) ([489245f](https://github.com/gmc-norr/cleve/commit/489245fd6b81e8a6608b0a837d613c729296d338))
+* add zoom and consistent series ordering for scatter plots ([#94](https://github.com/gmc-norr/cleve/issues/94)) ([06995de](https://github.com/gmc-norr/cleve/commit/06995de9a3a4b59918e17b88a72ce4a30165479b))
+* move scatter plot on run page ([#96](https://github.com/gmc-norr/cleve/issues/96)) ([50966ff](https://github.com/gmc-norr/cleve/commit/50966ff9e39276a084b6398a11c6ae2e224ab1e2))
+
+
+### Bug Fixes
+
+* allocate space for plots before loading them ([066baa4](https://github.com/gmc-norr/cleve/commit/066baa413f0706e02e1fd67e3c7375280b685be9))
+* better styling of plot controls ([066baa4](https://github.com/gmc-norr/cleve/commit/066baa413f0706e02e1fd67e3c7375280b685be9))
+* ignore page title when fetching index plots ([#93](https://github.com/gmc-norr/cleve/issues/93)) ([999dd2b](https://github.com/gmc-norr/cleve/commit/999dd2b08f01699c937dbbddd2d09fdf6a07ae1f))
+* prevent the index table to shrink horizontally ([999dd2b](https://github.com/gmc-norr/cleve/commit/999dd2b08f01699c937dbbddd2d09fdf6a07ae1f))
+* use monospaced font for index sequences in index table ([999dd2b](https://github.com/gmc-norr/cleve/commit/999dd2b08f01699c937dbbddd2d09fdf6a07ae1f))
+
 ## [0.4.3](https://github.com/gmc-norr/cleve/compare/v0.4.2...v0.4.3) (2025-05-05)
 
 
