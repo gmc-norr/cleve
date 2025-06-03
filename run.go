@@ -221,8 +221,11 @@ func unmarshalNovaSeqV1RunParameters(data []byte) (rp interop.RunParameters, err
 
 func unmarshalNextSeqV1RunParameters(data []byte) (rp interop.RunParameters, err error) {
 	type auxRunParams struct {
-		ExperimentName  string `bson:"experimentname"`
-		FlowcellRfidTag struct {
+		ExperimentName    string `bson:"experimentname"`
+		RTAVersion        string `bson:"rtaversion"`
+		RunManagerVersion string `bson:"localrunmanagerversion"`
+		CCSVersion        string `bson:"systemsuiteversion"`
+		FlowcellRfidTag   struct {
 			SerialNumber   string    `bson:"serialnumber"`
 			PartNumber     string    `bson:"partnumber"`
 			LotNumber      string    `bson:"lotnumber"`
@@ -257,6 +260,20 @@ func unmarshalNextSeqV1RunParameters(data []byte) (rp interop.RunParameters, err
 		PartNumber:     run.Params.FlowcellRfidTag.PartNumber,
 		LotNumber:      run.Params.FlowcellRfidTag.LotNumber,
 		ExpirationDate: time.Time(run.Params.FlowcellRfidTag.ExpirationDate),
+	}
+	rp.Software = []interop.Software{
+		{
+			Name:    "NextSeq Control Software",
+			Version: run.Params.CCSVersion,
+		},
+		{
+			Name:    "Realtime Analysis",
+			Version: run.Params.RTAVersion,
+		},
+		{
+			Name:    "Local Run Manager",
+			Version: run.Params.RunManagerVersion,
+		},
 	}
 	rp.Consumables = []interop.Consumable{
 		{
