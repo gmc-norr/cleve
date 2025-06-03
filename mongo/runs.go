@@ -335,6 +335,21 @@ func (db DB) CreateRun(r *cleve.Run) error {
 	return nil
 }
 
+func (db DB) UpdateRun(r *cleve.Run) error {
+	type auxQc struct {
+		Version    int `bson:"schema_version"`
+		*cleve.Run `bson:",inline"`
+	}
+	aqc := auxQc{
+		Version: 2,
+		Run:     r,
+	}
+	_, err := db.RunCollection().ReplaceOne(context.TODO(), bson.D{
+		{Key: "run_id", Value: r.RunID},
+	}, aqc, options.Replace().SetUpsert(true))
+	return err
+}
+
 func (db DB) DeleteRun(runId string) error {
 	res, err := db.RunCollection().DeleteOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}})
 	if err == nil && res.DeletedCount == 0 {
