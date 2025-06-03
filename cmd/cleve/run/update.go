@@ -65,18 +65,47 @@ var (
 			}
 
 			reloadQc, _ := cmd.Flags().GetBool("reload-qc")
-			if reloadQc {
-				log.Printf("Updating QC data for run %s", args[0])
-				run, err := db.Run(args[0], false)
+			reloadMetadata, _ := cmd.Flags().GetBool("reload-metadata")
+			var run *cleve.Run
+
+			if reloadQc || reloadMetadata {
+				run, err = db.Run(args[0], false)
 				if err != nil {
 					log.Fatalf("error: %s", err)
 				}
+			}
+
+			if reloadQc {
+				log.Printf("Updating QC data for run %s", args[0])
 				qc, err := interop.InteropFromDir(run.Path)
 				if err != nil {
 					log.Fatalf("error: %s", err)
 				}
 				if err := db.UpdateRunQC(qc.Summarise()); err != nil {
 					log.Fatalf("error: %s", err)
+				}
+				didSomething = true
+			}
+
+			if reloadMetadata {
+				log.Printf("Updating metadata for run %s", args[0])
+				runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
+				if err != nil {
+					log.Fatalf("error reading run info: %s", err)
+				}
+				runParameters, err := interop.ReadRunParameters(filepath.Join(run.Path, "RunParameters.xml"))
+				if err != nil {
+					log.Fatalf("error reading run parameters: %s", err)
+				}
+				run.RunInfo = runInfo
+				run.RunParameters = runParameters
+				if err := db.UpdateRun(run); err != nil {
+					log.Fatalf("error updating run: %s", err)
+				}
+				// TODO: There should be a method on the run struct that checks the run state.
+				// Update the state by using the last known run state
+				if err := db.SetRunState(run.RunID, run.StateHistory[0].State); err != nil {
+					log.Fatalf("error setting run state: %s", err)
 				}
 				didSomething = true
 			}
@@ -97,6 +126,7 @@ func init() {
 	updateCmd.Flags().StringVar(&stateArg, "state", "", "Run state (one of "+stateString+")")
 	updateCmd.Flags().StringP("path", "p", "", "Absolute path to the run")
 	updateCmd.Flags().Bool("reload-qc", false, "Reload QC data for run")
+	updateCmd.Flags().Bool("reload-metadata", false, "Reload metadata for run")
 
 	cobra.OnInitialize(func() {
 		if stateArg != "" {
