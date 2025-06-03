@@ -3,8 +3,8 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  args_bin = []
-  bin = "./bin/cleve serve"
+  args_bin = ["serve", "--debug"]
+  bin = "./bin/cleve"
   cmd = "make cleve"
   delay = 1000
   exclude_dir = ["bin", "testdata"]
