@@ -29,3 +29,11 @@
 .state-moved {
   @apply bg-amber-600 text-white;
 }
+
+.state-moving {
+  @apply bg-amber-600 text-white;
+}
+
+.state-incomplete {
+  @apply bg-red-600 text-white;
+}
