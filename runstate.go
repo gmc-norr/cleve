@@ -16,19 +16,23 @@ const (
 	Ready
 	Pending
 	Complete
+	Incomplete
 	Error
 	Moved
+	Moving
 	Unknown
 )
 
 var ValidRunStates = map[string]RunState{
-	"new":      New,
-	"ready":    Ready,
-	"pending":  Pending,
-	"complete": Complete,
-	"error":    Error,
-	"moved":    Moved,
-	"unknown":  Unknown,
+	"new":        New,
+	"ready":      Ready,
+	"pending":    Pending,
+	"complete":   Complete,
+	"incomplete": Incomplete,
+	"error":      Error,
+	"moved":      Moved,
+	"moving":     Moving,
+	"unknown":    Unknown,
 }
 
 func (s RunState) String() string {

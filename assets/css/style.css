@@ -685,6 +685,14 @@
   background-color: var(--color-amber-600);
   color: var(--color-white);
 }
+.state-moving {
+  background-color: var(--color-amber-600);
+  color: var(--color-white);
+}
+.state-incomplete {
+  background-color: var(--color-red-600);
+  color: var(--color-white);
+}
 @property --tw-rotate-x {
   syntax: "*";
   inherits: false;
