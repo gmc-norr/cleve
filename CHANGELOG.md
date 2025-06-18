@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/gmc-norr/cleve/compare/v0.6.0...v0.7.0) (2025-06-18)
+
+
+### Features
+
+* ability to update analysis path via API ([#107](https://github.com/gmc-norr/cleve/issues/107)) ([03c3b3e](https://github.com/gmc-norr/cleve/commit/03c3b3e1b94f53f45b141d9acfc436293aa773d8))
+
 ## [0.6.0](https://github.com/gmc-norr/cleve/compare/v0.5.0...v0.6.0) (2025-06-12)
 
 
