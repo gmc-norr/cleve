@@ -71,6 +71,20 @@ func (db DB) SetAnalysisState(runId string, analysisId string, state cleve.RunSt
 	return err
 }
 
+func (db DB) SetAnalysisPath(runId string, analysisId string, path string) error {
+	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
+	update := bson.D{{
+		Key: "$set", Value: bson.D{
+			{Key: "analysis.$.path", Value: path},
+		},
+	}}
+	res, err := db.RunCollection().UpdateOne(context.TODO(), filter, update)
+	if err != nil && res.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return err
+}
+
 func (db DB) SetAnalysisSummary(runId string, analysisId string, summary *cleve.AnalysisSummary) error {
 	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
 	update := bson.D{{
