@@ -202,6 +202,10 @@ endpoints:
         type: string
         description: new state of the analysis
         required: false
+      - key: path
+        type: string
+        description: the path of the analysis directory
+        required: false
       - key: summary_file
         type: file
         description: analysis summary file

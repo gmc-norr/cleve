@@ -22,6 +22,7 @@ type AnalysisGetter interface {
 type AnalysisSetter interface {
 	CreateAnalysis(string, *cleve.Analysis) error
 	SetAnalysisState(string, string, cleve.RunState) error
+	SetAnalysisPath(string, string, string) error
 	SetAnalysisSummary(string, string, *cleve.AnalysisSummary) error
 }
 
@@ -195,9 +196,13 @@ func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		analysisId := c.Param("analysisId")
+		stateUpdated := false
+		pathUpdated := false
+		summaryUpdated := false
 
 		var updateRequest struct {
 			State       string                `form:"state"`
+			Path        string                `form:"path"`
 			SummaryFile *multipart.FileHeader `form:"summary_file"`
 		}
 
@@ -236,6 +241,15 @@ func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 				)
 				return
 			}
+			stateUpdated = true
+		}
+
+		if updateRequest.Path != "" {
+			err := db.SetAnalysisPath(runId, analysisId, updateRequest.Path)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to set analysis path", "details": err})
+			}
+			pathUpdated = true
 		}
 
 		if updateRequest.SummaryFile != nil {
@@ -271,8 +285,14 @@ func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 				)
 				return
 			}
+			summaryUpdated = true
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "analysis updated", "run_id": runId, "analysis_id": analysisId})
+		msg := "analysis updated"
+		if !stateUpdated && !pathUpdated && !summaryUpdated {
+			msg = "nothing updated"
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": msg, "run_id": runId, "analysis_id": analysisId, "updated_state": stateUpdated, "updated_path": pathUpdated, "updated_summary": summaryUpdated})
 	}
 }
