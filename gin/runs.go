@@ -3,6 +3,8 @@ package gin
 import (
 	"errors"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -130,6 +132,106 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "run added", "run_id": run.RunID})
+	}
+}
+
+func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		runId := c.Param("runId")
+		var updateRequest struct {
+			State string `json:"state"`
+			Path  string `json:"path"`
+		}
+
+		run, err := db.Run(runId, false)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "run not found", "run_id": runId})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		updated := map[string]bool{
+			"state": false,
+			"path":  false,
+		}
+
+		if err := c.ShouldBindJSON(&updateRequest); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing request body"})
+			return
+		}
+
+		if updateRequest.Path != "" {
+			if err := db.SetRunPath(runId, updateRequest.Path); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run path"})
+				return
+			}
+
+			samplesheetPath, err := cleve.MostRecentSamplesheet(updateRequest.Path)
+			if err != nil {
+				if err.Error() != "no samplesheet found" {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "looking for samplesheet"})
+					return
+				}
+			}
+
+			if samplesheetPath != "" {
+				samplesheet, err := cleve.ReadSampleSheet(samplesheetPath)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "reading samplesheet"})
+					return
+				}
+				_, err = db.CreateSampleSheet(samplesheet, mongo.SampleSheetWithRunId(runId))
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "saving samplesheet"})
+					return
+				}
+			}
+
+			for _, a := range run.Analysis {
+				if strings.HasPrefix(a.Path, run.Path) {
+					pathSuffix := strings.TrimPrefix(a.Path, run.Path)
+					if err := db.SetAnalysisPath(runId, a.AnalysisId, filepath.Join(updateRequest.Path, pathSuffix)); err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating analysis path"})
+						return
+					}
+				}
+			}
+
+			updated["path"] = true
+		}
+
+		if updateRequest.State != "" {
+			var state cleve.RunState
+			err := state.Set(updateRequest.State)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing state"})
+				return
+			}
+
+			if err = db.SetRunState(runId, state); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run state"})
+				return
+			}
+			updated["state"] = true
+		}
+
+		any_updated := false
+		for _, u := range updated {
+			if u {
+				any_updated = true
+				break
+			}
+		}
+
+		msg := "run updated"
+		if !any_updated {
+			msg = "nothing updated"
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": msg, "run_id": runId, "updated": updated})
 	}
 }
 

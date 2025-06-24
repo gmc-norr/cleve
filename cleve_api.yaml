@@ -79,7 +79,7 @@ endpoints:
   - path: /runs/{run_id}/state
     method: PATCH
     section: runs
-    description: Update the state of a run
+    description: (deprecated) Update the state of a run
     headers:
       - key: Authorization
         type: string
@@ -98,7 +98,7 @@ endpoints:
   - path: /runs/{run_id}/path
     method: PATCH
     section: runs
-    description: Update the path of a run
+    description: (deprecated) Update the path of a run
     headers:
       - key: Authorization
         type: string
@@ -113,6 +113,29 @@ endpoints:
         type: string
         description: new path of the run directory
         required: true
+
+  - path: /runs/{run_id}
+    method: PATCH
+    section: runs
+    description: Update one or more run attributes
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run to update
+        required: true
+      - key: path
+        type: string
+        description: new path of the run directory
+        required: false
+      - key: state
+        type: string
+        description: new state of the run directory
+        required: false
 
   - path: /runs/{run_id}/analysis
     method: GET
