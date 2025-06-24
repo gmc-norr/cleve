@@ -3,6 +3,8 @@ package gin
 import (
 	"errors"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -133,12 +135,22 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 	}
 }
 
-func UpdateRunHandler(db RunSetter) gin.HandlerFunc {
+func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		var updateRequest struct {
 			State string `json:"state"`
 			Path  string `json:"path"`
+		}
+
+		run, err := db.Run(runId, false)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.JSON(http.StatusNotFound, gin.H{"error": "run not found", "run_id": runId})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 
 		updated := map[string]bool{
@@ -177,6 +189,17 @@ func UpdateRunHandler(db RunSetter) gin.HandlerFunc {
 					return
 				}
 			}
+
+			for _, a := range run.Analysis {
+				if strings.HasPrefix(a.Path, run.Path) {
+					pathSuffix := strings.TrimPrefix(a.Path, run.Path)
+					if err := db.SetAnalysisPath(runId, a.AnalysisId, filepath.Join(updateRequest.Path, pathSuffix)); err != nil {
+						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating analysis path"})
+						return
+					}
+				}
+			}
+
 			updated["path"] = true
 		}
 
