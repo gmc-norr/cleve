@@ -59,7 +59,7 @@ func ReadRunCompletionStatus(filename string) (RunCompletionStatus, error) {
 	if err != nil {
 		return status, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	data, err := io.ReadAll(f)
 	if err != nil {

@@ -119,13 +119,13 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	if err != nil {
 		return qc, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	if !cursor.Next(context.TODO()) {
 		// No documents
-		qc.PaginationMetadata.TotalCount = 0
+		qc.TotalCount = 0
 	}
-	if err := cursor.Decode(&qc.PaginationMetadata); qc.PaginationMetadata.TotalCount > 0 && err != nil {
+	if err := cursor.Decode(&qc.PaginationMetadata); qc.TotalCount > 0 && err != nil {
 		return qc, err
 	}
 	if qc.PageSize > 0 {
@@ -164,7 +164,7 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 	if err != nil {
 		return qc, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	for cursor.Next(context.TODO()) {
 		var auxQc struct {
@@ -180,7 +180,7 @@ func (db DB) RunQCs(filter cleve.QcFilter) (cleve.QcResult, error) {
 			auxQc.Qc.Date = time.Time{}
 		}
 
-		qc.PaginationMetadata.Count++
+		qc.Count++
 		qc.InteropSummary = append(qc.InteropSummary, auxQc.Qc)
 	}
 
@@ -222,7 +222,7 @@ func (db DB) RunQCIndex() ([]map[string]string, error) {
 	if err != nil {
 		return []map[string]string{}, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	var indexes []map[string]string
 

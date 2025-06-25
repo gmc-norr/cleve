@@ -35,12 +35,12 @@ var (
 				fmt.Println(string(jsonString))
 			} else {
 				w := tabwriter.NewWriter(os.Stdout, 2, 4, 2, ' ', 0)
-				fmt.Fprint(w, "name\tinstrument ids\trun count\tready marker\taliases\n")
-				fmt.Fprint(w, "----\t--------------\t---------\t------------\t-------\n")
+				_, _ = fmt.Fprint(w, "name\tinstrument ids\trun count\tready marker\taliases\n")
+				_, _ = fmt.Fprint(w, "----\t--------------\t---------\t------------\t-------\n")
 				for _, p := range platforms.Platforms {
-					fmt.Fprintf(w, "%s\t%v\t%d\t%s\t%v\n", p.Name, p.InstrumentIds, p.RunCount, p.ReadyMarker, p.Aliases)
+					_, _ = fmt.Fprintf(w, "%s\t%v\t%d\t%s\t%v\n", p.Name, p.InstrumentIds, p.RunCount, p.ReadyMarker, p.Aliases)
 				}
-				w.Flush()
+				_ = w.Flush()
 			}
 		},
 	}

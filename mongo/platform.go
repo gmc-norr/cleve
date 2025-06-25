@@ -39,7 +39,7 @@ func (db DB) Platforms() (cleve.Platforms, error) {
 		}
 		return platforms, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	err = cursor.All(context.TODO(), &platforms.Platforms)
 	return platforms.Condense(), err

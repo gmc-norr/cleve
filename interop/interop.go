@@ -404,7 +404,7 @@ type TileSummaryRecord struct {
 func (i Interop) TileSummary() []TileSummaryRecord {
 	tiles := make(map[string]TileSummaryRecord)
 	for _, record := range i.TileMetrics.Records {
-		name := record.LT.TileName()
+		name := record.TileName()
 		ts, ok := tiles[name]
 		if !ok {
 			ts.LT = record.LT
@@ -435,7 +435,7 @@ func (i Interop) TileSummary() []TileSummaryRecord {
 	}
 
 	for _, record := range i.ExtendedTileMetrics.Records {
-		name := record.LT.TileName()
+		name := record.TileName()
 		ts := tiles[name]
 		ts.PercentOccupied = OptionalFloat(100 * float64(record.OccupiedClusters) / float64(tiles[name].ClusterCount))
 		tiles[name] = ts

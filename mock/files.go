@@ -14,7 +14,7 @@ func WriteTempFile(t *testing.T, filename string, content string) (string, error
 	if err != nil {
 		return path, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	if _, err := io.WriteString(f, content); err != nil {
 		return path, err
 	}

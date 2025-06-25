@@ -141,7 +141,7 @@ func parseQMetricRecords4(r io.Reader, qm *QMetrics) error {
 		if err != nil {
 			return err
 		}
-		record.LTC = recordV4.ltc1.normalize()
+		record.LTC = recordV4.normalize()
 		record.Histogram = make([]int, qm.Bins)
 		for i := range recordV4.Histogram {
 			record.Histogram[i] = int(recordV4.Histogram[i])
@@ -166,7 +166,7 @@ func parseQMetricRecords6(r io.Reader, qm *QMetrics) error {
 		if err != nil {
 			return err
 		}
-		record.LTC = recordV6.ltc1.normalize()
+		record.LTC = recordV6.normalize()
 		record.Histogram = make([]int, qm.Bins)
 		for i := range recordV6.Histogram {
 			record.Histogram[i] = int(recordV6.Histogram[i])
@@ -192,7 +192,7 @@ func parseQMetricRecords7(r io.Reader, qm *QMetrics) error {
 		if err != nil {
 			return err
 		}
-		record.LTC = recordV7.ltc2.normalize()
+		record.LTC = recordV7.normalize()
 		record.Histogram = make([]int, qm.Bins)
 		for i := range recordV7.Histogram {
 			record.Histogram[i] = int(recordV7.Histogram[i])
@@ -242,7 +242,7 @@ func ReadQMetrics(filename string) (QMetrics, error) {
 	if err != nil {
 		return QMetrics{}, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	r := bufio.NewReader(f)
 	return parseQMetrics(r)
 }

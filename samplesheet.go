@@ -496,7 +496,7 @@ func ReadSampleSheet(filename string) (SampleSheet, error) {
 	if err != nil {
 		return SampleSheet{}, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	finfo, err := os.Stat(filename)
 	if err != nil {
 		return SampleSheet{}, err

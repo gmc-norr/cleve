@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-var ConflictError = errors.New("conflicting operation")
+var ErrConflict = errors.New("conflicting operation")
 
 type PageOutOfBoundsError struct {
 	page       int

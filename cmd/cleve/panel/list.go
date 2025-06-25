@@ -28,12 +28,12 @@ var listCmd = &cobra.Command{
 		cobra.CheckErr(err)
 
 		w := tabwriter.NewWriter(os.Stdout, 5, 4, 2, ' ', 0)
-		fmt.Fprintln(w, "id\tname\tversion\tarchived")
-		fmt.Fprintln(w, "--\t----\t-------\t--------")
+		_, _ = fmt.Fprintln(w, "id\tname\tversion\tarchived")
+		_, _ = fmt.Fprintln(w, "--\t----\t-------\t--------")
 		for _, p := range panels {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%t\n", p.Id, p.Name, p.Version.String(), p.Archived)
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%t\n", p.Id, p.Name, p.Version.String(), p.Archived)
 		}
-		w.Flush()
+		_ = w.Flush()
 	},
 }
 

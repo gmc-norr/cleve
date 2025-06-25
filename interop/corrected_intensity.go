@@ -145,7 +145,7 @@ func ReadCorrectedIntensity(filename string) (CorrectedIntensity, error) {
 	if err != nil {
 		return ci, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	r := bufio.NewReader(f)
 	return ParseCorrectedIntensity(r)
 }

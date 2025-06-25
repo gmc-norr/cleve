@@ -101,7 +101,7 @@ func parseIndexMetricsV1(r io.Reader, im *IndexMetrics) error {
 		}
 
 		im.Records = append(im.Records, IndexMetricRecord{
-			LT:           rec.lt1.normalize(),
+			LT:           rec.normalize(),
 			Read:         int(rec.Read),
 			IndexName:    string(rec.IndexName),
 			SampleName:   string(rec.SampleName),
@@ -151,7 +151,7 @@ func parseIndexMetricsV2(r io.Reader, im *IndexMetrics) error {
 		}
 
 		im.Records = append(im.Records, IndexMetricRecord{
-			LT:           rec.lt2.normalize(),
+			LT:           rec.normalize(),
 			Read:         int(rec.Read),
 			IndexName:    string(rec.IndexName),
 			SampleName:   string(rec.SampleName),
@@ -168,7 +168,7 @@ func ReadIndexMetrics(path string) (IndexMetrics, error) {
 	if err != nil {
 		return im, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	r := bufio.NewReader(f)
 

@@ -185,7 +185,7 @@ func parseTileMetricRecordsV2(r io.Reader, tm *TileMetrics) error {
 		key := [2]uint16{rt.Lane, rt.Tile}
 		if _, ok := tiles[key]; !ok {
 			tiles[key] = &TileRecord{
-				LT:             rt.lt1.normalize(),
+				LT:             rt.normalize(),
 				PercentAligned: make(map[int]float64),
 			}
 		}
@@ -251,7 +251,7 @@ func parseTileMetricRecordsV3(r io.Reader, tm *TileMetrics) error {
 		}
 		if _, ok := records[lane][tile]; !ok {
 			records[lane][tile] = &TileRecord{
-				LT:             t.lt2.normalize(),
+				LT:             t.normalize(),
 				PercentAligned: make(map[int]float64),
 			}
 		}
@@ -299,20 +299,20 @@ func ReadTileMetrics(filename string) (tm TileMetrics, err error) {
 	if err != nil {
 		return tm, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	r := bufio.NewReader(f)
 	tm.Header, err = parseHeader(r)
 	if err != nil {
 		return tm, nil
 	}
 
-	switch tm.Header.Version {
+	switch tm.Version {
 	case 2:
 		err = parseTileMetricsV2(r, &tm)
 	case 3:
 		err = parseTileMetricsV3(r, &tm)
 	default:
-		return tm, fmt.Errorf("unsupported tile metrics version: %d", tm.Header.Version)
+		return tm, fmt.Errorf("unsupported tile metrics version: %d", tm.Version)
 	}
 
 	return tm, err

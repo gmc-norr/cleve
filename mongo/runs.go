@@ -238,7 +238,7 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 
 	if !cursor.Next(context.TODO()) {
 		// No runs in result
-		r.PaginationMetadata.TotalCount = 0
+		r.TotalCount = 0
 	}
 	if err := cursor.Decode(&r.PaginationMetadata); r.TotalCount > 0 && err != nil {
 		return r, err
@@ -270,7 +270,7 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 	if err != nil {
 		return r, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	for cursor.Next(context.TODO()) {
 		var run cleve.Run
@@ -408,7 +408,7 @@ func (db DB) RunIndex() ([]map[string]string, error) {
 	if err != nil {
 		return []map[string]string{}, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	var indexes []map[string]string
 

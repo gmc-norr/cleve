@@ -419,6 +419,6 @@ func ReadRunParameters(filename string) (RunParameters, error) {
 	if err != nil {
 		return rp, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return ParseRunParameters(f)
 }
