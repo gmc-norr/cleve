@@ -10,3 +10,5 @@ formatters:
   enable:
     - gofumpt
     - goimports
+issues:
+  fix: true
