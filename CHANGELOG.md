@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/gmc-norr/cleve/compare/v0.7.0...v0.8.0) (2025-06-25)
+
+
+### Features
+
+* simplify run update endpoint ([#109](https://github.com/gmc-norr/cleve/issues/109)) ([b346fda](https://github.com/gmc-norr/cleve/commit/b346fdac8c88659954298d1ae90a9b31ef3a48e4))
+
+
+### Bug Fixes
+
+* add css class that was missed at some point ([518319b](https://github.com/gmc-norr/cleve/commit/518319beccb46a0adee9812bc12b5f97f3c9a098))
+
 ## [0.7.0](https://github.com/gmc-norr/cleve/compare/v0.6.0...v0.7.0) (2025-06-18)
 
 
