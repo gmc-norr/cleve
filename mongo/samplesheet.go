@@ -150,7 +150,7 @@ func (db DB) SampleSheetIndex() ([]map[string]string, error) {
 	if err != nil {
 		return []map[string]string{}, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	var indexes []map[string]string
 

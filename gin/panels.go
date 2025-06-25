@@ -104,7 +104,7 @@ func AddPanelHandler(db *mongo.DB) gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "a panel with this id and version already exists"})
 				return
 			}
-			if errors.Is(err, mongo.ConflictError) {
+			if errors.Is(err, mongo.ErrConflict) {
 				c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": err.Error(), "id": p.Id})
 				return
 			}

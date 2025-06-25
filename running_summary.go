@@ -33,7 +33,7 @@ func (v *RunningSummary[T]) Push(x T, weight ...T) error {
 		}
 		w = float64(weight[0])
 		v.wSum += w
-		v.w2Sum += math.Pow(w, 2)
+		v.w2Sum += w * w
 	}
 	if v.wSum == 1 {
 		v.Mean = float64(x)

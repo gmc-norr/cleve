@@ -166,7 +166,7 @@ func ReadRunInfo(filename string) (ri RunInfo, err error) {
 	if err != nil {
 		return ri, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return ParseRunInfo(f)
 }
 

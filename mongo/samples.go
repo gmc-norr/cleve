@@ -123,7 +123,7 @@ func (db DB) Samples(filter *cleve.SampleFilter) (*cleve.SampleResult, error) {
 	if err != nil {
 		return &sampleResult, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 	if ok := cursor.Next(context.TODO()); ok {
 		err := cursor.Decode(&sampleResult)
 		if err != nil {

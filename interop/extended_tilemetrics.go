@@ -53,7 +53,7 @@ func parseExtendedTileMetricRecordsV3(r io.Reader, tm *ExtTileMetrics) error {
 			return err
 		}
 		tm.Records = append(tm.Records, ExtTileMetricRecord{
-			LT:               rec.lt2.normalize(),
+			LT:               rec.normalize(),
 			OccupiedClusters: int(rec.OccupiedCount),
 		})
 	}
@@ -84,7 +84,7 @@ func parseExtendedTileMetricRecordsV1(r io.Reader, tm *ExtTileMetrics) error {
 		switch rec.Code {
 		case TileClusterCountOccupied:
 			tm.Records = append(tm.Records, ExtTileMetricRecord{
-				LT:               rec.lt1.normalize(),
+				LT:               rec.normalize(),
 				OccupiedClusters: int(rec.Value),
 			})
 		default:
@@ -104,20 +104,20 @@ func ReadExtendedTileMetrics(filename string) (ExtTileMetrics, error) {
 	if err != nil {
 		return tm, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	r := bufio.NewReader(f)
 	tm.Header, err = parseHeader(r)
 	if err != nil {
 		return tm, nil
 	}
 
-	switch tm.Header.Version {
+	switch tm.Version {
 	case 1:
 		err = parseExtendedTileMetricsV1(r, &tm)
 	case 3:
 		err = parseExtendedTileMetricsV3(r, &tm)
 	default:
-		return tm, fmt.Errorf("unsupported extended tile metrics version: %d", tm.Header.Version)
+		return tm, fmt.Errorf("unsupported extended tile metrics version: %d", tm.Version)
 	}
 
 	return tm, err

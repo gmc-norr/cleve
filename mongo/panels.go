@@ -151,7 +151,7 @@ func (db DB) Panel(id string, version string) (cleve.GenePanel, error) {
 	if err != nil {
 		return p.GenePanel, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 	if ok := cursor.Next(context.TODO()); !ok {
 		return p.GenePanel, ErrNoDocuments
 	}
@@ -249,7 +249,7 @@ func (db DB) PanelCategories() ([]string, error) {
 	if err != nil {
 		return categories, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 	cursor.Next(context.TODO())
 
 	type aux struct {
@@ -272,16 +272,16 @@ func (db DB) CreatePanel(p cleve.GenePanel) error {
 		return err
 	}
 	if existingPanel.Archived {
-		return fmt.Errorf("%w: panel is archived", ConflictError)
+		return fmt.Errorf("%w: panel is archived", ErrConflict)
 	}
 	if existingPanel.Version.NewerThan(p.Version) {
-		return fmt.Errorf("%w: a newer version of this panel already exists, most recent version is %s", ConflictError, existingPanel.Version)
+		return fmt.Errorf("%w: a newer version of this panel already exists, most recent version is %s", ErrConflict, existingPanel.Version)
 	}
 	if existingPanel.Date.After(p.Date) {
-		return fmt.Errorf("%w: a version with a more recent creation date already exists", ConflictError)
+		return fmt.Errorf("%w: a version with a more recent creation date already exists", ErrConflict)
 	}
 	if time.Now().Before(p.Date) {
-		return fmt.Errorf("%w: panel cannot have a creation date in the future", ConflictError)
+		return fmt.Errorf("%w: panel cannot have a creation date in the future", ErrConflict)
 	}
 	auxPanel := struct {
 		ImportedAt      time.Time
@@ -371,7 +371,7 @@ func (db DB) PanelIndex() ([]map[string]string, error) {
 	if err != nil {
 		return []map[string]string{}, err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	var indexes []map[string]string
 

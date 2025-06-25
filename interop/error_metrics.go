@@ -39,7 +39,7 @@ func parseErrorMetricRecordsV3(r io.Reader, em *ErrorMetrics) error {
 			return err
 		}
 		em.Records = append(em.Records, ErrorMetricRecord{
-			LTC:       rec.ltc1.normalize(),
+			LTC:       rec.normalize(),
 			ErrorRate: float64(rec.ErrorRate),
 		})
 	}
@@ -79,7 +79,7 @@ func parseErrorMetricRecordsV6(r io.Reader, adapterCount int, em *ErrorMetrics) 
 			return err
 		}
 		em.Records = append(em.Records, ErrorMetricRecord{
-			LTC:       rec.ltc2.normalize(),
+			LTC:       rec.normalize(),
 			ErrorRate: float64(rec.ErrorRate),
 		})
 	}
@@ -110,7 +110,7 @@ func ReadErrorMetrics(path string) (ErrorMetrics, error) {
 	if err != nil {
 		return em, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	r := bufio.NewReader(f)
 
 	err = binary.Read(r, binary.LittleEndian, &em.Header)

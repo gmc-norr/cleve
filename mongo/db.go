@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -29,6 +30,12 @@ type DB struct {
 	*mongo.Database
 }
 
+func closeCursor(c *mongo.Cursor, ctx context.Context) {
+	if err := c.Close(ctx); err != nil {
+		slog.Error("failed to close cursor", "context", ctx, "error", err)
+	}
+}
+
 func Connect() (*DB, error) {
 	mongo_db := viper.GetString("database.name")
 	mongo_host := viper.GetString("database.host")
@@ -48,7 +55,7 @@ func Connect() (*DB, error) {
 	})
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
-		return nil, fmt.Errorf("mongo.Connect() failed: %s\n", err)
+		return nil, fmt.Errorf("mongo.Connect() failed: %s", err)
 	}
 
 	if err := client.Ping(ctx, nil); err != nil {

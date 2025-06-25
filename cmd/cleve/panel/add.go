@@ -1,6 +1,7 @@
 package panel
 
 import (
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,7 +45,11 @@ over what is in the file.
 		fileType, _ := cmd.Flags().GetString("filetype")
 		f, err := os.Open(args[0])
 		cobra.CheckErr(err)
-		defer f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				slog.Error("failed to close file", "error", err)
+			}
+		}()
 
 		var (
 			parseError error
