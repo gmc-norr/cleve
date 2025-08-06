@@ -11,4 +11,4 @@ formatters:
     - gofumpt
     - goimports
 issues:
-  fix: true
+  fix: false
