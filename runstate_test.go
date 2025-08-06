@@ -13,27 +13,27 @@ func TestRunState(t *testing.T) {
 	tests := []testCase{
 		{
 			name: "new",
-			args: New,
+			args: StateNew,
 			want: "new",
 		},
 		{
 			name: "ready",
-			args: Ready,
+			args: StateReady,
 			want: "ready",
 		},
 		{
 			name: "pending",
-			args: Pending,
+			args: StatePending,
 			want: "pending",
 		},
 		{
 			name: "complete",
-			args: Complete,
+			args: StateComplete,
 			want: "complete",
 		},
 		{
 			name: "error",
-			args: Error,
+			args: StateError,
 			want: "error",
 		},
 	}

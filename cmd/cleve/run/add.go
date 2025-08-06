@@ -76,7 +76,7 @@ var (
 				log.Fatal(err)
 			}
 
-			if runState == cleve.Ready {
+			if runState == cleve.StateReady {
 				log.Printf("adding qc for run %s", run.RunID)
 				if err := db.CreateRunQC(run.RunID, interopData.Summarise()); err != nil {
 					log.Fatal(err)

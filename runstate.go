@@ -12,27 +12,27 @@ import (
 type RunState int
 
 const (
-	New RunState = iota
-	Ready
-	Pending
-	Complete
-	Incomplete
-	Error
-	Moved
-	Moving
-	Unknown
+	StateNew RunState = iota
+	StateReady
+	StatePending
+	StateComplete
+	StateIncomplete
+	StateError
+	StateMoved
+	StateMoving
+	StateUnknown
 )
 
 var ValidRunStates = map[string]RunState{
-	"new":        New,
-	"ready":      Ready,
-	"pending":    Pending,
-	"complete":   Complete,
-	"incomplete": Incomplete,
-	"error":      Error,
-	"moved":      Moved,
-	"moving":     Moving,
-	"unknown":    Unknown,
+	"new":        StateNew,
+	"ready":      StateReady,
+	"pending":    StatePending,
+	"complete":   StateComplete,
+	"incomplete": StateIncomplete,
+	"error":      StateError,
+	"moved":      StateMoved,
+	"moving":     StateMoving,
+	"unknown":    StateUnknown,
 }
 
 func (s RunState) String() string {
