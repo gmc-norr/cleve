@@ -68,7 +68,7 @@ var (
 				Platform:       interopData.RunInfo.Platform,
 				RunParameters:  interopData.RunParameters,
 				RunInfo:        interopData.RunInfo,
-				StateHistory:   []cleve.TimedRunState{{State: runState, Time: time.Now()}},
+				StateHistory:   cleve.StateHistory{{State: runState, Time: time.Now()}},
 				Analysis:       []*cleve.Analysis{},
 			}
 

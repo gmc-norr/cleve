@@ -3,6 +3,7 @@ package cleve
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -100,4 +101,22 @@ func (r *RunState) UnmarshalJSON(data []byte) error {
 type TimedRunState struct {
 	State RunState  `bson:"state" json:"state"`
 	Time  time.Time `bson:"time" json:"time"`
+}
+
+// StateHistory represents a slice of TimedRunState
+type StateHistory []TimedRunState
+
+// LastState returns the most recent TimedRunState in the state history. If the
+// history is empty, Unknown is returned with the current time.
+func (h StateHistory) LastState() TimedRunState {
+	if len(h) == 0 {
+		return TimedRunState{
+			Time:  time.Now(),
+			State: StateUnknown,
+		}
+	}
+	slices.SortFunc(h, func(a, b TimedRunState) int {
+		return b.Time.Compare(a.Time)
+	})
+	return h[0]
 }

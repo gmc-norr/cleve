@@ -387,11 +387,11 @@ func (db DB) SetRunPath(runId string, path string) error {
 	return nil
 }
 
-func (db DB) GetRunStateHistory(runId string) ([]cleve.TimedRunState, error) {
+func (db DB) GetRunStateHistory(runId string) (cleve.StateHistory, error) {
 	opts := options.FindOne().SetProjection(bson.D{{Key: "state_history", Value: 1}})
 	res := db.RunCollection().FindOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, opts)
 
-	var stateHistory []cleve.TimedRunState
+	var stateHistory cleve.StateHistory
 	err := res.Decode(&stateHistory)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {

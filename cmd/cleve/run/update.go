@@ -104,7 +104,7 @@ var (
 				}
 				// TODO: There should be a method on the run struct that checks the run state.
 				// Update the state by using the last known run state
-				if err := db.SetRunState(run.RunID, run.StateHistory[0].State); err != nil {
+				if err := db.SetRunState(run.RunID, run.StateHistory.LastState().State); err != nil {
 					log.Fatalf("error setting run state: %s", err)
 				}
 				didSomething = true

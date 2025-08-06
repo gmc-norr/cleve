@@ -21,7 +21,7 @@ type Run struct {
 	Path             string                `bson:"path" json:"path"`
 	Platform         string                `bson:"platform" json:"platform"`
 	Created          time.Time             `bson:"created" json:"created"`
-	StateHistory     []TimedRunState       `bson:"state_history" json:"state_history"`
+	StateHistory     StateHistory          `bson:"state_history" json:"state_history"`
 	SampleSheet      *SampleSheetInfo      `bson:"samplesheet,omitempty" json:"samplesheet"`
 	SampleSheetFiles []SampleSheetInfo     `bson:"samplesheets,omitempty" json:"samplesheets"`
 	RunParameters    interop.RunParameters `bson:"run_parameters,omitzero" json:"run_parameters,omitzero"`
@@ -68,7 +68,7 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 		Path             string            `bson:"path" json:"path"`
 		Platform         string            `bson:"platform" json:"platform"`
 		Created          time.Time         `bson:"created" json:"created"`
-		StateHistory     []TimedRunState   `bson:"state_history" json:"state_history"`
+		StateHistory     StateHistory      `bson:"state_history" json:"state_history"`
 		SampleSheet      *SampleSheetInfo  `bson:"samplesheet,omitempty" json:"samplesheet"`
 		SampleSheetFiles []SampleSheetInfo `bson:"samplesheets,omitempty" json:"samplesheets"`
 		RunInfo          struct {

@@ -2,6 +2,7 @@ package cleve
 
 import (
 	"testing"
+	"time"
 )
 
 func TestRunState(t *testing.T) {
@@ -67,5 +68,65 @@ func TestRunStateSet(t *testing.T) {
 	expected := "new"
 	if actual != expected {
 		t.Errorf("expected %s, got %s", expected, actual)
+	}
+}
+
+func TestLastState(t *testing.T) {
+	testcases := []struct {
+		name      string
+		history   StateHistory
+		lastState RunState
+	}{
+		{
+			name:      "empty history",
+			history:   StateHistory{},
+			lastState: StateUnknown,
+		},
+		{
+			name: "single state",
+			history: StateHistory{
+				{
+					Time:  time.Now(),
+					State: StateReady,
+				},
+			},
+			lastState: StateReady,
+		},
+		{
+			name: "multiple states",
+			history: StateHistory{
+				{
+					Time:  time.Now(),
+					State: StateReady,
+				},
+				{
+					Time:  time.Now().Add(-time.Hour),
+					State: StatePending,
+				},
+			},
+			lastState: StateReady,
+		},
+		{
+			name: "multiple states reversed",
+			history: StateHistory{
+				{
+					Time:  time.Now().Add(-time.Hour),
+					State: StatePending,
+				},
+				{
+					Time:  time.Now(),
+					State: StateReady,
+				},
+			},
+			lastState: StateReady,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.history.LastState().State != c.lastState {
+				t.Errorf("expected last state to be %s, got %s", c.lastState, c.history.LastState())
+			}
+		})
 	}
 }
