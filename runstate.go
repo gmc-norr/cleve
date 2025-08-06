@@ -120,3 +120,12 @@ func (h StateHistory) LastState() TimedRunState {
 	})
 	return h[0]
 }
+
+// Add adds a new state to the state history with the current time.
+func (h *StateHistory) Add(state RunState) {
+	s := TimedRunState{
+		Time:  time.Now(),
+		State: state,
+	}
+	*h = append(*h, s)
+}
