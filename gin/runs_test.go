@@ -316,14 +316,6 @@ func TestAddRunHandler(t *testing.T) {
 			createInvoked:  true,
 			hasSamplesheet: true,
 		},
-		{
-			name:           "missing state",
-			runPath:        "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1",
-			data:           []byte(`{"path": "/home/nima18/git/cleve/testdata/20250305_LH00352_0035_A222VYLLT1"}`),
-			code:           http.StatusBadRequest,
-			createInvoked:  false,
-			hasSamplesheet: false,
-		},
 	}
 
 	for _, v := range cases {

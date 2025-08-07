@@ -65,8 +65,8 @@
                     <td>{{ .Platform }}</td>
                     <td>{{ .RunInfo.FlowcellName }}</td>
                     <td>{{ .RunInfo.Date.Local.Format "2006-01-02" }}</td>
-                    <td>{{ (index .StateHistory 0).State.String | title }}</td>
-                    <td>{{ (index .StateHistory 0).Time.Local.Format "2006-01-02 15:04:05 MST" }}</td>
+                    <td>{{ .StateHistory.LastState.State.String | title }}</td>
+                    <td>{{ .StateHistory.LastState.Time.Local.Format "2006-01-02 15:04:05 MST" }}</td>
                     <td><code>{{ .Path }}</code></td>
                 </tr>
                 {{ end }}

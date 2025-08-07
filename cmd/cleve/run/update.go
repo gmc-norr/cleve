@@ -68,11 +68,20 @@ var (
 			reloadMetadata, _ := cmd.Flags().GetBool("reload-metadata")
 			var run *cleve.Run
 
-			if reloadQc || reloadMetadata {
-				run, err = db.Run(args[0], false)
-				if err != nil {
-					log.Fatalf("error: %s", err)
+			run, err = db.Run(args[0], false)
+			if err != nil {
+				log.Fatalf("error: %s", err)
+			}
+
+			lastState := run.StateHistory.LastState().State
+			currentState := run.State()
+
+			if lastState != currentState {
+				if err := db.SetRunState(run.RunID, currentState); err != nil {
+					log.Fatalf("error: failed to set run state: %s", err)
 				}
+				log.Printf("updated run state from %s to %s", lastState, currentState)
+				didSomething = true
 			}
 
 			if reloadQc {
@@ -104,7 +113,7 @@ var (
 				}
 				// TODO: There should be a method on the run struct that checks the run state.
 				// Update the state by using the last known run state
-				if err := db.SetRunState(run.RunID, run.StateHistory[0].State); err != nil {
+				if err := db.SetRunState(run.RunID, run.StateHistory.LastState().State); err != nil {
 					log.Fatalf("error setting run state: %s", err)
 				}
 				didSomething = true

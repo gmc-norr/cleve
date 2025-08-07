@@ -1,7 +1,11 @@
 package cleve
 
 import (
+	"errors"
 	"fmt"
+	"log/slog"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -21,13 +25,51 @@ type Run struct {
 	Path             string                `bson:"path" json:"path"`
 	Platform         string                `bson:"platform" json:"platform"`
 	Created          time.Time             `bson:"created" json:"created"`
-	StateHistory     []TimedRunState       `bson:"state_history" json:"state_history"`
+	StateHistory     StateHistory          `bson:"state_history" json:"state_history"`
 	SampleSheet      *SampleSheetInfo      `bson:"samplesheet,omitempty" json:"samplesheet"`
 	SampleSheetFiles []SampleSheetInfo     `bson:"samplesheets,omitempty" json:"samplesheets"`
 	RunParameters    interop.RunParameters `bson:"run_parameters,omitzero" json:"run_parameters,omitzero"`
 	RunInfo          interop.RunInfo       `bson:"run_info,omitzero" json:"run_info,omitzero"`
 	Analysis         []*Analysis           `bson:"analysis,omitempty" json:"analysis,omitempty"`
 	AnalysisCount    int                   `bson:"analysis_count" json:"analysis_count"`
+}
+
+// State detects the current state of the sequencing run.
+func (r *Run) State() RunState {
+	status, err := ReadRunCompletionStatus(filepath.Join(r.Path, interop.PlatformCompletionStatus(r.Platform)))
+	if err != nil {
+		slog.Warn("failed to read run completion status", "run", r.RunID, "error", err)
+		return r.state(nil)
+	}
+	return r.state(&status)
+}
+
+func (r *Run) state(status *RunCompletionStatus) RunState {
+	currentState := r.StateHistory.LastState()
+	if currentState.State != StateUnknown && currentState.State == StateMoved || currentState.State == StateMoving {
+		// If the run has been moved or is being moved, ignore it
+		return currentState.State
+	}
+	readyMarker := filepath.Join(r.Path, interop.PlatformReadyMarker(r.Platform))
+	slog.Info("ready marker", "path", readyMarker)
+	if info, err := os.Stat(readyMarker); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			// Data is still being copied
+			return StatePending
+		}
+	} else if info.IsDir() {
+		// This should never happen
+		return StateError
+	}
+
+	if status != nil && !status.Success {
+		// Something went wrong in the sequencing, assume that everything is fine if the results
+		// are not present.
+		return StateError
+	}
+
+	// Run is ready for downstream processing
+	return StateReady
 }
 
 // Unmarshals a BSON representation of a run.
@@ -68,7 +110,7 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 		Path             string            `bson:"path" json:"path"`
 		Platform         string            `bson:"platform" json:"platform"`
 		Created          time.Time         `bson:"created" json:"created"`
-		StateHistory     []TimedRunState   `bson:"state_history" json:"state_history"`
+		StateHistory     StateHistory      `bson:"state_history" json:"state_history"`
 		SampleSheet      *SampleSheetInfo  `bson:"samplesheet,omitempty" json:"samplesheet"`
 		SampleSheetFiles []SampleSheetInfo `bson:"samplesheets,omitempty" json:"samplesheets"`
 		RunInfo          struct {

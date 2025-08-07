@@ -2,8 +2,11 @@ package cleve
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/gmc-norr/cleve/interop"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 )
@@ -246,6 +249,66 @@ func TestUnmarshalV2(t *testing.T) {
 			}
 			if run.RunInfo.FlowcellName != c.flowcell {
 				t.Errorf("expected flowcell name %q, got %q", c.flowcell, run.RunInfo.FlowcellName)
+			}
+		})
+	}
+}
+
+func touchFile(path string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	_ = f.Close()
+	return nil
+}
+
+// This assumes that the interop data could be parsed for the run, i.e. both
+// RunInfo.xml and RunParameters.xml exist and are valid.
+func TestState(t *testing.T) {
+	testcases := []struct {
+		name         string
+		platform     string
+		copycomplete bool
+		status       *RunCompletionStatus
+		state        RunState
+	}{
+		{
+			name:         "pending run",
+			platform:     "NovaSeq X Plus",
+			copycomplete: false,
+			state:        StatePending,
+		},
+		{
+			name:         "error after complete",
+			platform:     "NovaSeq X Plus",
+			copycomplete: true,
+			status:       &RunCompletionStatus{Success: false},
+			state:        StateError,
+		},
+		{
+			name:         "run completion success",
+			platform:     "NovaSeq X Plus",
+			copycomplete: true,
+			status:       &RunCompletionStatus{Success: true},
+			state:        StateReady,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			rundir := t.TempDir()
+			if c.copycomplete {
+				if err := touchFile(filepath.Join(rundir, interop.PlatformReadyMarker(c.platform))); err != nil {
+					t.Fatal(err)
+				}
+			}
+			run := Run{
+				Path:     rundir,
+				Platform: c.platform,
+			}
+			if run.state(c.status) != c.state {
+				t.Errorf("expected current state to be %s, got %s", c.state, run.State())
 			}
 		})
 	}

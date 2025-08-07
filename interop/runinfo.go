@@ -24,6 +24,12 @@ var readyMarkers = map[string]string{
 	"MiSeq":          "CopyComplete.txt",
 }
 
+var completionStatus = map[string]string{
+	"NovaSeq X Plus": "RunCompletionStatus.xml",
+	"NextSeq 5x0":    "RunCompletionStatus.xml",
+	"MiSeq":          "AnalysisJobInfo.xml",
+}
+
 // Current sequencers that we use and support
 var instrumentIds = []idMatcher{
 	{idPattern: regexp.MustCompile(`^LH\d{5}$`), name: "NovaSeq X Plus"},
@@ -205,4 +211,8 @@ func IdentifyFlowcell(fcid string) string {
 func PlatformReadyMarker(platform string) string {
 	marker := readyMarkers[platform]
 	return marker
+}
+
+func PlatformCompletionStatus(platform string) string {
+	return completionStatus[platform]
 }
