@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
@@ -72,8 +71,7 @@ func RunHandler(db RunGetter) gin.HandlerFunc {
 func AddRunHandler(db RunSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var addRunRequest struct {
-			Path  string `json:"path" binding:"required"`
-			State string `json:"state" binding:"required"`
+			Path string `json:"path" binding:"required"`
 		}
 
 		if err := c.BindJSON(&addRunRequest); err != nil {
@@ -87,12 +85,6 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 			return
 		}
 
-		var state cleve.RunState
-		if err = state.Set(addRunRequest.State); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
 		run := cleve.Run{
 			RunID:          interopData.RunInfo.RunId,
 			ExperimentName: interopData.RunParameters.ExperimentName,
@@ -100,9 +92,9 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 			Platform:       interopData.RunInfo.Platform,
 			RunParameters:  interopData.RunParameters,
 			RunInfo:        interopData.RunInfo,
-			StateHistory:   cleve.StateHistory{{State: state, Time: time.Now()}},
 			Analysis:       []*cleve.Analysis{},
 		}
+		run.StateHistory.Add(run.State())
 
 		// Check for a sspath
 		sspath, err := cleve.MostRecentSamplesheet(run.Path)

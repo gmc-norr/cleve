@@ -59,8 +59,9 @@ endpoints:
         required: true
       - key: state
         type: string
-        description: state of the run directory
-        required: true
+        description: >
+          state of the run directory (deprecated: state is detected automatically and this parameter is ignored)
+        required: false
 
   - path: /runs/{run_id}
     method: GET
