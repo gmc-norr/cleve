@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -28,7 +27,8 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			db, err := mongo.Connect()
 			if err != nil {
-				log.Fatal(err.Error())
+				slog.Error("failed to connect to database", "error", err)
+				os.Exit(1)
 			}
 			host := viper.GetString("host")
 			port := viper.GetInt("port")
