@@ -24,7 +24,7 @@ type RunWatcher struct {
 	done chan struct{}
 }
 
-// NewRunWatcher creates a new RunWatcher. Having a poll interval less than 10 seconds is not recommended (just pulled this number out of my ass).
+// NewRunWatcher creates a new RunWatcher.
 func NewRunWatcher(pollInterval time.Duration, db runHandler, logger *slog.Logger) RunWatcher {
 	filter := cleve.NewRunFilter()
 	filter.PageSize = 30
