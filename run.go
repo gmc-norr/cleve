@@ -1,7 +1,6 @@
 package cleve
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -56,15 +55,9 @@ func (r *Run) state(status *RunCompletionStatus) RunState {
 		return currentState.State
 	}
 	readyMarker := filepath.Join(r.Path, interop.PlatformReadyMarker(r.Platform))
-	slog.Info("ready marker", "path", readyMarker)
-	if info, err := os.Stat(readyMarker); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			// Data is still being copied
-			return StatePending
-		}
-	} else if info.IsDir() {
-		// This should never happen
-		return StateError
+	slog.Debug("ready marker", "path", readyMarker)
+	if _, err := os.Stat(readyMarker); os.IsNotExist(err) {
+		return StatePending
 	}
 
 	if status != nil && !status.Success {
