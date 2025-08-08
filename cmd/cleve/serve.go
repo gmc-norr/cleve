@@ -41,7 +41,8 @@ var (
 			logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: loglevel}))
 			slog.SetDefault(logger)
 
-			runWatcher := watcher.NewRunWatcher(10*time.Second, db, logger)
+			pollInterval, _ := cmd.Flags().GetInt("poll-interval")
+			runWatcher := watcher.NewRunWatcher(time.Duration(pollInterval)*time.Second, db, logger)
 			defer runWatcher.Stop()
 			runWatcher.Start()
 
@@ -70,7 +71,9 @@ func init() {
 	serveCmd.Flags().StringVar(&host, "host", "localhost", "host")
 	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "port")
 	serveCmd.Flags().StringVar(&logfile, "logfile", "", "file to write logs in")
+	serveCmd.Flags().Int("poll-interval", 30, "how often, in seconds, that state changes to runs should be checked")
 	_ = viper.BindPFlag("host", serveCmd.Flags().Lookup("host"))
 	_ = viper.BindPFlag("port", serveCmd.Flags().Lookup("port"))
 	_ = viper.BindPFlag("logfile", serveCmd.Flags().Lookup("logfile"))
+	_ = viper.BindPFlag("run_polling_interval", serveCmd.Flags().Lookup("poll-interval"))
 }

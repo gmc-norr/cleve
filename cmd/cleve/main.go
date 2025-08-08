@@ -49,6 +49,8 @@ func initConfig() {
 		viper.AddConfigPath(".")
 	}
 
+	viper.SetDefault("run_poll_interval", 30)
+
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatalf("error: %s", err)
