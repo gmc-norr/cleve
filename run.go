@@ -1,7 +1,6 @@
 package cleve
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -36,9 +35,14 @@ type Run struct {
 
 // State detects the current state of the sequencing run.
 func (r *Run) State() RunState {
-	status, err := ReadRunCompletionStatus(filepath.Join(r.Path, interop.PlatformCompletionStatus(r.Platform)))
+	if _, err := os.Stat(r.Path); os.IsNotExist(err) {
+		return StateMoved
+	}
+	completionFile := filepath.Join(r.Path, interop.PlatformCompletionStatus(r.Platform))
+	slog.Debug("run completion status", "path", completionFile)
+	status, err := ReadRunCompletionStatus(completionFile)
 	if err != nil {
-		slog.Warn("failed to read run completion status", "run", r.RunID, "error", err)
+		slog.Debug("failed to read run completion status", "run", r.RunID, "error", err)
 		return r.state(nil)
 	}
 	return r.state(&status)
@@ -51,15 +55,9 @@ func (r *Run) state(status *RunCompletionStatus) RunState {
 		return currentState.State
 	}
 	readyMarker := filepath.Join(r.Path, interop.PlatformReadyMarker(r.Platform))
-	slog.Info("ready marker", "path", readyMarker)
-	if info, err := os.Stat(readyMarker); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			// Data is still being copied
-			return StatePending
-		}
-	} else if info.IsDir() {
-		// This should never happen
-		return StateError
+	slog.Debug("ready marker", "path", readyMarker)
+	if _, err := os.Stat(readyMarker); os.IsNotExist(err) {
+		return StatePending
 	}
 
 	if status != nil && !status.Success {

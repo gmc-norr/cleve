@@ -2,11 +2,16 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gmc-norr/cleve/gin"
 	"github.com/gmc-norr/cleve/mongo"
+	"github.com/gmc-norr/cleve/watcher"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -22,14 +27,41 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			db, err := mongo.Connect()
 			if err != nil {
-				log.Fatal(err.Error())
+				slog.Error("failed to connect to database", "error", err)
+				os.Exit(1)
 			}
 			host := viper.GetString("host")
 			port := viper.GetInt("port")
 			addr := fmt.Sprintf("%s:%d", host, port)
+
+			loglevel := slog.LevelWarn
+			if debug {
+				loglevel = slog.LevelDebug
+			}
+			logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: loglevel}))
+			slog.SetDefault(logger)
+
+			pollInterval, _ := cmd.Flags().GetInt("poll-interval")
+			runWatcher := watcher.NewRunWatcher(time.Duration(pollInterval)*time.Second, db, logger)
+			defer runWatcher.Stop()
+			runWatcher.Start()
+
+			interrupt := make(chan os.Signal, 1)
+			signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
+			go func() {
+				s := <-interrupt
+				slog.Error("signal received, shutting down", "signal", s)
+				runWatcher.Stop()
+				os.Exit(1)
+			}()
+
 			router := gin.NewRouter(db, debug)
-			log.Printf("Serving on %s", addr)
-			log.Fatal(http.ListenAndServe(addr, router))
+			logger.Info("serving cleve", "address", addr)
+			err = http.ListenAndServe(addr, router)
+			if err != nil {
+				slog.Error("server crashed", "error", err)
+				os.Exit(1)
+			}
 		},
 	}
 )
@@ -39,13 +71,9 @@ func init() {
 	serveCmd.Flags().StringVar(&host, "host", "localhost", "host")
 	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "port")
 	serveCmd.Flags().StringVar(&logfile, "logfile", "", "file to write logs in")
-	if err := viper.BindPFlag("host", serveCmd.Flags().Lookup("host")); err != nil {
-		log.Fatal(err)
-	}
-	if err := viper.BindPFlag("port", serveCmd.Flags().Lookup("port")); err != nil {
-		log.Fatal(err)
-	}
-	if err := viper.BindPFlag("logfile", serveCmd.Flags().Lookup("logfile")); err != nil {
-		log.Fatal(err)
-	}
+	serveCmd.Flags().Int("poll-interval", 30, "how often, in seconds, that state changes to runs should be checked")
+	_ = viper.BindPFlag("host", serveCmd.Flags().Lookup("host"))
+	_ = viper.BindPFlag("port", serveCmd.Flags().Lookup("port"))
+	_ = viper.BindPFlag("logfile", serveCmd.Flags().Lookup("logfile"))
+	_ = viper.BindPFlag("run_polling_interval", serveCmd.Flags().Lookup("poll-interval"))
 }

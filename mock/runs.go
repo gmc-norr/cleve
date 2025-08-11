@@ -60,3 +60,21 @@ func (s *RunSetter) SetRunPath(runId string, path string) error {
 	s.SetRunPathInvoked = true
 	return s.SetRunPathFn(runId, path)
 }
+
+// Mock implementing the runHandler for RunWatcher
+type RunHandler struct {
+	RunsFn             func(cleve.RunFilter) (cleve.RunResult, error)
+	RunsInvoked        bool
+	SetRunStateFn      func(string, cleve.RunState) error
+	SetRunStateInvoked bool
+}
+
+func (h *RunHandler) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
+	h.RunsInvoked = true
+	return h.RunsFn(filter)
+}
+
+func (h *RunHandler) SetRunState(runId string, state cleve.RunState) error {
+	h.SetRunStateInvoked = true
+	return h.SetRunStateFn(runId, state)
+}
