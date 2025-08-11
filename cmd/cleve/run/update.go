@@ -3,6 +3,7 @@ package run
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,9 +56,24 @@ var (
 				didSomething = true
 			}
 
+			var run *cleve.Run
+			run, err = db.Run(args[0], false)
+			if err != nil {
+				slog.Error("failed to fetch run information", "run", args[0], "error", err)
+			}
+
 			newPath, _ := cmd.Flags().GetString("path")
 			if newPath != "" {
-				log.Printf("Updating path of run %s to %s", args[0], newPath)
+				slog.Info("updating run path", "run", args[0], "path", newPath)
+				ri, err := interop.ReadRunInfo(filepath.Join(newPath, "RunInfo.xml"))
+				if err != nil {
+					slog.Error("failed to read run info, is it a valid run directory?", "path", newPath, "error", err)
+					os.Exit(1)
+				}
+				if run.RunID != ri.RunId {
+					slog.Error("mismatching run ids", "db_runid", run.RunID, "disk_runid", ri.RunId)
+					os.Exit(1)
+				}
 				if err := db.SetRunPath(args[0], newPath); err != nil {
 					log.Fatalf("error: %s", err)
 				}
@@ -66,12 +82,6 @@ var (
 
 			reloadQc, _ := cmd.Flags().GetBool("reload-qc")
 			reloadMetadata, _ := cmd.Flags().GetBool("reload-metadata")
-			var run *cleve.Run
-
-			run, err = db.Run(args[0], false)
-			if err != nil {
-				log.Fatalf("error: %s", err)
-			}
 
 			lastState := run.StateHistory.LastState().State
 			currentState := run.State(false)
