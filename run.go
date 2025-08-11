@@ -33,8 +33,10 @@ type Run struct {
 	AnalysisCount    int                   `bson:"analysis_count" json:"analysis_count"`
 }
 
-// State detects the current state of the sequencing run.
-func (r *Run) State() RunState {
+// State detects the current state of the sequencing run. If force is true, the state
+// detection is run even if the last known state are among those that should normally
+// be ignored.
+func (r *Run) State(force bool) RunState {
 	if _, err := os.Stat(r.Path); os.IsNotExist(err) {
 		return StateMoved
 	}
@@ -43,14 +45,14 @@ func (r *Run) State() RunState {
 	status, err := ReadRunCompletionStatus(completionFile)
 	if err != nil {
 		slog.Debug("failed to read run completion status", "run", r.RunID, "error", err)
-		return r.state(nil)
+		return r.state(nil, force)
 	}
-	return r.state(&status)
+	return r.state(&status, force)
 }
 
-func (r *Run) state(status *RunCompletionStatus) RunState {
+func (r *Run) state(status *RunCompletionStatus, force bool) RunState {
 	currentState := r.StateHistory.LastState()
-	if currentState.State != StateUnknown && currentState.State == StateMoved || currentState.State == StateMoving {
+	if !force && (currentState.State != StateUnknown && currentState.State == StateMoved || currentState.State == StateMoving) {
 		// If the run has been moved or is being moved, ignore it
 		return currentState.State
 	}

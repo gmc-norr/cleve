@@ -307,8 +307,9 @@ func TestState(t *testing.T) {
 				Path:     rundir,
 				Platform: c.platform,
 			}
-			if run.state(c.status) != c.state {
-				t.Errorf("expected current state to be %s, got %s", c.state, run.State())
+			observedState := run.state(c.status, false)
+			if observedState != c.state {
+				t.Errorf("expected current state to be %s, got %s", c.state, observedState)
 			}
 		})
 	}

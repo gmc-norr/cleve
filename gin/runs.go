@@ -94,7 +94,7 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 			RunInfo:        interopData.RunInfo,
 			Analysis:       []*cleve.Analysis{},
 		}
-		run.StateHistory.Add(run.State())
+		run.StateHistory.Add(run.State(false))
 
 		// Check for a sspath
 		sspath, err := cleve.MostRecentSamplesheet(run.Path)

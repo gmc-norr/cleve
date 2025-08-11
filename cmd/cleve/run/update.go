@@ -74,7 +74,7 @@ var (
 			}
 
 			lastState := run.StateHistory.LastState().State
-			currentState := run.State()
+			currentState := run.State(false)
 
 			if lastState != currentState {
 				if err := db.SetRunState(run.RunID, currentState); err != nil {
