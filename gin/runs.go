@@ -159,6 +159,15 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		if updateRequest.Path != "" {
+			runinfo, err := interop.ReadRunInfo(filepath.Join(updateRequest.Path, "RunInfo.xml"))
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "reading RunInfo.xml"})
+				return
+			}
+			if runinfo.RunId != runId {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "run id at new path different from requested run", "when": "updating run path"})
+				return
+			}
 			if err := db.SetRunPath(runId, updateRequest.Path); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run path"})
 				return
