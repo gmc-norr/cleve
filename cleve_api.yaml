@@ -118,7 +118,10 @@ endpoints:
   - path: /runs/{run_id}
     method: PATCH
     section: runs
-    description: Update one or more run attributes
+    description: >
+      Update one or more run attributes. If state is not supplied the state will be
+      automatically detected and updated if it differs from the state stored in the database.
+      If state is given it will overrule the actual state of the run.
     headers:
       - key: Authorization
         type: string
