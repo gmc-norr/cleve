@@ -2,6 +2,7 @@ package gin
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -94,7 +95,7 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 			RunInfo:        interopData.RunInfo,
 			Analysis:       []*cleve.Analysis{},
 		}
-		run.StateHistory.Add(run.State())
+		run.StateHistory.Add(run.State(false))
 
 		// Check for a sspath
 		sspath, err := cleve.MostRecentSamplesheet(run.Path)
@@ -151,11 +152,22 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		if err := c.ShouldBindJSON(&updateRequest); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing request body"})
-			return
+			if !errors.Is(err, io.EOF) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing request body"})
+				return
+			}
 		}
 
 		if updateRequest.Path != "" {
+			runinfo, err := interop.ReadRunInfo(filepath.Join(updateRequest.Path, "RunInfo.xml"))
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "reading RunInfo.xml"})
+				return
+			}
+			if runinfo.RunId != runId {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "run id at new path different from requested run", "when": "updating run path"})
+				return
+			}
 			if err := db.SetRunPath(runId, updateRequest.Path); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run path"})
 				return
@@ -183,8 +195,7 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			}
 
 			for _, a := range run.Analysis {
-				if strings.HasPrefix(a.Path, run.Path) {
-					pathSuffix := strings.TrimPrefix(a.Path, run.Path)
+				if pathSuffix, found := strings.CutPrefix(a.Path, run.Path); found {
 					if err := db.SetAnalysisPath(runId, a.AnalysisId, filepath.Join(updateRequest.Path, pathSuffix)); err != nil {
 						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating analysis path"})
 						return
@@ -195,14 +206,18 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			updated["path"] = true
 		}
 
+		var state cleve.RunState
 		if updateRequest.State != "" {
-			var state cleve.RunState
 			err := state.Set(updateRequest.State)
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing state"})
 				return
 			}
+		} else {
+			state = run.State(updated["path"])
+		}
 
+		if state != run.StateHistory.LastState().State {
 			if err = db.SetRunState(runId, state); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run state"})
 				return
