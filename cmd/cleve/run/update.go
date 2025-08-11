@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/gmc-norr/cleve"
@@ -86,9 +85,7 @@ var (
 					slog.Error("failed to set run state", "run", run.RunID, "new_state", stateUpdate, "error", err)
 				}
 				didSomething = true
-			} else if !slices.Contains([]cleve.RunState{cleve.StateMoving, cleve.StateMoved}, lastState) || newPath != "" {
-				// Only try to update the state if the run hasn't been moved or is currently being moved, unless the path
-				// of the run has been updated.
+			} else {
 				currentState := run.State(newPath != "")
 				slog.Debug("detected run state", "state", currentState)
 				if lastState != currentState {
