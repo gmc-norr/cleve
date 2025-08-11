@@ -2,7 +2,6 @@ package run
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -43,7 +42,8 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			db, err := mongo.Connect()
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("failed to connect to database", "error", err)
+				os.Exit(1)
 			}
 			didSomething := false
 
@@ -66,7 +66,8 @@ var (
 					os.Exit(1)
 				}
 				if err := db.SetRunPath(args[0], newPath); err != nil {
-					log.Fatalf("error: %s", err)
+					slog.Error("failed to update run path", "path", newPath, "error", err)
+					os.Exit(1)
 				}
 				didSomething = true
 			}
@@ -99,42 +100,42 @@ var (
 			}
 
 			if reloadQc {
-				log.Printf("Updating QC data for run %s", args[0])
+				slog.Info("updating run qc data", "run", args[0])
 				qc, err := interop.InteropFromDir(run.Path)
 				if err != nil {
-					log.Fatalf("error: %s", err)
+					slog.Error("failed to read qc data", "path", run.Path, "error", err)
+					os.Exit(1)
 				}
 				if err := db.UpdateRunQC(qc.Summarise()); err != nil {
-					log.Fatalf("error: %s", err)
+					slog.Error("failed to update qc data", "run", run.RunID, "error", err)
+					os.Exit(1)
 				}
 				didSomething = true
 			}
 
 			if reloadMetadata {
-				log.Printf("Updating metadata for run %s", args[0])
+				slog.Info("updating run metadata", "run", args[0])
 				runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
 				if err != nil {
-					log.Fatalf("error reading run info: %s", err)
+					slog.Error("failed to read run info", "run", args[0], "error", err)
+					os.Exit(1)
 				}
 				runParameters, err := interop.ReadRunParameters(filepath.Join(run.Path, "RunParameters.xml"))
 				if err != nil {
-					log.Fatalf("error reading run parameters: %s", err)
+					slog.Error("failed to read run parameters", "run", args[0], "error", err)
+					os.Exit(1)
 				}
 				run.RunInfo = runInfo
 				run.RunParameters = runParameters
 				if err := db.UpdateRun(run); err != nil {
-					log.Fatalf("error updating run: %s", err)
-				}
-				// TODO: There should be a method on the run struct that checks the run state.
-				// Update the state by using the last known run state
-				if err := db.SetRunState(run.RunID, run.StateHistory.LastState().State); err != nil {
-					log.Fatalf("error setting run state: %s", err)
+					slog.Error("failed to update run", "run", run.RunID, "error", err)
+					os.Exit(1)
 				}
 				didSomething = true
 			}
 
 			if !didSomething {
-				log.Printf("No changes made to run %s", args[0])
+				slog.Info("no changes made", "run", args[0])
 			}
 		},
 	}
@@ -154,7 +155,8 @@ func init() {
 	cobra.OnInitialize(func() {
 		if stateArg != "" {
 			if err := stateUpdate.Set(stateArg); err != nil {
-				log.Fatalf("error: %s", err)
+				slog.Error("failed to set state", "error", err)
+				os.Exit(1)
 			}
 		}
 	})
