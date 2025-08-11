@@ -2,6 +2,7 @@ package gin
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -151,8 +152,10 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		if err := c.ShouldBindJSON(&updateRequest); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing request body"})
-			return
+			if !errors.Is(err, io.EOF) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing request body"})
+				return
+			}
 		}
 
 		if updateRequest.Path != "" {
