@@ -207,14 +207,18 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			updated["path"] = true
 		}
 
+		var state cleve.RunState
 		if updateRequest.State != "" {
-			var state cleve.RunState
 			err := state.Set(updateRequest.State)
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing state"})
 				return
 			}
+		} else {
+			state = run.State(updated["path"])
+		}
 
+		if state != run.StateHistory.LastState().State {
 			if err = db.SetRunState(runId, state); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run state"})
 				return
