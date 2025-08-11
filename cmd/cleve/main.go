@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"log/slog"
+	"os"
 
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/cmd/cleve/db"
@@ -24,6 +26,9 @@ var (
 )
 
 func init() {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
@@ -56,7 +61,7 @@ func initConfig() {
 		log.Fatalf("error: %s", err)
 	}
 
-	log.Printf("Using config file: %s", viper.ConfigFileUsed())
+	slog.Info("config", "path", viper.ConfigFileUsed())
 
 	// Basic validation
 	dbConfig := viper.GetStringMap("database")
