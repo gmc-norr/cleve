@@ -93,6 +93,7 @@ func (w *RunWatcher) updateStates() {
 			}
 			currentState := r.State(false)
 			if knownState != currentState {
+				w.logger.Debug("updating run state", "previous_state", knownState, "new_state", currentState)
 				if err := w.store.SetRunState(r.RunID, currentState); err != nil {
 					w.logger.Error("failed to set run state", "run", r.RunID, "previous_state", knownState, "new_state", currentState)
 				}
