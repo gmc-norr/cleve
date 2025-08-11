@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/gmc-norr/cleve/interop"
 	"go.mongodb.org/mongo-driver/bson"
@@ -270,6 +271,8 @@ func TestState(t *testing.T) {
 		name         string
 		platform     string
 		copycomplete bool
+		stateHistory StateHistory
+		force        bool
 		status       *RunCompletionStatus
 		state        RunState
 	}{
@@ -293,6 +296,40 @@ func TestState(t *testing.T) {
 			status:       &RunCompletionStatus{Success: true},
 			state:        StateReady,
 		},
+		{
+			name:         "moved run without force",
+			platform:     "NovaSeq X Plus",
+			copycomplete: true,
+			stateHistory: StateHistory{{Time: time.Now(), State: StateMoved}},
+			status:       &RunCompletionStatus{Success: true},
+			state:        StateMoved,
+		},
+		{
+			name:         "moving run without force",
+			platform:     "NovaSeq X Plus",
+			copycomplete: true,
+			stateHistory: StateHistory{{Time: time.Now(), State: StateMoving}},
+			status:       &RunCompletionStatus{Success: true},
+			state:        StateMoving,
+		},
+		{
+			name:         "moved run with force",
+			platform:     "NovaSeq X Plus",
+			copycomplete: true,
+			stateHistory: StateHistory{{Time: time.Now(), State: StateMoved}},
+			force:        true,
+			status:       &RunCompletionStatus{Success: true},
+			state:        StateReady,
+		},
+		{
+			name:         "movig run with force",
+			platform:     "NovaSeq X Plus",
+			copycomplete: true,
+			stateHistory: StateHistory{{Time: time.Now(), State: StateMoving}},
+			force:        true,
+			status:       &RunCompletionStatus{Success: true},
+			state:        StateReady,
+		},
 	}
 
 	for _, c := range testcases {
@@ -304,10 +341,11 @@ func TestState(t *testing.T) {
 				}
 			}
 			run := Run{
-				Path:     rundir,
-				Platform: c.platform,
+				Path:         rundir,
+				Platform:     c.platform,
+				StateHistory: c.stateHistory,
 			}
-			observedState := run.state(c.status, false)
+			observedState := run.state(c.status, c.force)
 			if observedState != c.state {
 				t.Errorf("expected current state to be %s, got %s", c.state, observedState)
 			}
