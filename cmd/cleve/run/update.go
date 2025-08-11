@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/gmc-norr/cleve"
@@ -47,15 +48,6 @@ var (
 			}
 			didSomething := false
 
-			if stateArg != "" {
-				log.Printf("Updating state of run %s to '%s'", args[0], stateUpdate.String())
-				err := db.SetRunState(args[0], stateUpdate)
-				if err != nil {
-					log.Fatalf("error: %s", err)
-				}
-				didSomething = true
-			}
-
 			var run *cleve.Run
 			run, err = db.Run(args[0], false)
 			if err != nil {
@@ -83,15 +75,30 @@ var (
 			reloadQc, _ := cmd.Flags().GetBool("reload-qc")
 			reloadMetadata, _ := cmd.Flags().GetBool("reload-metadata")
 
+			// Update the run state. If the state was supplied on the command line, then use this state.
+			// If not, then detect the state and set it accordingly, but only if the last state of the run
+			// is not one of the ones that should be ignored.
 			lastState := run.StateHistory.LastState().State
-			currentState := run.State(false)
-
-			if lastState != currentState {
-				if err := db.SetRunState(run.RunID, currentState); err != nil {
-					log.Fatalf("error: failed to set run state: %s", err)
+			if stateArg != "" && lastState != stateUpdate {
+				slog.Info("updating run state", "run", run.RunID, "old_state", lastState, "new_state", stateUpdate)
+				err := db.SetRunState(run.RunID, stateUpdate)
+				if err != nil {
+					slog.Error("failed to set run state", "run", run.RunID, "new_state", stateUpdate, "error", err)
 				}
-				log.Printf("updated run state from %s to %s", lastState, currentState)
 				didSomething = true
+			} else if !slices.Contains([]cleve.RunState{cleve.StateMoving, cleve.StateMoved}, lastState) || newPath != "" {
+				// Only try to update the state if the run hasn't been moved or is currently being moved, unless the path
+				// of the run has been updated.
+				currentState := run.State(newPath != "")
+				slog.Debug("detected run state", "state", currentState)
+				if lastState != currentState {
+					slog.Info("updating run state", "run", run.RunID, "old_state", lastState, "new_state", currentState)
+					if err := db.SetRunState(run.RunID, currentState); err != nil {
+						slog.Error("failed to set run state", "run", run.RunID, "new_state", currentState, "error", err)
+						os.Exit(1)
+					}
+					didSomething = true
+				}
 			}
 
 			if reloadQc {
