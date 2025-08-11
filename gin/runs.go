@@ -195,8 +195,7 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			}
 
 			for _, a := range run.Analysis {
-				if strings.HasPrefix(a.Path, run.Path) {
-					pathSuffix := strings.TrimPrefix(a.Path, run.Path)
+				if pathSuffix, found := strings.CutPrefix(a.Path, run.Path); found {
 					if err := db.SetAnalysisPath(runId, a.AnalysisId, filepath.Join(updateRequest.Path, pathSuffix)); err != nil {
 						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating analysis path"})
 						return
