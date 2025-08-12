@@ -72,8 +72,14 @@ var (
 				didSomething = true
 			}
 
+			updateQc, _ := cmd.Flags().GetBool("update-qc")
+			updateMetadata, _ := cmd.Flags().GetBool("update-metadata")
+
+			// TODO: clean up when removing deprecated flags
 			reloadQc, _ := cmd.Flags().GetBool("reload-qc")
 			reloadMetadata, _ := cmd.Flags().GetBool("reload-metadata")
+			updateQc = updateQc || reloadQc
+			updateMetadata = updateMetadata || reloadMetadata
 
 			// Update the run state. If the state was supplied on the command line, then use this state.
 			// If not, then detect the state and set it accordingly, but only if the last state of the run
@@ -99,7 +105,7 @@ var (
 				}
 			}
 
-			if reloadQc {
+			if updateQc {
 				slog.Info("updating run qc data", "run", args[0])
 				qc, err := interop.InteropFromDir(run.Path)
 				if err != nil {
@@ -113,7 +119,7 @@ var (
 				didSomething = true
 			}
 
-			if reloadMetadata {
+			if updateMetadata {
 				slog.Info("updating run metadata", "run", args[0])
 				runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
 				if err != nil {
@@ -149,8 +155,13 @@ func init() {
 	stateString := strings.Join(allowedStates, ", ")
 	updateCmd.Flags().StringVar(&stateArg, "state", "", "Run state (one of "+stateString+")")
 	updateCmd.Flags().StringP("path", "p", "", "Absolute path to the run")
+	updateCmd.Flags().Bool("update-qc", false, "Update QC data for run")
+	updateCmd.Flags().Bool("update-metadata", false, "Update metadata for run")
 	updateCmd.Flags().Bool("reload-qc", false, "Reload QC data for run")
 	updateCmd.Flags().Bool("reload-metadata", false, "Reload metadata for run")
+
+	_ = updateCmd.Flags().MarkDeprecated("reload-qc", "use --update-qc instead")
+	_ = updateCmd.Flags().MarkDeprecated("reload-metadata", "use --update-metadata instead")
 
 	cobra.OnInitialize(func() {
 		if stateArg != "" {
