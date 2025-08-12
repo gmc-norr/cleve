@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/gmc-norr/cleve"
@@ -114,7 +115,7 @@ var (
 				didSomething = true
 			}
 
-			if updateMetadata {
+			if updateMetadata && !slices.Contains([]cleve.RunState{cleve.StateMoving, cleve.StateMoved}, run.StateHistory.LastState().State) {
 				slog.Info("updating run metadata", "run", args[0])
 				runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
 				if err != nil {
