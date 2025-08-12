@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/gmc-norr/cleve"
@@ -65,15 +66,18 @@ var (
 					slog.Error("mismatching run ids", "db_runid", run.RunID, "disk_runid", ri.RunId)
 					os.Exit(1)
 				}
-				if err := db.SetRunPath(args[0], newPath); err != nil {
-					slog.Error("failed to update run path", "path", newPath, "error", err)
-					os.Exit(1)
-				}
+				run.Path = newPath
 				didSomething = true
 			}
 
+			updateQc, _ := cmd.Flags().GetBool("update-qc")
+			updateMetadata, _ := cmd.Flags().GetBool("update-metadata")
+
+			// TODO: clean up when removing deprecated flags
 			reloadQc, _ := cmd.Flags().GetBool("reload-qc")
 			reloadMetadata, _ := cmd.Flags().GetBool("reload-metadata")
+			updateQc = updateQc || reloadQc
+			updateMetadata = updateMetadata || reloadMetadata
 
 			// Update the run state. If the state was supplied on the command line, then use this state.
 			// If not, then detect the state and set it accordingly, but only if the last state of the run
@@ -81,25 +85,19 @@ var (
 			lastState := run.StateHistory.LastState().State
 			if stateArg != "" && lastState != stateUpdate {
 				slog.Info("updating run state", "run", run.RunID, "old_state", lastState, "new_state", stateUpdate)
-				err := db.SetRunState(run.RunID, stateUpdate)
-				if err != nil {
-					slog.Error("failed to set run state", "run", run.RunID, "new_state", stateUpdate, "error", err)
-				}
+				run.StateHistory.Add(stateUpdate)
 				didSomething = true
 			} else {
 				currentState := run.State(newPath != "")
 				slog.Debug("detected run state", "state", currentState)
 				if lastState != currentState {
 					slog.Info("updating run state", "run", run.RunID, "old_state", lastState, "new_state", currentState)
-					if err := db.SetRunState(run.RunID, currentState); err != nil {
-						slog.Error("failed to set run state", "run", run.RunID, "new_state", currentState, "error", err)
-						os.Exit(1)
-					}
+					run.StateHistory.Add(currentState)
 					didSomething = true
 				}
 			}
 
-			if reloadQc {
+			if updateQc {
 				slog.Info("updating run qc data", "run", args[0])
 				qc, err := interop.InteropFromDir(run.Path)
 				if err != nil {
@@ -113,7 +111,7 @@ var (
 				didSomething = true
 			}
 
-			if reloadMetadata {
+			if updateMetadata && !slices.Contains([]cleve.RunState{cleve.StateMoving, cleve.StateMoved}, run.StateHistory.LastState().State) {
 				slog.Info("updating run metadata", "run", args[0])
 				runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
 				if err != nil {
@@ -127,14 +125,15 @@ var (
 				}
 				run.RunInfo = runInfo
 				run.RunParameters = runParameters
+				didSomething = true
+			}
+
+			if didSomething {
 				if err := db.UpdateRun(run); err != nil {
 					slog.Error("failed to update run", "run", run.RunID, "error", err)
 					os.Exit(1)
 				}
-				didSomething = true
-			}
-
-			if !didSomething {
+			} else {
 				slog.Info("no changes made", "run", args[0])
 			}
 		},
@@ -149,8 +148,13 @@ func init() {
 	stateString := strings.Join(allowedStates, ", ")
 	updateCmd.Flags().StringVar(&stateArg, "state", "", "Run state (one of "+stateString+")")
 	updateCmd.Flags().StringP("path", "p", "", "Absolute path to the run")
+	updateCmd.Flags().Bool("update-qc", false, "Update QC data for run")
+	updateCmd.Flags().Bool("update-metadata", false, "Update metadata for run")
 	updateCmd.Flags().Bool("reload-qc", false, "Reload QC data for run")
 	updateCmd.Flags().Bool("reload-metadata", false, "Reload metadata for run")
+
+	_ = updateCmd.Flags().MarkDeprecated("reload-qc", "use --update-qc instead")
+	_ = updateCmd.Flags().MarkDeprecated("reload-metadata", "use --update-metadata instead")
 
 	cobra.OnInitialize(func() {
 		if stateArg != "" {

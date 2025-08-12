@@ -384,7 +384,7 @@ func (db DB) SetRunPath(runId string, path string) error {
 		return mongo.ErrNoDocuments
 	}
 
-	return nil
+	return err
 }
 
 func (db DB) GetRunStateHistory(runId string) (cleve.StateHistory, error) {
