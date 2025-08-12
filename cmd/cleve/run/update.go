@@ -57,10 +57,6 @@ var (
 			newPath, _ := cmd.Flags().GetString("path")
 			if newPath != "" {
 				slog.Info("updating run path", "run", args[0], "path", newPath)
-				if !filepath.IsAbs(newPath) {
-					slog.Error("run path must be absolute", "path", newPath)
-					os.Exit(1)
-				}
 				ri, err := interop.ReadRunInfo(filepath.Join(newPath, "RunInfo.xml"))
 				if err != nil {
 					slog.Error("failed to read run info, is it a valid run directory?", "path", newPath, "error", err)
