@@ -134,11 +134,16 @@ endpoints:
         required: true
       - key: path
         type: string
-        description: new path of the run directory
+        description: new absolute path of the run directory
         required: false
       - key: state
         type: string
         description: new state of the run directory
+        required: false
+      - key: update_metadata
+        type: bool
+        description: update the metadata from RunInfo.xml and RunParameters.xml
+        default: false
         required: false
 
   - path: /runs/{run_id}/analysis
