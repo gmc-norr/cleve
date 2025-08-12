@@ -159,6 +159,11 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		if updateRequest.Path != "" {
+			if !filepath.IsAbs(updateRequest.Path) {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "run path must be absolute"})
+				return
+			}
+
 			runinfo, err := interop.ReadRunInfo(filepath.Join(updateRequest.Path, "RunInfo.xml"))
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "reading RunInfo.xml"})
