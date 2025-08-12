@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -135,6 +136,7 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			State          string `json:"state"`
 			Path           string `json:"path"`
 			UpdateMetadata bool   `json:"update_metadata"`
+			UpdateQc       bool   `json:"update_qc"`
 		}
 
 		run, err := db.Run(runId, false)
@@ -151,6 +153,7 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			"state":    false,
 			"path":     false,
 			"metadata": false,
+			"qc":       false,
 		}
 
 		if err := c.ShouldBindJSON(&updateRequest); err != nil {
@@ -240,22 +243,40 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			updated["metadata"] = true
 		}
 
+		// Only update QC if the state of the run is ready
+		if updateRequest.UpdateQc && run.StateHistory.LastState().State == cleve.StateReady {
+			qc, err := interop.InteropFromDir(run.Path)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to read qc data", "error": err})
+				return
+			}
+			if err := db.UpdateRunQC(qc.Summarise()); err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to update qc data", "run": run.RunID, "error": err})
+				return
+			}
+			updated["qc"] = true
+		}
+
 		any_updated := false
-		for _, u := range updated {
+		run_updated := false
+		for k, u := range updated {
 			if u {
 				any_updated = true
-				break
+				if slices.Contains([]string{"state", "path", "metadata"}, k) {
+					run_updated = true
+					break
+				}
 			}
 		}
 
-		if any_updated {
+		if run_updated {
 			if err := db.UpdateRun(run); err != nil {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to update run", "run": run.RunID, "error": err})
 				return
 			}
 		}
 
-		msg := "run updated"
+		msg := "update successful"
 		if !any_updated {
 			msg = "nothing updated"
 		}
