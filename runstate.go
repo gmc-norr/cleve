@@ -36,6 +36,12 @@ var ValidRunStates = map[string]RunState{
 	"unknown":    StateUnknown,
 }
 
+// IsMoved returns true if the state is `moved` or `moving`. Otherwise
+// it returns false.
+func (s RunState) IsMoved() bool {
+	return slices.Contains([]RunState{StateMoved, StateMoving}, s)
+}
+
 func (s RunState) String() string {
 	for k, v := range ValidRunStates {
 		if v == s {

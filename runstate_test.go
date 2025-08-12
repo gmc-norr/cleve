@@ -130,3 +130,40 @@ func TestLastState(t *testing.T) {
 		})
 	}
 }
+
+func TestIsMoved(t *testing.T) {
+	testcases := []struct {
+		name    string
+		state   RunState
+		isMoved bool
+	}{
+		{
+			name:    "moved",
+			state:   StateMoved,
+			isMoved: true,
+		},
+		{
+			name:    "moving",
+			state:   StateMoving,
+			isMoved: true,
+		},
+		{
+			name:    "ready",
+			state:   StateReady,
+			isMoved: false,
+		},
+		{
+			name:    "unknown",
+			state:   StateUnknown,
+			isMoved: false,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.state.IsMoved() != c.isMoved {
+				t.Errorf("expected IsMoved to be %t, got %t", c.isMoved, c.state.IsMoved())
+			}
+		})
+	}
+}

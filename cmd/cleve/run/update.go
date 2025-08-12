@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/gmc-norr/cleve"
@@ -97,7 +96,7 @@ var (
 				}
 			}
 
-			if updateQc {
+			if updateQc && run.StateHistory.LastState().State == cleve.StateReady {
 				slog.Info("updating run qc data", "run", args[0])
 				qc, err := interop.InteropFromDir(run.Path)
 				if err != nil {
@@ -109,9 +108,11 @@ var (
 					os.Exit(1)
 				}
 				didSomething = true
+			} else if updateQc {
+				slog.Warn("run is not ready, qc data will not be updated")
 			}
 
-			if updateMetadata && !slices.Contains([]cleve.RunState{cleve.StateMoving, cleve.StateMoved}, run.StateHistory.LastState().State) {
+			if updateMetadata && !run.StateHistory.LastState().State.IsMoved() {
 				slog.Info("updating run metadata", "run", args[0])
 				runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
 				if err != nil {

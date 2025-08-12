@@ -145,6 +145,11 @@ endpoints:
         description: update the metadata from RunInfo.xml and RunParameters.xml
         default: false
         required: false
+      - key: update_qc
+        type: bool
+        description: update the qc data for a run
+        default: false
+        required: false
 
   - path: /runs/{run_id}/analysis
     method: GET

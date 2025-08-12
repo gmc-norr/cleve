@@ -2,7 +2,6 @@ package watcher
 
 import (
 	"log/slog"
-	"slices"
 	"time"
 
 	"github.com/gmc-norr/cleve"
@@ -86,7 +85,7 @@ func (w *RunWatcher) updateStates() {
 		}
 		for _, r := range runs.Runs {
 			knownState := r.StateHistory.LastState().State
-			if slices.Contains([]cleve.RunState{cleve.StateMoving, cleve.StateMoved}, knownState) {
+			if knownState.IsMoved() {
 				// Nothing to do if the run is being moved, and we need an external
 				// signal to update a moved case.
 				continue
