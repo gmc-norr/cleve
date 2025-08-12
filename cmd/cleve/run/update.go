@@ -96,7 +96,7 @@ var (
 				}
 			}
 
-			if updateQc {
+			if updateQc && run.StateHistory.LastState().State == cleve.StateReady {
 				slog.Info("updating run qc data", "run", args[0])
 				qc, err := interop.InteropFromDir(run.Path)
 				if err != nil {
@@ -108,6 +108,8 @@ var (
 					os.Exit(1)
 				}
 				didSomething = true
+			} else if updateQc {
+				slog.Warn("run is not ready, qc data will not be updated")
 			}
 
 			if updateMetadata && !run.StateHistory.LastState().State.IsMoved() {
