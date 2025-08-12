@@ -56,6 +56,10 @@ var (
 			newPath, _ := cmd.Flags().GetString("path")
 			if newPath != "" {
 				slog.Info("updating run path", "run", args[0], "path", newPath)
+				if !filepath.IsAbs(newPath) {
+					slog.Error("run path must be absolute", "path", newPath)
+					os.Exit(1)
+				}
 				ri, err := interop.ReadRunInfo(filepath.Join(newPath, "RunInfo.xml"))
 				if err != nil {
 					slog.Error("failed to read run info, is it a valid run directory?", "path", newPath, "error", err)
@@ -65,10 +69,7 @@ var (
 					slog.Error("mismatching run ids", "db_runid", run.RunID, "disk_runid", ri.RunId)
 					os.Exit(1)
 				}
-				if err := db.SetRunPath(args[0], newPath); err != nil {
-					slog.Error("failed to update run path", "path", newPath, "error", err)
-					os.Exit(1)
-				}
+				run.Path = newPath
 				didSomething = true
 			}
 
@@ -87,20 +88,14 @@ var (
 			lastState := run.StateHistory.LastState().State
 			if stateArg != "" && lastState != stateUpdate {
 				slog.Info("updating run state", "run", run.RunID, "old_state", lastState, "new_state", stateUpdate)
-				err := db.SetRunState(run.RunID, stateUpdate)
-				if err != nil {
-					slog.Error("failed to set run state", "run", run.RunID, "new_state", stateUpdate, "error", err)
-				}
+				run.StateHistory.Add(stateUpdate)
 				didSomething = true
 			} else {
 				currentState := run.State(newPath != "")
 				slog.Debug("detected run state", "state", currentState)
 				if lastState != currentState {
 					slog.Info("updating run state", "run", run.RunID, "old_state", lastState, "new_state", currentState)
-					if err := db.SetRunState(run.RunID, currentState); err != nil {
-						slog.Error("failed to set run state", "run", run.RunID, "new_state", currentState, "error", err)
-						os.Exit(1)
-					}
+					run.StateHistory.Add(currentState)
 					didSomething = true
 				}
 			}
@@ -133,14 +128,15 @@ var (
 				}
 				run.RunInfo = runInfo
 				run.RunParameters = runParameters
+				didSomething = true
+			}
+
+			if didSomething {
 				if err := db.UpdateRun(run); err != nil {
 					slog.Error("failed to update run", "run", run.RunID, "error", err)
 					os.Exit(1)
 				}
-				didSomething = true
-			}
-
-			if !didSomething {
+			} else {
 				slog.Info("no changes made", "run", args[0])
 			}
 		},
