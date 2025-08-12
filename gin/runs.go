@@ -225,7 +225,7 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		// Only update the metadata if the run has not been moved or is being moved
-		if updateRequest.UpdateMetadata && slices.Contains([]cleve.RunState{cleve.StateMoving, cleve.StateMoved}, run.StateHistory.LastState().State) {
+		if updateRequest.UpdateMetadata && !slices.Contains([]cleve.RunState{cleve.StateMoving, cleve.StateMoved}, run.StateHistory.LastState().State) {
 			runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to read run info", "run": run.RunID, "error": err})
