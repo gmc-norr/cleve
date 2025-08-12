@@ -168,10 +168,6 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "run id at new path different from requested run", "when": "updating run path"})
 				return
 			}
-			if err := db.SetRunPath(runId, updateRequest.Path); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run path"})
-				return
-			}
 
 			samplesheetPath, err := cleve.MostRecentSamplesheet(updateRequest.Path)
 			if err != nil {
@@ -194,15 +190,13 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 				}
 			}
 
-			for _, a := range run.Analysis {
+			for i, a := range run.Analysis {
 				if pathSuffix, found := strings.CutPrefix(a.Path, run.Path); found {
-					if err := db.SetAnalysisPath(runId, a.AnalysisId, filepath.Join(updateRequest.Path, pathSuffix)); err != nil {
-						c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating analysis path"})
-						return
-					}
+					run.Analysis[i].Path = filepath.Join(updateRequest.Path, pathSuffix)
 				}
 			}
 
+			run.Path = updateRequest.Path
 			updated["path"] = true
 		}
 
@@ -218,10 +212,7 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		if state != run.StateHistory.LastState().State {
-			if err = db.SetRunState(runId, state); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "updating run state"})
-				return
-			}
+			run.StateHistory.Add(state)
 			updated["state"] = true
 		}
 
@@ -230,6 +221,13 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			if u {
 				any_updated = true
 				break
+			}
+		}
+
+		if any_updated {
+			if err := db.UpdateRun(run); err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to update run", "run": run.RunID, "error": err})
+				return
 			}
 		}
 
