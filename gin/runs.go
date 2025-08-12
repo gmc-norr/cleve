@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -132,8 +133,9 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		var updateRequest struct {
-			State string `json:"state"`
-			Path  string `json:"path"`
+			State          string `json:"state"`
+			Path           string `json:"path"`
+			UpdateMetadata bool   `json:"update_metadata"`
 		}
 
 		run, err := db.Run(runId, false)
@@ -147,8 +149,9 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		updated := map[string]bool{
-			"state": false,
-			"path":  false,
+			"state":    false,
+			"path":     false,
+			"metadata": false,
 		}
 
 		if err := c.ShouldBindJSON(&updateRequest); err != nil {
@@ -219,6 +222,23 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		if state != run.StateHistory.LastState().State {
 			run.StateHistory.Add(state)
 			updated["state"] = true
+		}
+
+		// Only update the metadata if the run has not been moved or is being moved
+		if updateRequest.UpdateMetadata && slices.Contains([]cleve.RunState{cleve.StateMoving, cleve.StateMoved}, run.StateHistory.LastState().State) {
+			runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to read run info", "run": run.RunID, "error": err})
+				return
+			}
+			runParameters, err := interop.ReadRunParameters(filepath.Join(run.Path, "RunParameters.xml"))
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to read run parameters", "run": run.RunID, "error": err})
+				return
+			}
+			run.RunInfo = runInfo
+			run.RunParameters = runParameters
+			updated["metadata"] = true
 		}
 
 		any_updated := false
