@@ -15,7 +15,7 @@ import (
 
 var (
 	stateArg    string
-	stateUpdate cleve.RunState
+	stateUpdate cleve.State
 	updateCmd   = &cobra.Command{
 		Use:   "update [flags] run_id",
 		Short: "Update a sequencing run",

@@ -35,7 +35,7 @@ type RunSetter struct {
 	CreateRunInvoked         bool
 	CreateSampleSheetFn      func(cleve.SampleSheet, ...mongo.SampleSheetOption) (*cleve.UpdateResult, error)
 	CreateSampleSheetInvoked bool
-	SetRunStateFn            func(string, cleve.RunState) error
+	SetRunStateFn            func(string, cleve.State) error
 	SetRunStateInvoked       bool
 	SetRunPathFn             func(string, string) error
 	SetRunPathInvoked        bool
@@ -51,7 +51,7 @@ func (s *RunSetter) CreateSampleSheet(samplesheet cleve.SampleSheet, opts ...mon
 	return s.CreateSampleSheetFn(samplesheet, opts...)
 }
 
-func (s *RunSetter) SetRunState(runId string, state cleve.RunState) error {
+func (s *RunSetter) SetRunState(runId string, state cleve.State) error {
 	s.SetRunStateInvoked = true
 	return s.SetRunStateFn(runId, state)
 }
@@ -65,7 +65,7 @@ func (s *RunSetter) SetRunPath(runId string, path string) error {
 type RunHandler struct {
 	RunsFn             func(cleve.RunFilter) (cleve.RunResult, error)
 	RunsInvoked        bool
-	SetRunStateFn      func(string, cleve.RunState) error
+	SetRunStateFn      func(string, cleve.State) error
 	SetRunStateInvoked bool
 }
 
@@ -74,7 +74,7 @@ func (h *RunHandler) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 	return h.RunsFn(filter)
 }
 
-func (h *RunHandler) SetRunState(runId string, state cleve.RunState) error {
+func (h *RunHandler) SetRunState(runId string, state cleve.State) error {
 	h.SetRunStateInvoked = true
 	return h.SetRunStateFn(runId, state)
 }

@@ -10,10 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
-type RunState int
+type State int
 
 const (
-	StateNew RunState = iota
+	StateNew State = iota
 	StateReady
 	StatePending
 	StateComplete
@@ -24,7 +24,7 @@ const (
 	StateUnknown
 )
 
-var ValidRunStates = map[string]RunState{
+var ValidRunStates = map[string]State{
 	"new":        StateNew,
 	"ready":      StateReady,
 	"pending":    StatePending,
@@ -38,11 +38,11 @@ var ValidRunStates = map[string]RunState{
 
 // IsMoved returns true if the state is `moved` or `moving`. Otherwise
 // it returns false.
-func (s RunState) IsMoved() bool {
-	return slices.Contains([]RunState{StateMoved, StateMoving}, s)
+func (s State) IsMoved() bool {
+	return slices.Contains([]State{StateMoved, StateMoving}, s)
 }
 
-func (s RunState) String() string {
+func (s State) String() string {
 	for k, v := range ValidRunStates {
 		if v == s {
 			return k
@@ -51,7 +51,7 @@ func (s RunState) String() string {
 	return ""
 }
 
-func (s *RunState) Set(v string) error {
+func (s *State) Set(v string) error {
 	state, ok := ValidRunStates[v]
 	if !ok {
 		return fmt.Errorf("illegal state: %#v", v)
@@ -60,13 +60,13 @@ func (s *RunState) Set(v string) error {
 	return nil
 }
 
-func (s *RunState) Type() string {
+func (s *State) Type() string {
 	return "RunState"
 }
 
-func (r *RunState) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+func (r *State) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 	var s string
-	var state RunState
+	var state State
 	if err := bson.UnmarshalValue(bson.TypeString, data, &s); err != nil {
 		return err
 	}
@@ -81,18 +81,18 @@ func (r *RunState) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 	return nil
 }
 
-func (r RunState) MarshalBSONValue() (bsontype.Type, []byte, error) {
+func (r State) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	state := r.String()
 	return bson.MarshalValue(state)
 }
 
-func (r RunState) MarshalJSON() ([]byte, error) {
+func (r State) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r.String())
 }
 
-func (r *RunState) UnmarshalJSON(data []byte) error {
+func (r *State) UnmarshalJSON(data []byte) error {
 	var s string
-	var state RunState
+	var state State
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (r *RunState) UnmarshalJSON(data []byte) error {
 }
 
 type TimedRunState struct {
-	State RunState  `bson:"state" json:"state"`
+	State State     `bson:"state" json:"state"`
 	Time  time.Time `bson:"time" json:"time"`
 }
 
@@ -128,7 +128,7 @@ func (h StateHistory) LastState() TimedRunState {
 }
 
 // Add adds a new state to the state history with the current time.
-func (h *StateHistory) Add(state RunState) {
+func (h *StateHistory) Add(state State) {
 	s := TimedRunState{
 		Time:  time.Now(),
 		State: state,

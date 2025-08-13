@@ -21,7 +21,7 @@ type AnalysisGetter interface {
 // Interface for storing/updating analyses in the database.
 type AnalysisSetter interface {
 	CreateAnalysis(string, *cleve.Analysis) error
-	SetAnalysisState(string, string, cleve.RunState) error
+	SetAnalysisState(string, string, cleve.State) error
 	SetAnalysisPath(string, string, string) error
 	SetAnalysisSummary(string, string, *cleve.AnalysisSummary) error
 }
@@ -89,7 +89,7 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			return
 		}
 
-		var state cleve.RunState
+		var state cleve.State
 		if err := state.Set(addAnalysisRequest.State); err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusBadRequest,
@@ -212,7 +212,7 @@ func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 		}
 
 		if updateRequest.State != "" {
-			var state cleve.RunState
+			var state cleve.State
 			err := state.Set(updateRequest.State)
 			if err != nil {
 				if err == mongo.ErrNoDocuments {

@@ -24,7 +24,7 @@ type RunGetter interface {
 type RunSetter interface {
 	CreateRun(*cleve.Run) error
 	CreateSampleSheet(cleve.SampleSheet, ...mongo.SampleSheetOption) (*cleve.UpdateResult, error)
-	SetRunState(string, cleve.RunState) error
+	SetRunState(string, cleve.State) error
 	SetRunPath(string, string) error
 }
 
@@ -210,7 +210,7 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			updated["path"] = true
 		}
 
-		var state cleve.RunState
+		var state cleve.State
 		if updateRequest.State != "" {
 			err := state.Set(updateRequest.State)
 			if err != nil {
@@ -298,7 +298,7 @@ func UpdateRunStateHandler(db RunSetter) gin.HandlerFunc {
 			return
 		}
 
-		var state cleve.RunState
+		var state cleve.State
 		err := state.Set(updateRequest.State)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "when": "parsing state"})

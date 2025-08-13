@@ -55,7 +55,7 @@ func (db DB) CreateAnalysis(runId string, analysis *cleve.Analysis) error {
 	return nil
 }
 
-func (db DB) SetAnalysisState(runId string, analysisId string, state cleve.RunState) error {
+func (db DB) SetAnalysisState(runId string, analysisId string, state cleve.State) error {
 	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
 	update := bson.D{{
 		Key: "$set", Value: bson.D{

@@ -8,7 +8,7 @@ import (
 func TestRunState(t *testing.T) {
 	type testCase struct {
 		name string
-		args RunState
+		args State
 		want string
 	}
 	tests := []testCase{
@@ -48,14 +48,14 @@ func TestRunState(t *testing.T) {
 }
 
 func TestInvalidState(t *testing.T) {
-	var s RunState
+	var s State
 	if err := s.Set("invalid"); err == nil { // No error
 		t.Errorf("invalid state should return an error")
 	}
 }
 
 func TestRunStateSet(t *testing.T) {
-	var s RunState
+	var s State
 	err := s.Set("invalid")
 	if err == nil {
 		t.Errorf("invalid state should return an error")
@@ -75,7 +75,7 @@ func TestLastState(t *testing.T) {
 	testcases := []struct {
 		name      string
 		history   StateHistory
-		lastState RunState
+		lastState State
 	}{
 		{
 			name:      "empty history",
@@ -134,7 +134,7 @@ func TestLastState(t *testing.T) {
 func TestIsMoved(t *testing.T) {
 	testcases := []struct {
 		name    string
-		state   RunState
+		state   State
 		isMoved bool
 	}{
 		{

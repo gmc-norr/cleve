@@ -358,7 +358,7 @@ func (db DB) DeleteRun(runId string) error {
 	return err
 }
 
-func (db DB) SetRunState(runId string, state cleve.RunState) error {
+func (db DB) SetRunState(runId string, state cleve.State) error {
 	runState := cleve.TimedRunState{State: state, Time: time.Now()}
 	update := bson.D{{Key: "$push", Value: bson.D{{Key: "state_history", Value: runState}}}}
 	result, err := db.RunCollection().UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)

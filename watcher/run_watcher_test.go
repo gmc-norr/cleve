@@ -33,7 +33,7 @@ func TestRunWatcher(t *testing.T) {
 				c.dbRuns.PageSize = filter.PageSize
 				return c.dbRuns, nil
 			}
-			db.SetRunStateFn = func(runId string, state cleve.RunState) error {
+			db.SetRunStateFn = func(runId string, state cleve.State) error {
 				t.Logf("changing state to %s for %s", state, runId)
 				return nil
 			}

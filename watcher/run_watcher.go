@@ -9,7 +9,7 @@ import (
 
 type runHandler interface {
 	Runs(filter cleve.RunFilter) (cleve.RunResult, error)
-	SetRunState(runId string, state cleve.RunState) error
+	SetRunState(runId string, state cleve.State) error
 }
 
 type RunWatcher struct {
