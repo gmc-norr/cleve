@@ -221,13 +221,13 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			state = run.State(updated["path"])
 		}
 
-		if state != run.StateHistory.LastState().State {
+		if state != run.StateHistory.LastState() {
 			run.StateHistory.Add(state)
 			updated["state"] = true
 		}
 
 		// Only update the metadata if the run has not been moved or is being moved
-		if updateRequest.UpdateMetadata && !run.StateHistory.LastState().State.IsMoved() {
+		if updateRequest.UpdateMetadata && !run.StateHistory.LastState().IsMoved() {
 			runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to read run info", "run": run.RunID, "error": err})
@@ -244,7 +244,7 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		// Only update QC if the state of the run is ready
-		if updateRequest.UpdateQc && run.StateHistory.LastState().State == cleve.StateReady {
+		if updateRequest.UpdateQc && run.StateHistory.LastState() == cleve.StateReady {
 			qc, err := interop.InteropFromDir(run.Path)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to read qc data", "error": err})

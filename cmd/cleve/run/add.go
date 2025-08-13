@@ -74,7 +74,7 @@ var addCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if run.StateHistory.LastState().State == cleve.StateReady {
+		if run.StateHistory.LastState() == cleve.StateReady {
 			log.Printf("adding qc for run %s", run.RunID)
 			if err := db.CreateRunQC(run.RunID, interopData.Summarise()); err != nil {
 				log.Fatal(err)

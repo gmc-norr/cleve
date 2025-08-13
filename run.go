@@ -52,9 +52,9 @@ func (r *Run) State(force bool) State {
 
 func (r *Run) state(status *RunCompletionStatus, force bool) State {
 	currentState := r.StateHistory.LastState()
-	if !force && (currentState.State != StateUnknown && currentState.State == StateMoved || currentState.State == StateMoving) {
+	if !force && (currentState != StateUnknown && currentState == StateMoved || currentState == StateMoving) {
 		// If the run has been moved or is being moved, ignore it
-		return currentState.State
+		return currentState
 	}
 	readyMarker := filepath.Join(r.Path, interop.PlatformReadyMarker(r.Platform))
 	slog.Debug("ready marker", "path", readyMarker)

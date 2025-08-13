@@ -97,7 +97,7 @@ func AddRunQcHandler(db RunQCGetterSetter) gin.HandlerFunc {
 			return
 		}
 
-		if run.StateHistory.LastState().State != cleve.StateReady {
+		if run.StateHistory.LastState() != cleve.StateReady {
 			ctx.AbortWithStatusJSON(
 				http.StatusNotFound,
 				gin.H{"error": fmt.Sprintf("run %s not ready", runId)},

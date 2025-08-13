@@ -124,7 +124,7 @@ func TestLastState(t *testing.T) {
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
-			if c.history.LastState().State != c.lastState {
+			if c.history.LastState() != c.lastState {
 				t.Errorf("expected last state to be %s, got %s", c.lastState, c.history.LastState())
 			}
 		})

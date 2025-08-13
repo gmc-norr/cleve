@@ -84,7 +84,7 @@ func (w *RunWatcher) updateStates() {
 			break
 		}
 		for _, r := range runs.Runs {
-			knownState := r.StateHistory.LastState().State
+			knownState := r.StateHistory.LastState()
 			if knownState.IsMoved() {
 				// Nothing to do if the run is being moved, and we need an external
 				// signal to update a moved case.
