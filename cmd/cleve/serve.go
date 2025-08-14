@@ -48,7 +48,7 @@ var (
 			}
 			runWatcher := watcher.NewRunWatcher(time.Duration(pollInterval)*time.Second, db, logger)
 			defer runWatcher.Stop()
-			runWatcher.Start()
+			runStateEvents := runWatcher.Start()
 
 			interrupt := make(chan os.Signal, 1)
 			signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -57,6 +57,21 @@ var (
 				slog.Error("signal received, shutting down", "signal", s)
 				runWatcher.Stop()
 				os.Exit(1)
+			}()
+
+			go func() {
+				for events := range runStateEvents {
+					for _, e := range events {
+						slog.Debug("run state event", "event", e)
+						if e.Changed {
+							slog.Info("updating run state", "run", e.Id, "path", e.Path, "state", e.State)
+							if err := db.SetRunState(e.Id, e.State); err != nil {
+								slog.Error("failed to update run state", "run", e.Id, "error", err)
+							}
+						}
+					}
+				}
+				slog.Info("stop handling run watcher events")
 			}()
 
 			router := gin.NewRouter(db, debug)
