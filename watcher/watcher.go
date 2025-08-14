@@ -61,7 +61,7 @@ func (w *RunWatcher) start() {
 	for {
 		select {
 		case <-ticker.C:
-			w.poll()
+			w.Poll()
 		case <-w.quit:
 			close(w.emit)
 			return
@@ -76,13 +76,8 @@ func (w *RunWatcher) Stop() {
 	w.logger.Info("run watcher stopped")
 }
 
-func (w *RunWatcher) poll() {
+func (w *RunWatcher) Poll() {
 	w.logger.Debug("run watcher start poll")
-	w.updateStates()
-	w.logger.Debug("run watcher end poll")
-}
-
-func (w *RunWatcher) updateStates() {
 	w.runFilter.Page = 1
 	events := make([]WatcherEvent, 0)
 	for {
@@ -123,4 +118,5 @@ func (w *RunWatcher) updateStates() {
 		w.logger.Debug("emitting events", "count", len(events))
 		w.emit <- events
 	}
+	w.logger.Debug("run watcher end poll")
 }

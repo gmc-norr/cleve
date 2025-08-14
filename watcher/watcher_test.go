@@ -81,7 +81,7 @@ func TestRunWatcher(t *testing.T) {
 			events := w.Start()
 			defer w.Stop()
 
-			go w.poll()
+			go w.Poll()
 			assertFunc := assertTrue
 			if c.nEvents == 0 {
 				assertFunc = assertFalse
