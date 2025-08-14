@@ -15,7 +15,7 @@ import (
 
 var (
 	stateArg    string
-	stateUpdate cleve.RunState
+	stateUpdate cleve.State
 	updateCmd   = &cobra.Command{
 		Use:   "update [flags] run_id",
 		Short: "Update a sequencing run",
@@ -81,7 +81,7 @@ var (
 			// Update the run state. If the state was supplied on the command line, then use this state.
 			// If not, then detect the state and set it accordingly, but only if the last state of the run
 			// is not one of the ones that should be ignored.
-			lastState := run.StateHistory.LastState().State
+			lastState := run.StateHistory.LastState()
 			if stateArg != "" && lastState != stateUpdate {
 				slog.Info("updating run state", "run", run.RunID, "old_state", lastState, "new_state", stateUpdate)
 				run.StateHistory.Add(stateUpdate)
@@ -96,7 +96,7 @@ var (
 				}
 			}
 
-			if updateQc && run.StateHistory.LastState().State == cleve.StateReady {
+			if updateQc && run.StateHistory.LastState() == cleve.StateReady {
 				slog.Info("updating run qc data", "run", args[0])
 				qc, err := interop.InteropFromDir(run.Path)
 				if err != nil {
@@ -112,7 +112,7 @@ var (
 				slog.Warn("run is not ready, qc data will not be updated")
 			}
 
-			if updateMetadata && !run.StateHistory.LastState().State.IsMoved() {
+			if updateMetadata && !run.StateHistory.LastState().IsMoved() {
 				slog.Info("updating run metadata", "run", args[0])
 				runInfo, err := interop.ReadRunInfo(filepath.Join(run.Path, "RunInfo.xml"))
 				if err != nil {

@@ -8,7 +8,7 @@ import (
 type Analysis struct {
 	AnalysisId string           `bson:"analysis_id" json:"analysis_id"`
 	Path       string           `bson:"path" json:"path"`
-	State      RunState         `bson:"state" json:"state"`
+	State      State            `bson:"state" json:"state"`
 	Summary    *AnalysisSummary `bson:"summary" json:"summary"`
 }
 
@@ -35,7 +35,7 @@ func ParseAnalysisSummary(data []byte) (AnalysisSummary, error) {
 	return summary, err
 }
 
-func NewAnalysis(path string, state RunState, data []byte) (Analysis, error) {
+func NewAnalysis(path string, state State, data []byte) (Analysis, error) {
 	var analysis Analysis
 	summary, err := ParseAnalysisSummary(data)
 	if err != nil {

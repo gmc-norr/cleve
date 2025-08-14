@@ -9,7 +9,13 @@ import (
 
 type runHandler interface {
 	Runs(filter cleve.RunFilter) (cleve.RunResult, error)
-	SetRunState(runId string, state cleve.RunState) error
+}
+
+type WatcherEvent struct {
+	Id           string
+	Path         string
+	State        cleve.State
+	StateChanged bool
 }
 
 type RunWatcher struct {
@@ -21,6 +27,7 @@ type RunWatcher struct {
 
 	quit chan struct{}
 	done chan struct{}
+	emit chan []WatcherEvent
 }
 
 // NewRunWatcher creates a new RunWatcher.
@@ -34,12 +41,14 @@ func NewRunWatcher(pollInterval time.Duration, db runHandler, logger *slog.Logge
 		logger:       logger,
 		quit:         make(chan struct{}),
 		done:         make(chan struct{}),
+		emit:         make(chan []WatcherEvent, 1),
 	}
 }
 
-func (w *RunWatcher) Start() {
+func (w *RunWatcher) Start() chan []WatcherEvent {
 	w.logger.Info("starting run watcher", "poll_interval", w.PollInterval)
 	go w.start()
+	return w.emit
 }
 
 func (w *RunWatcher) start() {
@@ -51,8 +60,9 @@ func (w *RunWatcher) start() {
 	for {
 		select {
 		case <-ticker.C:
-			w.poll()
+			w.Poll()
 		case <-w.quit:
+			close(w.emit)
 			return
 		}
 	}
@@ -65,42 +75,47 @@ func (w *RunWatcher) Stop() {
 	w.logger.Info("run watcher stopped")
 }
 
-func (w *RunWatcher) poll() {
-	w.updateStates()
-}
-
-func (w *RunWatcher) updateStates() {
-	w.logger.Info("checking run states")
+func (w *RunWatcher) Poll() {
+	w.logger.Debug("run watcher start poll")
 	w.runFilter.Page = 1
+	events := make([]WatcherEvent, 0)
 	for {
 		w.logger.Debug("fetching runs", "page", w.runFilter.Page)
 		runs, err := w.store.Runs(w.runFilter)
 		if err != nil {
 			w.logger.Error("failed to get runs", "error", err)
 		}
-		w.logger.Debug("got runs", "page", w.runFilter.Page, "pagination", runs.PaginationMetadata)
+		w.logger.Debug("got runs", "pagination", runs.PaginationMetadata)
 		if runs.Count == 0 {
-			w.logger.Debug("no more runs, bail out")
+			w.logger.Debug("no runs, bail out")
 			break
 		}
 		for _, r := range runs.Runs {
-			knownState := r.StateHistory.LastState().State
+			knownState := r.StateHistory.LastState()
 			if knownState.IsMoved() {
 				// Nothing to do if the run is being moved, and we need an external
 				// signal to update a moved case.
 				continue
 			}
 			currentState := r.State(false)
-			if knownState != currentState {
-				w.logger.Debug("updating run state", "previous_state", knownState, "new_state", currentState)
-				if err := w.store.SetRunState(r.RunID, currentState); err != nil {
-					w.logger.Error("failed to set run state", "run", r.RunID, "previous_state", knownState, "new_state", currentState)
-				}
+			if currentState == knownState {
+				continue
 			}
+			events = append(events, WatcherEvent{
+				Id:           r.RunID,
+				Path:         r.Path,
+				State:        currentState,
+				StateChanged: knownState != currentState,
+			})
 		}
-		if runs.TotalPages == w.runFilter.Page {
+		if w.runFilter.Page >= runs.TotalPages {
 			break
 		}
 		w.runFilter.Page += 1
 	}
+	if len(events) > 0 {
+		w.logger.Debug("emitting events", "count", len(events))
+		w.emit <- events
+	}
+	w.logger.Debug("run watcher end poll")
 }

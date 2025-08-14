@@ -208,11 +208,22 @@ func IdentifyFlowcell(fcid string) string {
 	return "unknown"
 }
 
+// PlatformReadyMarker returns the name of the file that indicates that the sequencing
+// run is ready. If there is not matching platform, "CopyComplete.txt" is returned.
 func PlatformReadyMarker(platform string) string {
-	marker := readyMarkers[platform]
-	return marker
+	filename, ok := readyMarkers[platform]
+	if !ok {
+		return "CopyComplete.txt"
+	}
+	return filename
 }
 
+// PlatformCompletionsStatus returns the name of the file that contains information on
+// run completion status. If there is not matching platform, "RunCompletionStatus.xml" is returned.
 func PlatformCompletionStatus(platform string) string {
-	return completionStatus[platform]
+	filename, ok := completionStatus[platform]
+	if !ok {
+		return "RunCompletionStatus.xml"
+	}
+	return filename
 }

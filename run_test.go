@@ -274,7 +274,7 @@ func TestState(t *testing.T) {
 		stateHistory StateHistory
 		force        bool
 		status       *RunCompletionStatus
-		state        RunState
+		state        State
 	}{
 		{
 			name:         "pending run",
