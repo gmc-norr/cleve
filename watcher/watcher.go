@@ -13,6 +13,7 @@ type runHandler interface {
 }
 
 type WatcherEvent struct {
+	Id      string
 	Path    string
 	State   cleve.State
 	Changed bool
@@ -104,6 +105,7 @@ func (w *RunWatcher) updateStates() {
 			}
 			currentState := r.State(false)
 			events = append(events, WatcherEvent{
+				Id:      r.RunID,
 				Path:    r.Path,
 				State:   currentState,
 				Changed: knownState != currentState,
