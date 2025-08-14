@@ -13,10 +13,10 @@ type runHandler interface {
 }
 
 type WatcherEvent struct {
-	Id      string
-	Path    string
-	State   cleve.State
-	Changed bool
+	Id           string
+	Path         string
+	State        cleve.State
+	StateChanged bool
 }
 
 type RunWatcher struct {
@@ -108,10 +108,10 @@ func (w *RunWatcher) updateStates() {
 				continue
 			}
 			events = append(events, WatcherEvent{
-				Id:      r.RunID,
-				Path:    r.Path,
-				State:   currentState,
-				Changed: knownState != currentState,
+				Id:           r.RunID,
+				Path:         r.Path,
+				State:        currentState,
+				StateChanged: knownState != currentState,
 			})
 		}
 		if runs.TotalPages <= w.runFilter.Page {

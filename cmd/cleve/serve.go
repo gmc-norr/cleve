@@ -63,7 +63,7 @@ var (
 				for events := range runStateEvents {
 					for _, e := range events {
 						slog.Debug("run state event", "event", e)
-						if e.Changed {
+						if e.StateChanged {
 							slog.Info("updating run state", "run", e.Id, "path", e.Path, "state", e.State)
 							if err := db.SetRunState(e.Id, e.State); err != nil {
 								slog.Error("failed to update run state", "run", e.Id, "error", err)
