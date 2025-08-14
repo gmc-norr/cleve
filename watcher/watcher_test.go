@@ -31,25 +31,21 @@ func assertFalse(t *testing.T, assertion func() bool, maxRetries int, waitTime t
 
 func TestRunWatcher(t *testing.T) {
 	testcases := []struct {
-		name    string
-		dbRuns  cleve.RunResult
-		nEvents int
+		name   string
+		dbRuns cleve.RunResult
+		events []WatcherEvent
 	}{
 		{
 			name: "no runs",
 			dbRuns: cleve.RunResult{
-				PaginationMetadata: cleve.PaginationMetadata{
-					Count: 0,
-				},
+				PaginationMetadata: cleve.PaginationMetadata{},
 			},
-			nEvents: 0,
+			events: []WatcherEvent{},
 		},
 		{
-			name: "single run",
+			name: "single run state unchanged",
 			dbRuns: cleve.RunResult{
-				PaginationMetadata: cleve.PaginationMetadata{
-					Count: 1,
-				},
+				PaginationMetadata: cleve.PaginationMetadata{},
 				Runs: []*cleve.Run{
 					{
 						RunID:        "run1",
@@ -58,10 +54,67 @@ func TestRunWatcher(t *testing.T) {
 					},
 				},
 			},
-			nEvents: 1,
+			events: []WatcherEvent{},
+		},
+		{
+			name: "single run state changed",
+			dbRuns: cleve.RunResult{
+				PaginationMetadata: cleve.PaginationMetadata{},
+				Runs: []*cleve.Run{
+					{
+						RunID:        "run1",
+						Path:         t.TempDir(),
+						StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateReady}},
+					},
+				},
+			},
+			events: []WatcherEvent{{Id: "run1", State: cleve.StatePending, StateChanged: true}},
+		},
+		{
+			name: "two runs state changed for both",
+			dbRuns: cleve.RunResult{
+				PaginationMetadata: cleve.PaginationMetadata{
+					Count: 2,
+				},
+				Runs: []*cleve.Run{
+					{
+						RunID:        "run1",
+						Path:         t.TempDir(),
+						StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateReady}},
+					},
+					{
+						RunID:        "run2",
+						Path:         t.TempDir(),
+						StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateError}},
+					},
+				},
+			},
+			events: []WatcherEvent{
+				{Id: "run1", State: cleve.StatePending, StateChanged: true},
+				{Id: "run2", State: cleve.StatePending, StateChanged: true},
+			},
+		},
+		{
+			name: "single run with state moving",
+			dbRuns: cleve.RunResult{
+				PaginationMetadata: cleve.PaginationMetadata{
+					Count: 1,
+				},
+				Runs: []*cleve.Run{
+					{
+						RunID:        "run1",
+						Path:         t.TempDir(),
+						StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateMoving}},
+					},
+				},
+			},
+			events: []WatcherEvent{},
 		},
 	}
+
 	db := mock.RunHandler{}
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
@@ -69,31 +122,41 @@ func TestRunWatcher(t *testing.T) {
 				c.dbRuns.Page = filter.Page
 				c.dbRuns.PageSize = filter.PageSize
 				c.dbRuns.TotalCount = len(c.dbRuns.Runs)
-				c.dbRuns.Count = min(c.dbRuns.Count, c.dbRuns.TotalCount)
+				c.dbRuns.Count = min(c.dbRuns.PageSize, c.dbRuns.TotalCount)
 				c.dbRuns.TotalPages = c.dbRuns.TotalCount / c.dbRuns.PageSize
 				if c.dbRuns.TotalCount%c.dbRuns.PageSize == 0 {
 					c.dbRuns.TotalPages++
 				}
 				return c.dbRuns, nil
 			}
-			logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 			w := NewRunWatcher(1*time.Minute, &db, logger)
 			events := w.Start()
 			defer w.Stop()
 
+			for _, r := range c.dbRuns.Runs {
+				t.Logf("current state of %s: %s", r.RunID, r.State(false))
+			}
+
 			go w.Poll()
 			assertFunc := assertTrue
-			if c.nEvents == 0 {
+			if len(c.events) == 0 {
 				assertFunc = assertFalse
 			}
+			var e []WatcherEvent
 			assertFunc(t, func() bool {
 				select {
-				case e := <-events:
-					return len(e) == c.nEvents
+				case e = <-events:
+					return len(e) == len(c.events)
 				case <-time.After(5 * time.Millisecond):
 					return false
 				}
 			}, 10, 10*time.Millisecond)
+
+			for i, event := range e {
+				if event.Id != c.events[i].Id || event.State != c.events[i].State {
+					t.Error("states mismatching")
+				}
+			}
 		})
 	}
 }
