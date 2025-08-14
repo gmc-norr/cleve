@@ -110,6 +110,21 @@ func TestRunWatcher(t *testing.T) {
 			},
 			events: []WatcherEvent{},
 		},
+		{
+			name: "moved run",
+			dbRuns: cleve.RunResult{
+				PaginationMetadata: cleve.PaginationMetadata{
+					Count: 1,
+				},
+				Runs: []*cleve.Run{
+					{
+						RunID:        "run1",
+						StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateReady}},
+					},
+				},
+			},
+			events: []WatcherEvent{{Id: "run1", State: cleve.StateMoved}},
+		},
 	}
 
 	db := mock.RunHandler{}
