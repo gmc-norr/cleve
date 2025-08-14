@@ -122,12 +122,19 @@ func TestRunWatcher(t *testing.T) {
 				c.dbRuns.Page = filter.Page
 				c.dbRuns.PageSize = filter.PageSize
 				c.dbRuns.TotalCount = len(c.dbRuns.Runs)
-				c.dbRuns.Count = min(c.dbRuns.PageSize, c.dbRuns.TotalCount)
+
+				startIndex := (c.dbRuns.Page - 1) * c.dbRuns.PageSize
+				endIndex := min(c.dbRuns.Page*c.dbRuns.PageSize, c.dbRuns.TotalCount)
+
+				c.dbRuns.Count = endIndex - startIndex
 				c.dbRuns.TotalPages = c.dbRuns.TotalCount / c.dbRuns.PageSize
-				if c.dbRuns.TotalCount%c.dbRuns.PageSize == 0 {
-					c.dbRuns.TotalPages++
+				if c.dbRuns.TotalCount%c.dbRuns.PageSize > 0 {
+					c.dbRuns.TotalPages += 1
 				}
-				return c.dbRuns, nil
+				return cleve.RunResult{
+					PaginationMetadata: c.dbRuns.PaginationMetadata,
+					Runs:               c.dbRuns.Runs[startIndex:endIndex],
+				}, nil
 			}
 			w := NewRunWatcher(1*time.Minute, &db, logger)
 			events := w.Start()
