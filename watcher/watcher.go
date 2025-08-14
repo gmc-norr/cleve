@@ -104,6 +104,9 @@ func (w *RunWatcher) updateStates() {
 				continue
 			}
 			currentState := r.State(false)
+			if currentState == knownState {
+				continue
+			}
 			events = append(events, WatcherEvent{
 				Id:      r.RunID,
 				Path:    r.Path,
