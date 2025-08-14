@@ -108,7 +108,7 @@ func (w *RunWatcher) Poll() {
 				StateChanged: knownState != currentState,
 			})
 		}
-		if runs.TotalPages <= w.runFilter.Page {
+		if w.runFilter.Page >= runs.TotalPages {
 			break
 		}
 		w.runFilter.Page += 1
