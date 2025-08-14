@@ -9,7 +9,6 @@ import (
 
 type runHandler interface {
 	Runs(filter cleve.RunFilter) (cleve.RunResult, error)
-	SetRunState(runId string, state cleve.State) error
 }
 
 type WatcherEvent struct {
