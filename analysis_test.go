@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 )
 
@@ -35,16 +36,140 @@ func TestDragenManifest(t *testing.T) {
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
 			r := bytes.NewReader(c.data)
-			files, err := readDragenManifest(r)
+			m, err := ReadDragenManifest(r)
 			if c.error != (err != nil) {
 				t.Fatal(err)
 			}
-			if len(files) != len(c.files) {
-				t.Fatalf("expected %d files, got %d files", len(c.files), len(files))
+			if len(m.Files) != len(c.files) {
+				t.Fatalf("expected %d files, got %d files", len(c.files), len(m.Files))
 			}
-			for i := range files {
-				if files[i] != c.files[i] {
-					t.Errorf("expected file %d to be %s, got %s", i+1, c.files[i], files[i])
+			for i := range m.Files {
+				if m.Files[i] != c.files[i] {
+					t.Errorf("expected file %d to be %s, got %s", i+1, c.files[i], m.Files[i])
+				}
+			}
+		})
+	}
+}
+
+func TestDragenManifestFind(t *testing.T) {
+	testcases := []struct {
+		name     string
+		manifest DragenManifest
+		regex    *regexp.Regexp
+		matches  []string
+	}{
+		{
+			name: "contains matches",
+			manifest: DragenManifest{
+				Files: []string{
+					"data/subdir1/file1.txt",
+					"data/subdir1/file1.fastq.gz",
+					"data/subdir2/file2.txt",
+					"data/subdir2/file2.fastq.gz",
+					"data/subdir2-1/file2.txt",
+					"data/subdir2-1/file2.fastq.gz",
+				},
+			},
+			regex: regexp.MustCompile(`^file2.fastq.gz$`),
+			matches: []string{
+				"data/subdir2/file2.fastq.gz",
+				"data/subdir2-1/file2.fastq.gz",
+			},
+		},
+		{
+			name: "nil regex",
+			manifest: DragenManifest{
+				Files: []string{
+					"data/subdir1/file1.txt",
+					"data/subdir1/file1.fastq.gz",
+					"data/subdir2/file2.txt",
+					"data/subdir2/file2.fastq.gz",
+					"data/subdir2-1/file2.txt",
+					"data/subdir2-1/file2.fastq.gz",
+				},
+			},
+		},
+		{
+			name: "no matcher",
+			manifest: DragenManifest{
+				Files: []string{
+					"data/subdir1/file1.txt",
+					"data/subdir1/file1.fastq.gz",
+					"data/subdir2/file2.txt",
+					"data/subdir2/file2.fastq.gz",
+					"data/subdir2-1/file2.txt",
+					"data/subdir2-1/file2.fastq.gz",
+				},
+			},
+			regex: regexp.MustCompile(`^file3.fastq.gz$`),
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			matches := c.manifest.FindFiles(c.regex)
+			if len(matches) != len(c.matches) {
+				t.Fatalf("expected %d matches, got %d", len(c.matches), len(matches))
+			}
+			for i := range matches {
+				if matches[i] != c.matches[i] {
+					t.Errorf("expected match %d to be %q, got %q", i+1, c.matches[i], matches[i])
+				}
+			}
+		})
+	}
+}
+
+func TestRealDragenManifest(t *testing.T) {
+	manifestFile := "testdata/dragen_manifest.tsv"
+	f, err := os.Open(manifestFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := ReadDragenManifest(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testcases := []struct {
+		name   string
+		regex  *regexp.Regexp
+		expect []string
+	}{
+		{
+			name:  "D25-445",
+			regex: regexp.MustCompile(`^` + regexp.QuoteMeta("D25-445") + `.*\.fastq\.gz$`),
+			expect: []string{
+				"Data/DragenSomatic/fastq/D25-445_S16_L001_R1_001.fastq.gz",
+				"Data/DragenSomatic/fastq/D25-445_S16_L001_R2_001.fastq.gz",
+				"Data/DragenSomatic/fastq/D25-445_S16_L002_R1_001.fastq.gz",
+				"Data/DragenSomatic/fastq/D25-445_S16_L002_R2_001.fastq.gz",
+				"Data/DragenSomatic/fastq/D25-445_S16_L003_R1_001.fastq.gz",
+				"Data/DragenSomatic/fastq/D25-445_S16_L003_R2_001.fastq.gz",
+			},
+		},
+		{
+			name:  "Seq25-9259",
+			regex: regexp.MustCompile(`^` + regexp.QuoteMeta("Seq25-9259") + `.*\.fastq\.gz$`),
+			expect: []string{
+				"Data/DragenGermline/fastq/Seq25-9259_S11_L007_R1_001.fastq.gz",
+				"Data/DragenGermline/fastq/Seq25-9259_S11_L007_R2_001.fastq.gz",
+				"Data/DragenGermline/fastq/Seq25-9259_S11_L008_R1_001.fastq.gz",
+				"Data/DragenGermline/fastq/Seq25-9259_S11_L008_R2_001.fastq.gz",
+			},
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			matches := manifest.FindFiles(c.regex)
+			if len(matches) != len(c.expect) {
+				t.Errorf("expected %d fastq files, found %d", len(c.expect), len(matches))
+			}
+			for i := range c.expect {
+				if c.expect[i] != matches[i] {
+					t.Errorf("expected match %d to be %q, got %q", i, c.expect[i], matches[i])
 				}
 			}
 		})

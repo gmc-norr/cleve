@@ -143,18 +143,16 @@ func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 			return analysis, err
 		}
 		defer func() { _ = f.Close() }()
-		manifest, err := readDragenManifest(f)
+		manifest, err := ReadDragenManifest(f)
 		if err != nil {
 			return analysis, fmt.Errorf("failed to read dragen manifest: %w", err)
 		}
 		fqRegex := regexp.MustCompile(`\.f(ast)?q(\.gz)?$`)
-		for _, f := range manifest {
-			if fqRegex.MatchString(f) {
-				analysis.Files = append(analysis.Files, AnalysisFile{
-					Path:     f,
-					FileType: FileFastq,
-				})
-			}
+		for _, f := range manifest.FindFiles(fqRegex) {
+           analysis.Files = append(analysis.Files, AnalysisFile{
+               Path:     f,
+               FileType: FileFastq,
+           })
 		}
 	}
 
@@ -177,19 +175,39 @@ func dragenAnalysisState(path string) State {
 	return StateReady
 }
 
-// readDragenManifest reads a Dragen analysis manifest file and returns a slice of
+type DragenManifest struct {
+	Files []string
+}
+
+// ReadDragenManifest reads a Dragen analysis manifest file and returns a slice of
 // strings with all paths listed in the manifest.
-func readDragenManifest(r io.Reader) ([]string, error) {
+func ReadDragenManifest(r io.Reader) (DragenManifest, error) {
 	var files []string
 	csvReader := csv.NewReader(r)
 	csvReader.Comma = '\t'
 	csvReader.FieldsPerRecord = 2
 	lines, err := csvReader.ReadAll()
 	if err != nil {
-		return files, err
+		return DragenManifest{}, err
 	}
 	for _, line := range lines {
 		files = append(files, line[0])
 	}
-	return files, nil
+	return DragenManifest{Files: files}, nil
+}
+
+// FindFiles returns a list of paths where the file name (not the full path) matches the
+// supplied regular expression. If the regular expression is nil, or no files are found,
+// an empty slice is returned.
+func (m *DragenManifest) FindFiles(r *regexp.Regexp) []string {
+	var matches []string
+	if r == nil {
+		return matches
+	}
+	for _, f := range m.Files {
+		if r.MatchString(filepath.Base(f)) {
+			matches = append(matches, f)
+		}
+	}
+	return matches
 }
