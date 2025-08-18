@@ -71,6 +71,10 @@ func (db DB) RunCollection() *mongo.Collection {
 	return db.Collection("runs")
 }
 
+func (db DB) AnalysesCollection() *mongo.Collection {
+	return db.Collection("analyses")
+}
+
 func (db DB) KeyCollection() *mongo.Collection {
 	return db.Collection("keys")
 }
@@ -139,6 +143,12 @@ func (db *DB) Init(ctx context.Context) error {
 		return err
 	}
 	if _, err := db.SetRunIndex(); err != nil {
+		return err
+	}
+	if err := createCollection("analyses"); err != nil {
+		return err
+	}
+	if _, err := db.SetAnalysesIndex(); err != nil {
 		return err
 	}
 	if err := createCollection("keys"); err != nil {
