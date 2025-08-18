@@ -61,12 +61,13 @@
                 {{ end }}
                 {{ range .runs }}
                 <tr class="hover:bg-accent-100">
+                    {{ $state := .StateHistory.LastEntry }}
                     <td><a class="text-accent-900" href="/runs/{{ .RunID }}">{{ .RunID }}</a></td>
                     <td>{{ .Platform }}</td>
                     <td>{{ .RunInfo.FlowcellName }}</td>
                     <td>{{ .RunInfo.Date.Local.Format "2006-01-02" }}</td>
-                    <td>{{ .StateHistory.LastState.State.String | title }}</td>
-                    <td>{{ .StateHistory.LastState.Time.Local.Format "2006-01-02 15:04:05 MST" }}</td>
+                    <td>{{ $state.State.String | title }}</td>
+                    <td>{{ $state.Time.Local.Format "2006-01-02 15:04:05 MST" }}</td>
                     <td><code>{{ .Path }}</code></td>
                 </tr>
                 {{ end }}
