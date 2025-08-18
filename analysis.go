@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
 type AnalysisFileType int
@@ -30,10 +33,71 @@ type AnalysisFile struct {
 type AnalysisLevel int
 
 const (
-	LevelRun AnalysisLevel = iota
+	LevelRun AnalysisLevel = iota + 1
 	LevelCase
 	LevelSample
 )
+
+func (l AnalysisLevel) String() string {
+	switch l {
+	case LevelRun:
+		return "run"
+	case LevelCase:
+		return "case"
+	case LevelSample:
+		return "sample"
+	default:
+		return ""
+	}
+}
+
+func AnalysisLevelFromString(level string) (AnalysisLevel, error) {
+	switch level {
+	case "run":
+		return LevelRun, nil
+	case "case":
+		return LevelCase, nil
+	case "sample":
+		return LevelSample, nil
+	default:
+		return 0, fmt.Errorf("invalid analysis level %q", level)
+	}
+}
+
+func (l AnalysisLevel) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bson.MarshalValue(l.String())
+}
+
+func (l *AnalysisLevel) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+	var ls string
+	err := bson.UnmarshalValue(bson.TypeString, data, &ls)
+	if err != nil {
+		return fmt.Errorf("unmarshal enenene failed: %w", err)
+	}
+	level, err := AnalysisLevelFromString(ls)
+	if err != nil {
+		return err
+	}
+	*l = level
+	return nil
+}
+
+func (l *AnalysisLevel) MarshalJSON() ([]byte, error) {
+	return json.Marshal(l.String())
+}
+
+func (l *AnalysisLevel) UnmarshalJSON(data []byte) error {
+	var ls string
+	if err := json.Unmarshal(data, &ls); err != nil {
+		return err
+	}
+	level, err := AnalysisLevelFromString(ls)
+	if err != nil {
+		return err
+	}
+	*l = level
+	return nil
+}
 
 type Analysis struct {
 	AnalysisId      string         `bson:"analysis_id" json:"analysis_id"`

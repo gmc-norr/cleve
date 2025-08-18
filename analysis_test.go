@@ -2,10 +2,13 @@ package cleve
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"regexp"
 	"testing"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestDragenManifest(t *testing.T) {
@@ -292,6 +295,93 @@ func TestGetFiles(t *testing.T) {
 				if c.files[i] != f {
 					t.Errorf("expected file %v, got %v", c.files[i], f)
 				}
+			}
+		})
+	}
+}
+
+func TestUnmarshalJSONLevel(t *testing.T) {
+	testcases := []struct {
+		name    string
+		json    []byte
+		expect  AnalysisLevel
+		isError bool
+	}{
+		{
+			name:   "level run",
+			json:   []byte(`"run"`),
+			expect: LevelRun,
+		},
+		{
+			name:   "level case",
+			json:   []byte(`"case"`),
+			expect: LevelCase,
+		},
+		{
+			name:   "level sample",
+			json:   []byte(`"sample"`),
+			expect: LevelSample,
+		},
+		{
+			name:    "empty string",
+			json:    []byte(`""`),
+			isError: true,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			var l AnalysisLevel
+			err := json.Unmarshal(c.json, &l)
+			if c.isError != (err != nil) {
+				t.Fatalf("isError is %t, but got %s", c.isError, err)
+			}
+			if err != nil && l != c.expect {
+				t.Errorf("expected level %s, got %s", c.expect, l)
+			}
+		})
+	}
+}
+
+func TestBSONLevel(t *testing.T) {
+	testcases := []struct {
+		name    string
+		level   AnalysisLevel
+		isError bool
+	}{
+		{
+			name:  "level run",
+			level: LevelRun,
+		},
+		{
+			name:  "level case",
+			level: LevelCase,
+		},
+		{
+			name:  "level sample",
+			level: LevelSample,
+		},
+		{
+			name:    "empty string",
+			isError: true,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			doc, err := bson.Marshal(bson.M{"level": c.level})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var tmp struct {
+				Level AnalysisLevel `bson:"level"`
+			}
+			err = bson.Unmarshal(doc, &tmp)
+			if c.isError != (err != nil) {
+				t.Fatalf("isError is %t, but got %s", c.isError, err)
+			}
+			if err == nil && tmp.Level != c.level {
+				t.Errorf("expected level %s, got %s", c.level, tmp.Level)
 			}
 		})
 	}
