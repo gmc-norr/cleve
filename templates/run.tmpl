@@ -6,7 +6,7 @@
 
 {{ define "run" }}
 {{ template "header" . }}
-{{ $state := .run.StateHistory.LastState.State.String }}
+{{ $state := .run.StateHistory.LastState.String }}
 <header class="m-6">
     <h2 class="text-3xl">Sequencing run: {{ .run.RunID }}
         <span class="state-{{ $state }} inline-block py-1 px-2 rounded-md">

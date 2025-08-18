@@ -112,16 +112,27 @@ type TimedRunState struct {
 // StateHistory represents a slice of TimedRunState
 type StateHistory []TimedRunState
 
-// LastState returns the most recent State in the state history. If the
-// history is empty, Unknown is returned.
-func (h StateHistory) LastState() State {
+// LastEntry returns the most recent TimedRunState in the state history.
+func (h StateHistory) LastEntry() TimedRunState {
 	if len(h) == 0 {
-		return StateUnknown
+		return TimedRunState{State: StateUnknown}
 	}
 	slices.SortFunc(h, func(a, b TimedRunState) int {
 		return b.Time.Compare(a.Time)
 	})
-	return h[0].State
+	return h[0]
+}
+
+// LastState returns the most recent State in the state history. If the
+// history is empty, Unknown is returned.
+func (h StateHistory) LastState() State {
+	return h.LastEntry().State
+}
+
+// LastModification returns the time of the last modification of the state.
+// If the history is empty, the zero value of time.Time will be returned.
+func (h StateHistory) LastModification() time.Time {
+	return h.LastEntry().Time
 }
 
 // Add adds a new state to the state history with the current time.
