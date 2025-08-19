@@ -158,23 +158,12 @@ func (db DB) Analysis(analysisId string, parentId string) (*cleve.Analysis, erro
 	return analyses.Analyses[0], nil
 }
 
-func (db DB) CreateAnalysis(runId string, analysis *cleve.Analysis) error {
-	update := bson.D{{
-		Key: "$push", Value: bson.D{
-			{Key: "analysis", Value: analysis},
-		},
-	}}
-	res, err := db.RunCollection().UpdateOne(
+func (db DB) CreateAnalysis(analysis *cleve.Analysis) error {
+	_, err := db.AnalysesCollection().InsertOne(
 		context.TODO(),
-		bson.D{{Key: "run_id", Value: runId}},
-		update,
+		analysis,
 	)
-
-	if err == nil && res.MatchedCount == 0 {
-		return mongo.ErrNoDocuments
-	}
-
-	return nil
+	return err
 }
 
 func (db DB) SetAnalysisState(runId string, analysisId string, state cleve.State) error {

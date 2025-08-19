@@ -15,12 +15,12 @@ import (
 // Interface for reading analyses from the database.
 type AnalysisGetter interface {
 	Analyses(cleve.AnalysisFilter) (cleve.AnalysisResult, error)
-	Analysis(string, string) (*cleve.Analysis, error)
+	Analysis(analysisId string, parentId string) (*cleve.Analysis, error)
 }
 
 // Interface for storing/updating analyses in the database.
 type AnalysisSetter interface {
-	CreateAnalysis(string, *cleve.Analysis) error
+	CreateAnalysis(*cleve.Analysis) error
 	SetAnalysisState(string, string, cleve.State) error
 	SetAnalysisPath(string, string, string) error
 }
@@ -79,14 +79,18 @@ func RunAnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 
 func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		runId := c.Param("runId")
-		var addAnalysisRequest struct {
-			Path        string                `form:"path" binding:"required"`
-			State       string                `form:"state" binding:"required"`
-			SummaryFile *multipart.FileHeader `form:"summary_file"`
+		var params struct {
+			Path            string               `json:"path" binding:"required"`
+			AnalysisId      string               `json:"analysis_id" binding:"required"`
+			ParentId        string               `json:"parent_id" binding:"required"`
+			Level           cleve.AnalysisLevel  `json:"level" binding:"required"`
+			State           cleve.State          `json:"state" binding:"required"`
+			Software        string               `json:"software" binding:"required"`
+			SoftwareVersion string               `json:"software_version" binding:"required"`
+			Files           []cleve.AnalysisFile `json:"files"`
 		}
 
-		if err := c.ShouldBind(&addAnalysisRequest); err != nil {
+		if err := c.ShouldBind(&params); err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusBadRequest,
 				gin.H{"error": err.Error(), "when": "parsing request body"},
@@ -94,62 +98,27 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			return
 		}
 
-		var state cleve.State
-		if err := state.Set(addAnalysisRequest.State); err != nil {
-			c.AbortWithStatusJSON(
-				http.StatusBadRequest,
-				gin.H{"error": err.Error(), "when": "parsing state"},
-			)
-			return
-		}
-
-		var summary *cleve.AnalysisSummary
-		if addAnalysisRequest.SummaryFile != nil {
-			summaryFile, err := addAnalysisRequest.SummaryFile.Open()
-			if err != nil {
-				c.AbortWithStatusJSON(
-					http.StatusInternalServerError,
-					gin.H{"error": err.Error(), "when": "opening summary file"},
-				)
-				return
-			}
-
-			summaryData, err := io.ReadAll(summaryFile)
-			if err != nil {
-				c.AbortWithStatusJSON(
-					http.StatusInternalServerError,
-					gin.H{"error": err.Error(), "when": "reading summary file"},
-				)
-				return
-			}
-
-			s, err := cleve.ParseAnalysisSummary(summaryData)
-			if err != nil {
-				c.AbortWithStatusJSON(
-					http.StatusBadRequest,
-					gin.H{"error": err.Error(), "when": "parsing summary file"},
-				)
-				return
-			}
-			summary = &s
-		}
-
 		a := cleve.Analysis{
-			AnalysisId: filepath.Base(addAnalysisRequest.Path),
-			Path:       addAnalysisRequest.Path,
-			State:      state,
-			Summary:    summary,
+			AnalysisId:      params.AnalysisId,
+			ParentId:        params.ParentId,
+			Level:           params.Level,
+			Path:            params.Path,
+			Software:        params.Software,
+			SoftwareVersion: params.SoftwareVersion,
+			Files:           params.Files,
 		}
+		a.StateHistory.Add(params.State)
 
 		// Check that the analysis doesn't already exist
-		_, err := db.Analysis(runId, a.AnalysisId)
+		_, err := db.Analysis(a.AnalysisId, a.ParentId)
 		if err == nil {
 			c.AbortWithStatusJSON(
 				http.StatusConflict,
 				gin.H{
 					"error":       "analysis already exists",
-					"run_id":      runId,
+					"parent_id":   a.ParentId,
 					"analysis_id": a.AnalysisId,
+					"level":       a.Level,
 				},
 			)
 			return
@@ -164,24 +133,7 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			return
 		}
 
-		// Make sure that analyses are being added to the right run, and
-		// also that requeued analyses are correctly identified. Only
-		// check this if the analysis summary is actually present, otherwise
-		// just add it blindly.
-		requeRegex := regexp.MustCompile(`-Requeued-\d+$`)
-		if a.Summary != nil && requeRegex.ReplaceAllString(a.Summary.RunID, "") != runId {
-			c.AbortWithStatusJSON(
-				http.StatusBadRequest,
-				gin.H{
-					"error":           "run id in summary does not match the id of the run it is being added to",
-					"run_id":          runId,
-					"analysis_run_id": a.Summary.RunID,
-				},
-			)
-			return
-		}
-
-		if err := db.CreateAnalysis(runId, &a); err != nil {
+		if err := db.CreateAnalysis(&a); err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
 				gin.H{"error": err.Error(), "when": "adding analysis"},
@@ -191,8 +143,9 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":     "analysis added",
-			"run_id":      runId,
+			"parent_id":   a.ParentId,
 			"analysis_id": a.AnalysisId,
+			"level":       a.Level,
 		})
 	}
 }
