@@ -33,13 +33,36 @@ func TestRunState(t *testing.T) {
 			want: "complete",
 		},
 		{
+			name: "incomplete",
+			args: StateIncomplete,
+			want: "incomplete",
+		},
+		{
 			name: "error",
 			args: StateError,
 			want: "error",
 		},
+		{
+			name: "moved",
+			args: StateMoved,
+			want: "moved",
+		},
+		{
+			name: "moving",
+			args: StateMoving,
+			want: "moving",
+		},
+		{
+			name: "unknown",
+			args: StateUnknown,
+			want: "unknown",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if !tt.args.IsValid() {
+				t.Errorf("state %s should be valid", tt.args)
+			}
 			if got := tt.args.String(); got != tt.want {
 				t.Errorf("RunState.String() = %v, want %v", got, tt.want)
 			}

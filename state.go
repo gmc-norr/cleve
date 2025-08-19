@@ -13,7 +13,7 @@ import (
 type State int
 
 const (
-	StateInvalid State = iota
+	_ State = iota
 	StateNew
 	StateReady
 	StatePending
@@ -41,6 +41,11 @@ var ValidRunStates = map[string]State{
 // it returns false.
 func (s State) IsMoved() bool {
 	return slices.Contains([]State{StateMoved, StateMoving}, s)
+}
+
+// IsValid returns true if the State s represents a valid state.
+func (s State) IsValid() bool {
+	return s > 0 && s <= StateUnknown
 }
 
 func (s State) String() string {

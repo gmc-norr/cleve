@@ -33,11 +33,16 @@ type AnalysisFile struct {
 type AnalysisLevel int
 
 const (
-	LevelInvalid AnalysisLevel = iota
+	_ AnalysisLevel = iota
 	LevelRun
 	LevelCase
 	LevelSample
 )
+
+// IsValid returns true if the AnalysisLevel l represents a valid level.
+func (l AnalysisLevel) IsValid() bool {
+	return l > 0 && l <= LevelSample
+}
 
 func (l AnalysisLevel) String() string {
 	switch l {

@@ -380,6 +380,9 @@ func TestBSONLevel(t *testing.T) {
 			if c.isError != (err != nil) {
 				t.Fatalf("isError is %t, but got %s", c.isError, err)
 			}
+			if err == nil && !tmp.Level.IsValid() {
+				t.Errorf("level is invalid: %s", c.level)
+			}
 			if err == nil && tmp.Level != c.level {
 				t.Errorf("expected level %s, got %s", c.level, tmp.Level)
 			}

@@ -55,7 +55,7 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		}},
 	})
 
-	if filter.State != cleve.StateInvalid {
+	if filter.State.IsValid() {
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "$expr", Value: bson.D{
@@ -68,7 +68,7 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		})
 	}
 
-	if filter.Level != cleve.LevelInvalid {
+	if filter.Level.IsValid() {
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "level", Value: filter.Level},
