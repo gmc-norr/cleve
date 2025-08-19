@@ -64,6 +64,15 @@ func AnalysisLevelFromString(level string) (AnalysisLevel, error) {
 	}
 }
 
+func (l *AnalysisLevel) UnmarshalParam(param string) error {
+	level, err := AnalysisLevelFromString(param)
+	if err != nil {
+		return err
+	}
+	*l = level
+	return nil
+}
+
 func (l AnalysisLevel) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	return bson.MarshalValue(l.String())
 }

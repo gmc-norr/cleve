@@ -64,6 +64,10 @@ func (s *State) Type() string {
 	return "RunState"
 }
 
+func (s *State) UnmarshalParam(param string) error {
+	return s.Set(param)
+}
+
 func (r *State) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 	var s string
 	var state State
