@@ -125,6 +125,9 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			Files:           params.Files,
 		}
 		a.StateHistory.Add(params.State)
+		if a.Files == nil {
+			a.Files = make([]cleve.AnalysisFile, 0)
+		}
 
 		// Check that the analysis doesn't already exist
 		_, err := db.Analysis(a.AnalysisId, a.ParentId)
