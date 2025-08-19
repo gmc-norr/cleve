@@ -116,6 +116,24 @@ func (f QcFilter) UrlParams() string {
 	return s
 }
 
+// Analysis filtering
+type AnalysisFilter struct {
+	AnalysisId       string         `form:"analysis_id"`
+	ParentId         string         `form:"parent_id"`
+	Level            *AnalysisLevel `form:"level"`
+	Software         string         `form:"software"`
+	State            *State         `form:"state"`
+	PaginationFilter `form:",inline"`
+}
+
+func NewAnalysisFilter() AnalysisFilter {
+	return AnalysisFilter{
+		PaginationFilter: PaginationFilter{
+			PageSize: 10,
+		},
+	}
+}
+
 // Sample filtering.
 type SampleFilter struct {
 	Name             string `form:"sample_name"`
