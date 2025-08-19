@@ -121,11 +121,11 @@ func (f QcFilter) UrlParams() string {
 
 // Analysis filtering
 type AnalysisFilter struct {
-	AnalysisId       string         `form:"analysis_id"`
-	ParentId         string         `form:"parent_id"`
-	Level            *AnalysisLevel `form:"level"`
-	Software         string         `form:"software"`
-	State            *State         `form:"state"`
+	AnalysisId       string        `form:"analysis_id"`
+	ParentId         string        `form:"parent_id"`
+	Level            AnalysisLevel `form:"level"`
+	Software         string        `form:"software"`
+	State            State         `form:"state"`
 	PaginationFilter `form:",inline"`
 }
 
