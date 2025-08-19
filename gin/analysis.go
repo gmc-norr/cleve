@@ -14,7 +14,7 @@ import (
 
 // Interface for reading analyses from the database.
 type AnalysisGetter interface {
-	Analyses(string) ([]*cleve.Analysis, error)
+	Analyses(cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 	Analysis(string, string) (*cleve.Analysis, error)
 }
 
@@ -23,7 +23,6 @@ type AnalysisSetter interface {
 	CreateAnalysis(string, *cleve.Analysis) error
 	SetAnalysisState(string, string, cleve.State) error
 	SetAnalysisPath(string, string, string) error
-	SetAnalysisSummary(string, string, *cleve.AnalysisSummary) error
 }
 
 // Interface for both getting and storing/updating analyses.
@@ -32,13 +31,19 @@ type AnalysisGetterSetter interface {
 	AnalysisSetter
 }
 
-func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
+func RunAnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		runId := c.Param("runId")
-		analyses, err := db.Analyses(runId)
+		filter, err := getAnalysisFilter(c)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				c.JSON(http.StatusNotFound, gin.H{"error": "run not found"})
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		filter.ParentId = c.Param("runId")
+		slog.Debug("analysis filter", "filter", filter)
+		analyses, err := db.Analyses(filter)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.JSON(http.StatusOK, analyses)
 				return
 			}
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -48,11 +53,11 @@ func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 	}
 }
 
-func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
+func RunAnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
 		analysisId := c.Param("analysisId")
-		analysis, err := db.Analysis(runId, analysisId)
+		analysis, err := db.Analysis(analysisId, runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(

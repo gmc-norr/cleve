@@ -193,8 +193,8 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 
 	r.GET("/api/runs", RunsHandler(db))
 	r.GET("/api/runs/:runId", RunHandler(db))
-	r.GET("/api/runs/:runId/analysis", AnalysesHandler(db))
-	r.GET("/api/runs/:runId/analysis/:analysisId", AnalysisHandler(db))
+	r.GET("/api/runs/:runId/analyses", RunAnalysesHandler(db))
+	r.GET("/api/runs/:runId/analyses/:analysisId", RunAnalysisHandler(db))
 	r.GET("/api/runs/:runId/samplesheet", RunSampleSheetHandler(db))
 	r.GET("/api/runs/:runId/qc", RunQcHandler(db))
 	r.GET("/api/panels", PanelsHandler(db))
