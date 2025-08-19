@@ -31,15 +31,23 @@ type AnalysisGetterSetter interface {
 	AnalysisSetter
 }
 
-func RunAnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
+func AnalysesHandler(db AnalysisGetter, level cleve.AnalysisLevel) gin.HandlerFunc {
+	var parentIdKey string
+	switch level {
+	case cleve.LevelRun:
+		parentIdKey = "runId"
+	case cleve.LevelCase:
+		parentIdKey = "caseId"
+	case cleve.LevelSample:
+		parentIdKey = "sampleId"
+	}
 	return func(c *gin.Context) {
 		filter, err := getAnalysisFilter(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		filter.ParentId = c.Param("runId")
-		slog.Debug("analysis filter", "filter", filter)
+		filter.ParentId = c.Param(parentIdKey)
 		analyses, err := db.Analyses(filter)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
@@ -53,18 +61,27 @@ func RunAnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 	}
 }
 
-func RunAnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
+func AnalysisHandler(db AnalysisGetter, level cleve.AnalysisLevel) gin.HandlerFunc {
+	var parentIdKey string
+	switch level {
+	case cleve.LevelRun:
+		parentIdKey = "runId"
+	case cleve.LevelCase:
+		parentIdKey = "caseId"
+	case cleve.LevelSample:
+		parentIdKey = "sampleId"
+	}
 	return func(c *gin.Context) {
-		runId := c.Param("runId")
+		parentId := c.Param(parentIdKey)
 		analysisId := c.Param("analysisId")
-		analysis, err := db.Analysis(analysisId, runId)
+		analysis, err := db.Analysis(analysisId, parentId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.AbortWithStatusJSON(
 					http.StatusNotFound,
 					gin.H{
 						"error":       "analysis not found",
-						"run_id":      runId,
+						"parent_id":   parentId,
 						"analysis_id": analysisId,
 					},
 				)
