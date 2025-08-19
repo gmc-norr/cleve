@@ -108,8 +108,14 @@ func (l *AnalysisLevel) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type AnalysisResult struct {
+	PaginationMetadata `bson:"metadata" json:"metadata"`
+	Analyses           []*Analysis `bson:"analyses" json:"analyses"`
+}
+
 type Analysis struct {
 	AnalysisId      string         `bson:"analysis_id" json:"analysis_id"`
+	ParentId        string         `bson:"parent_id" json:"parent_id"`
 	Level           AnalysisLevel  `bson:"level" json:"level"`
 	Path            string         `bson:"path" json:"path"`
 	Software        string         `bson:"software" json:"software"`
