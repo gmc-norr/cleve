@@ -13,7 +13,8 @@ import (
 type State int
 
 const (
-	StateNew State = iota
+	StateInvalid State = iota
+	StateNew
 	StateReady
 	StatePending
 	StateComplete

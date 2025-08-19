@@ -33,7 +33,8 @@ type AnalysisFile struct {
 type AnalysisLevel int
 
 const (
-	LevelRun AnalysisLevel = iota + 1
+	LevelInvalid AnalysisLevel = iota
+	LevelRun
 	LevelCase
 	LevelSample
 )
