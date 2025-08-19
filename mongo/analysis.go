@@ -2,10 +2,12 @@ package mongo
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error) {
@@ -205,18 +207,39 @@ func (db DB) SetAnalysisPath(runId string, analysisId string, path string) error
 	return err
 }
 
-func (db DB) SetAnalysisSummary(runId string, analysisId string, summary *cleve.AnalysisSummary) error {
-	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
-	update := bson.D{{
-		Key: "$set", Value: bson.D{
-			{Key: "analysis.$.summary", Value: summary},
-		},
-	}}
+// func (db DB) SetAnalysisSummary(runId string, analysisId string, summary *cleve.AnalysisSummary) error {
+// 	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
+// 	update := bson.D{{
+// 		Key: "$set", Value: bson.D{
+// 			{Key: "analysis.$.summary", Value: summary},
+// 		},
+// 	}}
+//
+// 	res, err := db.RunCollection().UpdateOne(context.TODO(), filter, update)
+// 	if err == nil && res.MatchedCount == 0 {
+// 		return mongo.ErrNoDocuments
+// 	}
+//
+// 	return err
+// }
 
-	res, err := db.RunCollection().UpdateOne(context.TODO(), filter, update)
-	if err == nil && res.MatchedCount == 0 {
-		return mongo.ErrNoDocuments
+func (db DB) SetAnalysesIndex() (string, error) {
+	indexModel := mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "analysis_id", Value: 1},
+			{Key: "parent_id", Value: 1},
+		},
+		Options: options.Index().SetUnique(true),
 	}
 
-	return err
+	// TODO: do this as a transaction and roll back if anything fails
+	res, err := db.AnalysesCollection().Indexes().DropAll(context.TODO())
+	if err != nil {
+		return "", err
+	}
+
+	slog.Info("dropped indexes", "count", res.Lookup("nIndexesWas").Int32())
+
+	name, err := db.AnalysesCollection().Indexes().CreateOne(context.TODO(), indexModel)
+	return name, err
 }
