@@ -142,19 +142,18 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 	return analyses, nil
 }
 
-func (db DB) Analysis(runId string, analysisId string) (*cleve.Analysis, error) {
-	analyses, err := db.Analyses(runId)
+func (db DB) Analysis(analysisId string, parentId string) (*cleve.Analysis, error) {
+	filter := cleve.NewAnalysisFilter()
+	filter.AnalysisId = analysisId
+	filter.ParentId = parentId
+	analyses, err := db.Analyses(filter)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, analysis := range analyses {
-		if analysis.AnalysisId == analysisId {
-			return analysis, nil
-		}
+	if analyses.Count == 0 {
+		return nil, mongo.ErrNoDocuments
 	}
-
-	return nil, mongo.ErrNoDocuments
+	return analyses.Analyses[0], nil
 }
 
 func (db DB) CreateAnalysis(runId string, analysis *cleve.Analysis) error {
