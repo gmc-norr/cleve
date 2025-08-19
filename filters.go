@@ -11,6 +11,13 @@ type PaginationFilter struct {
 	PageSize int `form:"page_size"`
 }
 
+func NewPaginationFilter() PaginationFilter {
+	return PaginationFilter{
+		Page:     1,
+		PageSize: 10,
+	}
+}
+
 func (f PaginationFilter) Validate() error {
 	if f.Page < 1 {
 		return fmt.Errorf("illegal page number %d", f.Page)
@@ -35,9 +42,7 @@ type RunFilter struct {
 
 func NewRunFilter() RunFilter {
 	return RunFilter{
-		PaginationFilter: PaginationFilter{
-			PageSize: 10,
-		},
+		PaginationFilter: NewPaginationFilter(),
 	}
 }
 
@@ -79,9 +84,7 @@ type QcFilter struct {
 
 func NewQcFilter() QcFilter {
 	return QcFilter{
-		PaginationFilter: PaginationFilter{
-			PageSize: 10,
-		},
+		PaginationFilter: NewPaginationFilter(),
 	}
 }
 
@@ -128,9 +131,7 @@ type AnalysisFilter struct {
 
 func NewAnalysisFilter() AnalysisFilter {
 	return AnalysisFilter{
-		PaginationFilter: PaginationFilter{
-			PageSize: 10,
-		},
+		PaginationFilter: NewPaginationFilter(),
 	}
 }
 
@@ -145,9 +146,7 @@ type SampleFilter struct {
 
 func NewSampleFilter() SampleFilter {
 	return SampleFilter{
-		PaginationFilter: PaginationFilter{
-			PageSize: 10,
-		},
+		PaginationFilter: NewPaginationFilter(),
 	}
 }
 
