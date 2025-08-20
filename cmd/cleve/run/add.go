@@ -64,7 +64,6 @@ var addCmd = &cobra.Command{
 			Platform:       interopData.RunInfo.Platform,
 			RunParameters:  interopData.RunParameters,
 			RunInfo:        interopData.RunInfo,
-			Analysis:       []*cleve.Analysis{},
 		}
 		currentState := run.State(false)
 		run.StateHistory.Add(currentState)

@@ -29,8 +29,6 @@ type Run struct {
 	SampleSheetFiles []SampleSheetInfo     `bson:"samplesheets,omitempty" json:"samplesheets"`
 	RunParameters    interop.RunParameters `bson:"run_parameters,omitzero" json:"run_parameters,omitzero"`
 	RunInfo          interop.RunInfo       `bson:"run_info,omitzero" json:"run_info,omitzero"`
-	Analysis         []*Analysis           `bson:"analysis,omitempty" json:"analysis,omitempty"`
-	AnalysisCount    int                   `bson:"analysis_count" json:"analysis_count"`
 }
 
 // State detects the current state of the sequencing run. If force is true, the state
@@ -138,8 +136,6 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 				} `bson:"reads"`
 			} `bson:"run"`
 		} `bson:"run_info,omitzero" json:"run_info,omitzero"`
-		Analysis      []*Analysis `bson:"analysis,omitempty" json:"analysis,omitempty"`
-		AnalysisCount int         `bson:"analysis_count" json:"analysis_count"`
 	}
 
 	v1 := RunV1{}
@@ -158,8 +154,6 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 	r.StateHistory = v1.StateHistory
 	r.SampleSheet = v1.SampleSheet
 	r.SampleSheetFiles = v1.SampleSheetFiles
-	r.Analysis = v1.Analysis
-	r.AnalysisCount = v1.AnalysisCount
 	r.RunInfo = interop.RunInfo{
 		Version:      v1.RunInfo.Version,
 		RunId:        v1.RunInfo.Run.RunID,
