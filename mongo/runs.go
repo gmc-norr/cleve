@@ -202,28 +202,10 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		},
 	})
 
-	// Count number of analyses
-	pipeline = append(pipeline, bson.D{
-		{Key: "$set", Value: bson.D{
-			{
-				Key: "analysis_count",
-				Value: bson.D{
-					{Key: "$cond", Value: bson.M{
-						"if": bson.D{
-							{Key: "$isArray", Value: "$analysis"},
-						}, "then": bson.D{
-							{Key: "$size", Value: "$analysis"},
-						}, "else": 0,
-					}},
-				},
-			},
-		}},
-	})
-
-	// Exclude run parameters and analysis
+	// Exclude run parameters
 	if filter.Brief {
 		pipeline = append(pipeline, bson.D{
-			{Key: "$unset", Value: bson.A{"run_parameters", "analysis"}},
+			{Key: "$unset", Value: bson.A{"run_parameters"}},
 		})
 	}
 
