@@ -23,8 +23,15 @@ func mockFile(path string, content string) error {
 	return err
 }
 
-func mockSummaryJson(samples int) string {
-	summary := `{"result": "success", "workflows": [{"workflow_name": "bcl_convert", "samples": [`
+func mockSummaryJson(samples int, state State) string {
+	var stringState string
+	switch state {
+	case StateReady:
+		stringState = "success"
+	case StateError:
+		stringState = "error"
+	}
+	summary := fmt.Sprintf(`{"result": "%s", "workflows": [{"workflow_name": "bcl_convert", "samples": [`, stringState)
 	for i := range samples {
 		summary += fmt.Sprintf(`{"sample_id": "sample%d"}`, i+1)
 		if i < samples-1 {
@@ -39,7 +46,8 @@ func mockManifest(samples int, lanes int) string {
 	var manifest string
 	for s := range samples {
 		for l := range lanes {
-			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d.fastq.gz\thash%d\n", s+1, l+1, s*l+l+1)
+			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_1.fastq.gz\thash%d\n", s+1, l+1, s*l+l+1)
+			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_2.fastq.gz\thash%d\n", s+1, l+1, s*l+l+1)
 		}
 	}
 	return manifest
@@ -66,7 +74,7 @@ func mockAnalysisDirectory(t *testing.T, state State, dragenVersion string, samp
 		if err := mockFile(filepath.Join(analysisDir, "Data", "Secondary_Analysis_Complete.txt"), ""); err != nil {
 			return analysisDir, err
 		}
-		if err := mockFile(filepath.Join(analysisDir, "Data", "summary", dragenVersion, "detailed_summary.json"), mockSummaryJson(samples)); err != nil {
+		if err := mockFile(filepath.Join(analysisDir, "Data", "summary", dragenVersion, "detailed_summary.json"), mockSummaryJson(samples, state)); err != nil {
 			return analysisDir, err
 		}
 	case StatePending:
@@ -82,7 +90,7 @@ func mockAnalysisDirectory(t *testing.T, state State, dragenVersion string, samp
 		if err := mockFile(filepath.Join(analysisDir, "Data", "Secondary_Analysis_Complete.txt"), ""); err != nil {
 			return analysisDir, err
 		}
-		if err := mockFile(filepath.Join(analysisDir, "Data", "summary", dragenVersion, "detailed_summary.json"), `{"result": "error", "workflows": [{"workflow_name": "bcl_convert", "samples": [{"sample_id": "sample1"}]}]}`); err != nil {
+		if err := mockFile(filepath.Join(analysisDir, "Data", "summary", dragenVersion, "detailed_summary.json"), mockSummaryJson(samples, state)); err != nil {
 			return analysisDir, err
 		}
 	}
@@ -160,6 +168,9 @@ func TestDragenAnalysis(t *testing.T) {
 			for i, a := range analyses[1:] {
 				if a.Level != LevelSample {
 					t.Errorf("analysis %d is not on sample level (sample %s)", i+1, a.ParentId)
+				}
+				if len(a.Files) != c.lanes*2 {
+					t.Errorf("expected %d files for %s, got %d", c.lanes*2, a.ParentId, len(a.Files))
 				}
 			}
 		})
