@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
@@ -94,7 +93,6 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 			Platform:       interopData.RunInfo.Platform,
 			RunParameters:  interopData.RunParameters,
 			RunInfo:        interopData.RunInfo,
-			Analysis:       []*cleve.Analysis{},
 		}
 		run.StateHistory.Add(run.State(false))
 
@@ -197,12 +195,6 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 				if err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "when": "saving samplesheet"})
 					return
-				}
-			}
-
-			for i, a := range run.Analysis {
-				if pathSuffix, found := strings.CutPrefix(a.Path, run.Path); found {
-					run.Analysis[i].Path = filepath.Join(updateRequest.Path, pathSuffix)
 				}
 			}
 

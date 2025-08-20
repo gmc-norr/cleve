@@ -13,7 +13,8 @@ import (
 type State int
 
 const (
-	StateNew State = iota
+	_ State = iota
+	StateNew
 	StateReady
 	StatePending
 	StateComplete
@@ -42,6 +43,11 @@ func (s State) IsMoved() bool {
 	return slices.Contains([]State{StateMoved, StateMoving}, s)
 }
 
+// IsValid returns true if the State s represents a valid state.
+func (s State) IsValid() bool {
+	return s > 0 && s <= StateUnknown
+}
+
 func (s State) String() string {
 	for k, v := range ValidRunStates {
 		if v == s {
@@ -62,6 +68,10 @@ func (s *State) Set(v string) error {
 
 func (s *State) Type() string {
 	return "RunState"
+}
+
+func (s *State) UnmarshalParam(param string) error {
+	return s.Set(param)
 }
 
 func (r *State) UnmarshalBSONValue(t bsontype.Type, data []byte) error {

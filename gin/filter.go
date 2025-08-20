@@ -1,6 +1,9 @@
 package gin
 
 import (
+	"errors"
+	"io"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
 )
@@ -8,6 +11,14 @@ import (
 func getRunFilter(c *gin.Context) (cleve.RunFilter, error) {
 	filter := cleve.NewRunFilter()
 	if err := c.BindQuery(&filter); err != nil {
+		return filter, err
+	}
+	return filter, filter.Validate()
+}
+
+func getAnalysisFilter(c *gin.Context) (cleve.AnalysisFilter, error) {
+	filter := cleve.NewAnalysisFilter()
+	if err := c.BindQuery(&filter); err != nil && !errors.Is(err, io.EOF) {
 		return filter, err
 	}
 	return filter, filter.Validate()

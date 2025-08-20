@@ -19,7 +19,7 @@ endpoints:
     method: GET
     section: runs
     description: Get all sequencing runs
-    params:
+    query_params:
       - key: brief
         type: boolean
         description: if true, exclude detailed information
@@ -76,6 +76,47 @@ endpoints:
         type: boolean
         description: if true, exclude detailed information
         default: false
+
+  - path: /runs/{run_id}/analyses
+    method: GET
+    section: runs
+    description: Get analyses associated with the run
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+    query_params:
+      - key: page
+        type: integer
+        description: page number to get
+        default: 1
+      - key: page_size
+        type: integer
+        description: number of items per page
+        default: 10
+      - key: software
+        type: string
+        description: analysis software to filter on
+        required: false
+      - key: state
+        type: string
+        description: state of the analysis to filter on
+        required: false
+
+  - path: /runs/{run_id}/analyses/{analysis_id}
+    method: GET
+    section: runs
+    description: Get a single analysis associated with the run
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+      - key: analysis_id
+        type: string
+        description: ID of the analysis
+        required: true
 
   - path: /runs/{run_id}/state
     method: PATCH
@@ -151,101 +192,108 @@ endpoints:
         default: false
         required: false
 
-  - path: /runs/{run_id}/analysis
+  - path: /analyses
     method: GET
     section: analysis
-    description: Get all analyses associated with a run. Only valid for NovaSeq runs.
-    params:
-      - key: run_id
+    description: Get analyses
+    query_params:
+      - key: page
+        type: integer
+        description: page number to get
+        default: 1
+      - key: page_size
+        type: integer
+        description: number of items per page
+        default: 10
+      - key: analysis_id
         type: string
-        description: ID of the run
-        required: true
+        description: analysis ID to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: analysis parent ID to filter on
+        required: false
+      - key: state
+        type: string
+        description: analysis state to filter on
+        required: false
+      - key: software
+        type: string
+        description: analysis software to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
 
-  - path: /runs/{run_id}/analysis
+  - path: /analyses
     method: POST
     section: analysis
-    description: Add an analysis to a run. Only valid for NovaSeq runs.
-    headers:
-      - key: Authorization
-        type: string
-        description: API key
-        required: true
+    description: Add an analysis
     params:
-      - key: run_id
+      - key: analysis_id
         type: string
-        description: ID of the run
+        description: analysis ID
+        required: true
+      - key: parent_id
+        type: string
+        description: analysis parent ID
         required: true
       - key: path
         type: string
-        description: path to the analysis directory
+        description: absolute path to the analysis directory
+        required: true
+      - key: level
+        type: string
+        description: analysis level
         required: true
       - key: state
         type: string
-        description: path to the analysis directory
+        description: analysis state
         required: true
-      - key: summary_file
+      - key: software
         type: string
-        description: path to the analysis summary file
+        description: analysis software
+        required: true
+      - key: software_version
+        type: string
+        description: analysis software version
+        required: true
+      - key: files
+        type: array
+        description: >
+          An array of file objects with the mandatory keys `path` (string) and `type` (string)
+          which represent the path to the file relative to the analysis directory path, and
+          the file type, respectively.
         required: false
 
-  - path: /runs/{run_id}/analysis
-    method: POST
-    section: analysis
-    description: Get all analyses associated with a run. Only valid for NovaSeq runs.
-    headers:
-      - key: Authorization
-        type: string
-        description: API key
-        required: true
-    params:
-      - key: run_id
-        type: string
-        description: ID of the run
-        required: true
-
-  - path: /runs/{run_id}/analysis/{analysis_id}
-    method: GET
-    section: analysis
-    description: Get a specific analysis associated with a sequencing run. Only valid for NovaSeq runs.
-    params:
-      - key: run_id
-        type: string
-        description: ID of the run
-        required: true
-      - key: analysis_id
-        type: string
-        description: ID of the analysis
-        required: true
-
-  - path: /runs/{run_id}/analysis/{analysis_id}
+  - path: /analyses/{parent_id}/{analysis_id}
     method: PATCH
     section: analysis
-    description: Update an analysis associated with a sequencing run. Only valid for NovaSeq runs.
-    headers:
-      - key: Authorization
-        type: string
-        description: API key
-        required: true
+    description: Update an analysis
     params:
-      - key: run_id
-        type: string
-        description: ID of the run
-        required: true
       - key: analysis_id
         type: string
-        description: ID of the analysis
+        description: analysis ID
         required: true
-      - key: state
+      - key: parent_id
         type: string
-        description: new state of the analysis
-        required: false
+        description: analysis parent ID
+        required: true
       - key: path
         type: string
-        description: the path of the analysis directory
+        description: path to the analysis
         required: false
-      - key: summary_file
-        type: file
-        description: analysis summary file
+      - key: state
+        type: string
+        description: analysis state
+        required: false
+      - key: files
+        type: array
+        description: >
+          An array of file objects with the mandatory keys `path` (string) and `type` (string)
+          which represent the path to the file relative to the analysis directory path, and
+          the file type, respectively.
         required: false
 
   - path: /samples
@@ -281,6 +329,47 @@ endpoints:
       - key: sample_id
         type: string
         description: ID of the sample.
+        required: true
+
+  - path: /samples/{sample_id}/analyses
+    method: GET
+    section: samples
+    description: Get analyses associated with a sample
+    params:
+      - key: sample_id
+        type: string
+        description: ID of the sample.
+        required: true
+    query_params:
+      - key: page
+        type: integer
+        description: page number to get
+        default: 1
+      - key: page_size
+        type: integer
+        description: number of items per page
+        default: 10
+      - key: state
+        type: string
+        description: state of the analysis to filter on
+        required: false
+      - key: software
+        type: string
+        description: analysis software to filter on
+        required: false
+
+  - path: /samples/{sample_id}/analyses/{analysis_id}
+    method: GET
+    section: samples
+    description: Get a single analysis associated with a sample
+    params:
+      - key: sample_id
+        type: string
+        description: ID of the sample.
+        required: true
+      - key: analysis_id
+        type: string
+        description: ID of the analysis.
         required: true
 
   - path: /runs/{run_id}/samplesheet
@@ -349,7 +438,7 @@ endpoints:
       - key: page_size
         type: integer
         description: number of items per page
-        default: 5
+        default: 10
       - key: run_id_query
         type: string
         description: Run ID regular expression
