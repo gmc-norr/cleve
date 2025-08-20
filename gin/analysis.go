@@ -2,7 +2,6 @@ package gin
 
 import (
 	"errors"
-	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -198,8 +197,6 @@ func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.Han
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		slog.Debug("updating analysis", "payload", updateRequest)
 
 		if updateRequest.State.IsValid() {
 			err := db.SetAnalysisState(analysisId, parentId, updateRequest.State)
