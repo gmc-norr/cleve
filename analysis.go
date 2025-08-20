@@ -169,7 +169,7 @@ func (l *AnalysisLevel) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 	var ls string
 	err := bson.UnmarshalValue(bson.TypeString, data, &ls)
 	if err != nil {
-		return fmt.Errorf("unmarshal enenene failed: %w", err)
+		return fmt.Errorf("unmarshal failed: %w", err)
 	}
 	level, err := AnalysisLevelFromString(ls)
 	if err != nil {
