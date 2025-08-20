@@ -212,7 +212,7 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))
 	authEndpoints.POST("/api/analyses", AddAnalysisHandler(db))
-	authEndpoints.PATCH("/api/analyses/:parentId/:analysisId", UpdateAnalysisHandler(db))
+	authEndpoints.PATCH("/api/analyses/:parentId/:analysisId", UpdateAnalysisHandler(db, 0))
 	authEndpoints.POST("/api/panels", AddPanelHandler(db))
 	authEndpoints.PATCH("/api/panels/:panelId/archive", ArchivePanelHandler(db))
 	authEndpoints.POST("/api/runs", AddRunHandler(db))

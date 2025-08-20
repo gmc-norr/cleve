@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
@@ -166,30 +167,45 @@ func (db DB) CreateAnalysis(analysis *cleve.Analysis) error {
 	return err
 }
 
-func (db DB) SetAnalysisState(runId string, analysisId string, state cleve.State) error {
-	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
+func (db DB) SetAnalysisState(analysisId string, parentId string, state cleve.State) error {
+	filter := bson.D{{Key: "analysis_id", Value: analysisId}, {Key: "parent_id", Value: parentId}}
 	update := bson.D{{
-		Key: "$set", Value: bson.D{
-			{Key: "analysis.$.state", Value: state.String()},
+		Key: "$push", Value: bson.D{
+			{Key: "state_history", Value: cleve.TimedRunState{
+				State: state,
+				Time:  time.Now(),
+			}},
 		},
 	}}
-
-	res, err := db.RunCollection().UpdateOne(context.TODO(), filter, update)
+	res, err := db.AnalysesCollection().UpdateOne(context.TODO(), filter, update)
 	if err == nil && res.MatchedCount == 0 {
 		return mongo.ErrNoDocuments
 	}
-
 	return err
 }
 
-func (db DB) SetAnalysisPath(runId string, analysisId string, path string) error {
-	filter := bson.D{{Key: "run_id", Value: runId}, {Key: "analysis.analysis_id", Value: analysisId}}
+func (db DB) SetAnalysisPath(analysisId string, parentId string, path string) error {
+	filter := bson.D{{Key: "analysis_id", Value: analysisId}, {Key: "parent_id", Value: parentId}}
 	update := bson.D{{
 		Key: "$set", Value: bson.D{
-			{Key: "analysis.$.path", Value: path},
+			{Key: "path", Value: path},
 		},
 	}}
-	res, err := db.RunCollection().UpdateOne(context.TODO(), filter, update)
+	res, err := db.AnalysesCollection().UpdateOne(context.TODO(), filter, update)
+	if err != nil && res.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return err
+}
+
+func (db DB) SetAnalysisFiles(analysisId string, parentId string, files []cleve.AnalysisFile) error {
+	filter := bson.D{{Key: "analysis_id", Value: analysisId}, {Key: "parent_id", Value: parentId}}
+	update := bson.D{{
+		Key: "$set", Value: bson.D{
+			{Key: "files", Value: files},
+		},
+	}}
+	res, err := db.AnalysesCollection().UpdateOne(context.TODO(), filter, update)
 	if err != nil && res.MatchedCount == 0 {
 		return mongo.ErrNoDocuments
 	}

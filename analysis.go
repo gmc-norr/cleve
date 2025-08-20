@@ -17,17 +17,99 @@ import (
 type AnalysisFileType int
 
 const (
-	FileVcf AnalysisFileType = iota
+	_ AnalysisFileType = iota
+	FileVcf
 	FileBam
 	FileSnvVcf
 	FileSvVcf
 	FileFastq
+	FileText
 )
+
+var validAnalysisFileTypes = map[string]AnalysisFileType{
+	"vcf":     FileVcf,
+	"bam":     FileBam,
+	"vcf_snv": FileSnvVcf,
+	"vcf_sv":  FileSvVcf,
+	"fastq":   FileFastq,
+	"text":    FileText,
+}
+
+func (t AnalysisFileType) String() string {
+	switch t {
+	case FileVcf:
+		return "vcf"
+	case FileBam:
+		return "bam"
+	case FileSnvVcf:
+		return "vcf_snv"
+	case FileSvVcf:
+		return "vcf_sv"
+	case FileFastq:
+		return "fastq"
+	case FileText:
+		return "text"
+	default:
+		return ""
+	}
+}
+
+func (t AnalysisFileType) IsValid() bool {
+	return t > 0 && t <= FileText
+}
+
+func AnalysisFileTypeFromString(stringType string) AnalysisFileType {
+	t, ok := validAnalysisFileTypes[stringType]
+	if !ok {
+		return 0
+	}
+	return t
+}
+
+func (ft AnalysisFileType) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bson.MarshalValue(ft.String())
+}
+
+func (ft *AnalysisFileType) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
+	var typeString string
+	if err := bson.UnmarshalValue(t, data, &typeString); err != nil {
+		return err
+	}
+	fileType := AnalysisFileTypeFromString(typeString)
+	if !t.IsValid() {
+		return fmt.Errorf("invalid analysis file type: %q", typeString)
+	}
+	*ft = fileType
+	return nil
+}
+
+func (ft AnalysisFileType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ft.String())
+}
+
+func (ft *AnalysisFileType) UnmarshalJSON(data []byte) error {
+	var typeString string
+	if err := json.Unmarshal(data, &typeString); err != nil {
+		return err
+	}
+	fileType := AnalysisFileTypeFromString(typeString)
+	if !fileType.IsValid() {
+		return fmt.Errorf("invalid analysis file type: %q", typeString)
+	}
+	*ft = fileType
+	return nil
+}
+
+type TextFileOptions struct {
+	Format    string
+	Delimiter string
+	Columns   string
+}
 
 type AnalysisFile struct {
 	// Path is a relative path to the file within the analysis directory.
-	Path     string
-	FileType AnalysisFileType
+	Path     string           `json:"path"`
+	FileType AnalysisFileType `json:"type"`
 }
 
 type AnalysisLevel int
