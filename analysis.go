@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -277,7 +278,7 @@ func NewDragenAnalysis(path string, run *Run) ([]Analysis, error) {
 	}
 	var dragenVersion string
 	for _, sw := range run.RunParameters.Software {
-		if strings.ToLower(sw.Name) != "Dragen" {
+		if strings.ToLower(sw.Name) != "dragen" {
 			continue
 		}
 		dragenVersion = sw.Version
@@ -287,24 +288,31 @@ func NewDragenAnalysis(path string, run *Run) ([]Analysis, error) {
 		return analyses, fmt.Errorf("failed to identify dragen version")
 	}
 	runAnalysis.SoftwareVersion = dragenVersion
-	var summary DragenAnalysisSummary
-	if state == StateReady {
-		f, err := os.Open("Data/" + dragenVersion + "/detailed_summary.json")
-		if err != nil {
-			return analyses, err
-		}
-		summary, err = ParseDragenAnalysisSummary(f)
-		if err != nil {
-			return analyses, err
-		}
+
+	if state != StateReady {
+		runAnalysis.StateHistory.Add(state)
+		analyses = append(analyses, runAnalysis)
+		return analyses, nil
 	}
+
+	var summary DragenAnalysisSummary
+	f, err := os.Open(filepath.Join(runAnalysis.Path, "Data", "summary", dragenVersion, "detailed_summary.json"))
+	if err != nil {
+		return analyses, err
+	}
+	summary, err = ParseDragenAnalysisSummary(f)
+	if err != nil {
+		return analyses, err
+	}
+
 	switch summary.Result {
 	case "success":
 		state = StateReady
 	case "error":
+		// TODO: I actually don't know what values this can take.
 		state = StateError
 	default:
-		state = StateUnknown
+		state = StatePending
 	}
 
 	runAnalysis.StateHistory.Add(state)
@@ -343,6 +351,7 @@ func NewDragenAnalysis(path string, run *Run) ([]Analysis, error) {
 					Path:            runAnalysis.Path,
 					AnalysisId:      runAnalysis.AnalysisId,
 					ParentId:        sample.SampleID,
+					Level:           LevelSample,
 					Software:        runAnalysis.Software,
 					SoftwareVersion: runAnalysis.SoftwareVersion,
 				}
@@ -356,6 +365,9 @@ func NewDragenAnalysis(path string, run *Run) ([]Analysis, error) {
 						Path:     f,
 						FileType: FileFastq,
 					})
+				}
+				if len(sampleAnalysis.Files) == 0 {
+					slog.Warn("no fastq files found", "run", run.RunID, "sample", sample.SampleID)
 				}
 				analyses = append(analyses, sampleAnalysis)
 			}
