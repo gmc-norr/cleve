@@ -261,7 +261,10 @@ endpoints:
         required: true
       - key: files
         type: array
-        description: files to associate with the analysis
+        description: >
+          An array of file objects with the mandatory keys `path` (string) and `type` (string)
+          which represent the path to the file relative to the analysis directory path, and
+          the file type, respectively.
         required: false
 
   - path: /analyses/{parent_id}/{analysis_id}
@@ -287,7 +290,10 @@ endpoints:
         required: false
       - key: files
         type: array
-        description: files to associate with the analysis
+        description: >
+          An array of file objects with the mandatory keys `path` (string) and `type` (string)
+          which represent the path to the file relative to the analysis directory path, and
+          the file type, respectively.
         required: false
 
   - path: /samples
