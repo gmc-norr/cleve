@@ -178,13 +178,17 @@ func ParseDragenAnalysisSummary(r io.Reader) (DragenAnalysisSummary, error) {
 	return summary, err
 }
 
-// NewDragenAnalysis creates a new Analysis representing a Dragen analysis,
-// specifically the results from BCLConvert.
-func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
+// NewDragenAnalysis creates a slice of Analysis representing a Dragen analysis,
+// specifically the results from BCLConvert. The first element in the slice will
+// represent all samples in the sequencing run, and the rest of the analyses represent
+// each individual sample in run.
+func NewDragenAnalysis(path string, run *Run) ([]Analysis, error) {
+	var analyses []Analysis
 	state := dragenAnalysisState(path)
 	id := run.RunID + "_" + filepath.Base(path) + "_bclconvert"
-	analysis := Analysis{
+	runAnalysis := Analysis{
 		AnalysisId: id,
+		ParentId:   run.RunID,
 		Level:      LevelRun,
 		Software:   "Dragen BCLConvert",
 		Path:       path,
@@ -198,18 +202,18 @@ func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 		break
 	}
 	if dragenVersion == "" {
-		return analysis, fmt.Errorf("failed to identify dragen version")
+		return analyses, fmt.Errorf("failed to identify dragen version")
 	}
-	analysis.SoftwareVersion = dragenVersion
+	runAnalysis.SoftwareVersion = dragenVersion
 	var summary DragenAnalysisSummary
 	if state == StateReady {
 		f, err := os.Open("Data/" + dragenVersion + "/detailed_summary.json")
 		if err != nil {
-			return analysis, err
+			return analyses, err
 		}
 		summary, err = ParseDragenAnalysisSummary(f)
 		if err != nil {
-			return analysis, err
+			return analyses, err
 		}
 	}
 	switch summary.Result {
@@ -221,28 +225,62 @@ func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 		state = StateUnknown
 	}
 
+	runAnalysis.StateHistory.Add(state)
+	analyses = append(analyses, runAnalysis)
+
 	if state == StateReady {
-		// Add the fastq files to the analysis
-		f, err := os.Open(filepath.Join(analysis.Path, "Manifest.tsv"))
+		// Add the stats files to the analysis
+		runAnalysis.Files = []AnalysisFile{
+			{
+				Path:     "Data/Demux/Demultiplex_Stats.csv",
+				FileType: FileText,
+			},
+			{
+				Path:     "Data/Demux/Index_Hopping_Counts.csv",
+				FileType: FileText,
+			},
+			{
+				Path:     "Data/Demux/Top_Unknown_Barcodes.csv",
+				FileType: FileText,
+			},
+		}
+
+		f, err := os.Open(filepath.Join(runAnalysis.Path, "Manifest.tsv"))
 		if err != nil {
-			return analysis, err
+			return analyses, err
 		}
 		defer func() { _ = f.Close() }()
 		manifest, err := ReadDragenManifest(f)
 		if err != nil {
-			return analysis, fmt.Errorf("failed to read dragen manifest: %w", err)
+			return analyses, fmt.Errorf("failed to read dragen manifest: %w", err)
 		}
-		fqRegex := regexp.MustCompile(`\.f(ast)?q(\.gz)?$`)
-		for _, f := range manifest.FindFiles(fqRegex) {
-           analysis.Files = append(analysis.Files, AnalysisFile{
-               Path:     f,
-               FileType: FileFastq,
-           })
+
+		for _, wf := range summary.Workflows {
+			for _, sample := range wf.Samples {
+				sampleAnalysis := Analysis{
+					Path:            runAnalysis.Path,
+					AnalysisId:      runAnalysis.AnalysisId,
+					ParentId:        sample.SampleID,
+					Software:        runAnalysis.Software,
+					SoftwareVersion: runAnalysis.SoftwareVersion,
+				}
+				// Add the fastq files to the analysis
+				fqRegex, err := regexp.Compile(`^` + regexp.QuoteMeta(sample.SampleID) + `.*\.f(ast)?q(\.gz)?$`)
+				if err != nil {
+					return analyses, fmt.Errorf("failed to compile regex for sample fastq files: %w", err)
+				}
+				for _, f := range manifest.FindFiles(fqRegex) {
+					sampleAnalysis.Files = append(sampleAnalysis.Files, AnalysisFile{
+						Path:     f,
+						FileType: FileFastq,
+					})
+				}
+				analyses = append(analyses, sampleAnalysis)
+			}
 		}
 	}
 
-	analysis.StateHistory.Add(state)
-	return analysis, nil
+	return analyses, nil
 }
 
 // dragenAnalysisState identifies the state of a Dragen analysis. This is just
