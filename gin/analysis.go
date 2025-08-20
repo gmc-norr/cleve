@@ -45,7 +45,9 @@ func AnalysesHandler(db AnalysisGetter, level cleve.AnalysisLevel) gin.HandlerFu
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		filter.ParentId = c.Param(parentIdKey)
+		if parentIdKey != "" {
+			filter.ParentId = c.Param(parentIdKey)
+		}
 		analyses, err := db.Analyses(filter)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
@@ -68,6 +70,8 @@ func AnalysisHandler(db AnalysisGetter, level cleve.AnalysisLevel) gin.HandlerFu
 		parentIdKey = "caseId"
 	case cleve.LevelSample:
 		parentIdKey = "sampleId"
+	default:
+		parentIdKey = "parentId"
 	}
 	return func(c *gin.Context) {
 		parentId := c.Param(parentIdKey)
