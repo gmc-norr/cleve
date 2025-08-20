@@ -307,7 +307,7 @@ func (db DB) CreateRun(r *cleve.Run) error {
 		*cleve.Run    `bson:",inline"`
 	}
 	run := auxRun{
-		SchemaVersion: 2,
+		SchemaVersion: 3,
 		Run:           r,
 	}
 	run.Created = time.Now()
