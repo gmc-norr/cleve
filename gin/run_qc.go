@@ -20,7 +20,7 @@ type RunQCGetter interface {
 
 // Interface for storing run QC data in the database.
 type RunQCSetter interface {
-	Run(string, bool) (*cleve.Run, error)
+	Run(string) (*cleve.Run, error)
 	CreateRunQC(string, interop.InteropSummary) error
 }
 
@@ -81,7 +81,7 @@ func AllRunQcHandler(db RunQCGetter) gin.HandlerFunc {
 func AddRunQcHandler(db RunQCGetterSetter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		runId := ctx.Param("runId")
-		run, err := db.Run(runId, true)
+		run, err := db.Run(runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				ctx.AbortWithStatusJSON(

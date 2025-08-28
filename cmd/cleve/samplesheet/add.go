@@ -42,7 +42,7 @@ var (
 				log.Fatal(err)
 			}
 
-			_, err = db.Run(runID, true)
+			_, err = db.Run(runID)
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					log.Fatalf("error: run with id %q not found", runID)

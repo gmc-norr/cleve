@@ -32,7 +32,6 @@ func (f PaginationFilter) Validate() error {
 type RunFilter struct {
 	RunID            string    `form:"run_id"`
 	RunIdQuery       string    `form:"run_id_query"`
-	Brief            bool      `form:"brief"`
 	Platform         string    `form:"platform"`
 	State            string    `form:"state"`
 	From             time.Time `form:"from"`

@@ -91,29 +91,13 @@ func TestRunsHandler(t *testing.T) {
 			},
 		},
 		{
-			"brief",
-			cleve.RunResult{
-				Runs: []*cleve.Run{novaseq1, novaseq2, nextseq1},
-			},
-			nil,
-			"/api/runs?brief=true",
-			cleve.RunFilter{
-				Brief: true,
-				PaginationFilter: cleve.PaginationFilter{
-					Page:     1,
-					PageSize: 10,
-				},
-			},
-		},
-		{
-			"brief and platform filter",
+			"platform filter",
 			cleve.RunResult{
 				Runs: []*cleve.Run{novaseq1, novaseq2},
 			},
 			nil,
-			"/api/runs?brief=true&platform=NovaSeq",
+			"/api/runs?platform=NovaSeq",
 			cleve.RunFilter{
-				Brief:    true,
 				Platform: "NovaSeq",
 				PaginationFilter: cleve.PaginationFilter{
 					Page:     1,
@@ -127,9 +111,8 @@ func TestRunsHandler(t *testing.T) {
 				Runs: []*cleve.Run{novaseq1, novaseq2},
 			},
 			nil,
-			"/api/runs?brief=true&platform=NovaSeq&page=3&page_size=5",
+			"/api/runs?platform=NovaSeq&page=3&page_size=5",
 			cleve.RunFilter{
-				Brief:    true,
 				Platform: "NovaSeq",
 				PaginationFilter: cleve.PaginationFilter{
 					Page:     3,
@@ -143,9 +126,8 @@ func TestRunsHandler(t *testing.T) {
 				Runs: []*cleve.Run{},
 			},
 			nil,
-			"/api/runs?brief=true&platform=NovaSeq",
+			"/api/runs?platform=NovaSeq",
 			cleve.RunFilter{
-				Brief:    true,
 				Platform: "NovaSeq",
 				PaginationFilter: cleve.PaginationFilter{
 					Page:     1,
@@ -235,7 +217,6 @@ func TestRunHandler(t *testing.T) {
 			novaseq2,
 			gin.Params{
 				gin.Param{Key: "runId", Value: "run2"},
-				gin.Param{Key: "brief", Value: "false"},
 			},
 			http.StatusOK,
 			`"experiment_name":"experiment 3"`,
@@ -245,7 +226,6 @@ func TestRunHandler(t *testing.T) {
 			novaseq2,
 			gin.Params{
 				gin.Param{Key: "runId", Value: "run2"},
-				gin.Param{Key: "brief", Value: "true"},
 			},
 			http.StatusOK,
 			`"experiment_name":"experiment 3"`,
@@ -258,7 +238,7 @@ func TestRunHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 
-		rg.RunFn = func(run_id string, brief bool) (*cleve.Run, error) {
+		rg.RunFn = func(run_id string) (*cleve.Run, error) {
 			switch run_id {
 			case "run1":
 				return novaseq1, nil
