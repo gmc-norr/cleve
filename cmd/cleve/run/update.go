@@ -48,7 +48,7 @@ var (
 			didSomething := false
 
 			var run *cleve.Run
-			run, err = db.Run(args[0], false)
+			run, err = db.Run(args[0])
 			if err != nil {
 				slog.Error("failed to fetch run information", "run", args[0], "error", err)
 			}

@@ -202,13 +202,6 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 		},
 	})
 
-	// Exclude run parameters
-	if filter.Brief {
-		pipeline = append(pipeline, bson.D{
-			{Key: "$unset", Value: bson.A{"run_parameters"}},
-		})
-	}
-
 	metaPipeline := append(pipeline, bson.D{
 		{Key: "$count", Value: "total_count"},
 	})
@@ -280,10 +273,9 @@ func (db DB) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {
 	return r, nil
 }
 
-func (db DB) Run(runId string, brief bool) (*cleve.Run, error) {
+func (db DB) Run(runId string) (*cleve.Run, error) {
 	filter := cleve.RunFilter{
 		RunID: runId,
-		Brief: brief,
 	}
 	runs, err := db.Runs(filter)
 	if err != nil {

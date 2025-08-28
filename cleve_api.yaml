@@ -22,7 +22,8 @@ endpoints:
     query_params:
       - key: brief
         type: boolean
-        description: if true, exclude detailed information
+        description: >
+          if true, exclude detailed information (deprecated: this parameter is ignored)
         default: false
       - key: run_id
         type: string
@@ -74,7 +75,8 @@ endpoints:
         required: true
       - key: brief
         type: boolean
-        description: if true, exclude detailed information
+        description: >
+          if true, exclude detailed information (deprecated: this parameter is ignored)
         default: false
 
   - path: /runs/{run_id}/analyses

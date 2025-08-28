@@ -15,7 +15,7 @@ import (
 
 // Interface for reading runs from the database.
 type RunGetter interface {
-	Run(string, bool) (*cleve.Run, error)
+	Run(string) (*cleve.Run, error)
 	Runs(cleve.RunFilter) (cleve.RunResult, error)
 }
 
@@ -53,8 +53,7 @@ func RunsHandler(db RunGetter) gin.HandlerFunc {
 func RunHandler(db RunGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
-		_, brief := c.GetQuery("brief")
-		run, err := db.Run(runId, brief)
+		run, err := db.Run(runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.JSON(http.StatusNotFound, gin.H{"error": "run not found"})
@@ -137,7 +136,7 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 			UpdateQc       bool   `json:"update_qc"`
 		}
 
-		run, err := db.Run(runId, false)
+		run, err := db.Run(runId)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "run not found", "run_id": runId})

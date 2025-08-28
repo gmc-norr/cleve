@@ -160,7 +160,7 @@ func DashboardPanelHandler(db *mongo.DB) gin.HandlerFunc {
 func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		runId := c.Param("runId")
-		run, err := db.Run(runId, false)
+		run, err := db.Run(runId)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				c.HTML(http.StatusNotFound, "error404", gin.H{"error": fmt.Sprintf("run with id %q not found", runId)})

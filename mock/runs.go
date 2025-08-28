@@ -11,15 +11,15 @@ import (
 // the corresponding *Invoked fields register whether the function has been
 // called. The interface implementation then just wraps the *Fn functions.
 type RunGetter struct {
-	RunFn       func(string, bool) (*cleve.Run, error)
+	RunFn       func(string) (*cleve.Run, error)
 	RunInvoked  bool
 	RunsFn      func(cleve.RunFilter) (cleve.RunResult, error)
 	RunsInvoked bool
 }
 
-func (g *RunGetter) Run(id string, brief bool) (*cleve.Run, error) {
+func (g *RunGetter) Run(id string) (*cleve.Run, error) {
 	g.RunInvoked = true
-	return g.RunFn(id, brief)
+	return g.RunFn(id)
 }
 
 func (g *RunGetter) Runs(filter cleve.RunFilter) (cleve.RunResult, error) {

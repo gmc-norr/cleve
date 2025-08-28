@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	csvOutput, jsonOutput, brief bool
-	platform, state              string
-	listCmd                      = &cobra.Command{
+	csvOutput, jsonOutput bool
+	platform, state       string
+	listCmd               = &cobra.Command{
 		Use:   "list",
 		Short: "List sequencing runs",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -29,7 +29,6 @@ var (
 				log.Fatal(err)
 			}
 			filter := cleve.RunFilter{
-				Brief:    brief,
 				Platform: platform,
 				State:    state,
 			}
@@ -51,7 +50,6 @@ var (
 func init() {
 	listCmd.Flags().BoolVar(&csvOutput, "csv", false, "Output in CSV format")
 	listCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output in CSV format")
-	listCmd.Flags().BoolVar(&brief, "brief", false, "Brief output")
 
 	listCmd.Flags().StringVar(&platform, "platform", "", "Filter by platform")
 	listCmd.Flags().StringVar(&state, "state", "", "Filter by state")
