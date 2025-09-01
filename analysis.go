@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -109,8 +108,17 @@ type TextFileOptions struct {
 
 type AnalysisFile struct {
 	// Path is a relative path to the file within the analysis directory.
-	Path     string           `json:"path"`
-	FileType AnalysisFileType `json:"type"`
+	Path     string           `bson:"path" json:"path"`
+	FileType AnalysisFileType `bson:"type" json:"type"`
+	Level    AnalysisLevel    `bson:"level" json:"level"`
+	ParentId string           `bson:"parent_id" json:"parent_id"`
+}
+
+type AnalysisFileFilter struct {
+	AnalysisId string
+	Type       AnalysisFileType
+	Level      AnalysisLevel
+	Pattern    *regexp.Regexp
 }
 
 type AnalysisLevel int
@@ -203,21 +211,21 @@ type AnalysisResult struct {
 }
 
 type Analysis struct {
-	AnalysisId      string         `bson:"analysis_id" json:"analysis_id"`
-	ParentId        string         `bson:"parent_id" json:"parent_id"`
-	Level           AnalysisLevel  `bson:"level" json:"level"`
-	Path            string         `bson:"path" json:"path"`
-	Software        string         `bson:"software" json:"software"`
-	SoftwareVersion string         `bson:"software_version" json:"software_version"`
-	StateHistory    StateHistory   `bson:"state_history" json:"state_history"`
-	Files           []AnalysisFile `bson:"files" json:"files"`
+	AnalysisId      string               `bson:"analysis_id" json:"analysis_id"`
+	Runs            []string             `bson:"runs" json:"runs"`
+	Path            string               `bson:"path" json:"path"`
+	Software        string               `bson:"software" json:"software"`
+	SoftwareVersion string               `bson:"software_version" json:"software_version"`
+	StateHistory    StateHistory         `bson:"state_history" json:"state_history"`
+	InputFiles      []AnalysisFileFilter `bson:"input_files" json:"input_files"`
+	OutputFiles     []AnalysisFile       `bson:"files" json:"files"`
 }
 
 // GetFiles returns all paths to files of a particular type associated with an analysis.
 // If there are no such files, and empty slice is returned.
 func (a *Analysis) GetFiles(t AnalysisFileType) []string {
 	var files []string
-	for _, f := range a.Files {
+	for _, f := range a.OutputFiles {
 		if f.FileType == t {
 			files = append(files, filepath.Join(a.Path, f.Path))
 		}
@@ -265,14 +273,12 @@ func ParseDragenAnalysisSummary(r io.Reader) (DragenAnalysisSummary, error) {
 // specifically the results from BCLConvert. The first element in the slice will
 // represent all samples in the sequencing run, and the rest of the analyses represent
 // each individual sample in run.
-func NewDragenAnalysis(path string, run *Run) ([]Analysis, error) {
-	var analyses []Analysis
+func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 	state := dragenAnalysisState(path)
 	id := run.RunID + "_" + filepath.Base(path) + "_bclconvert"
-	runAnalysis := Analysis{
+	analysis := Analysis{
 		AnalysisId: id,
-		ParentId:   run.RunID,
-		Level:      LevelRun,
+		Runs:       []string{run.RunID},
 		Software:   "Dragen BCLConvert",
 		Path:       path,
 	}
@@ -285,24 +291,23 @@ func NewDragenAnalysis(path string, run *Run) ([]Analysis, error) {
 		break
 	}
 	if dragenVersion == "" {
-		return analyses, fmt.Errorf("failed to identify dragen version")
+		return analysis, fmt.Errorf("failed to identify dragen version")
 	}
-	runAnalysis.SoftwareVersion = dragenVersion
+	analysis.SoftwareVersion = dragenVersion
 
 	if state != StateReady {
-		runAnalysis.StateHistory.Add(state)
-		analyses = append(analyses, runAnalysis)
-		return analyses, nil
+		analysis.StateHistory.Add(state)
+		return analysis, nil
 	}
 
 	var summary DragenAnalysisSummary
-	f, err := os.Open(filepath.Join(runAnalysis.Path, "Data", "summary", dragenVersion, "detailed_summary.json"))
+	f, err := os.Open(filepath.Join(analysis.Path, "Data", "summary", dragenVersion, "detailed_summary.json"))
 	if err != nil {
-		return analyses, err
+		return analysis, err
 	}
 	summary, err = ParseDragenAnalysisSummary(f)
 	if err != nil {
-		return analyses, err
+		return analysis, err
 	}
 
 	switch summary.Result {
@@ -315,66 +320,58 @@ func NewDragenAnalysis(path string, run *Run) ([]Analysis, error) {
 		state = StatePending
 	}
 
-	runAnalysis.StateHistory.Add(state)
-	analyses = append(analyses, runAnalysis)
+	analysis.StateHistory.Add(state)
 
 	if state == StateReady {
 		// Add the stats files to the analysis
-		runAnalysis.Files = []AnalysisFile{
+		analysis.OutputFiles = []AnalysisFile{
 			{
 				Path:     "Data/Demux/Demultiplex_Stats.csv",
 				FileType: FileText,
+				Level:    LevelRun,
 			},
 			{
 				Path:     "Data/Demux/Index_Hopping_Counts.csv",
 				FileType: FileText,
+				Level:    LevelRun,
 			},
 			{
 				Path:     "Data/Demux/Top_Unknown_Barcodes.csv",
 				FileType: FileText,
+				Level:    LevelRun,
 			},
 		}
 
-		f, err := os.Open(filepath.Join(runAnalysis.Path, "Manifest.tsv"))
+		f, err := os.Open(filepath.Join(analysis.Path, "Manifest.tsv"))
 		if err != nil {
-			return analyses, err
+			return analysis, err
 		}
 		defer func() { _ = f.Close() }()
 		manifest, err := ReadDragenManifest(f)
 		if err != nil {
-			return analyses, fmt.Errorf("failed to read dragen manifest: %w", err)
+			return analysis, fmt.Errorf("failed to read dragen manifest: %w", err)
 		}
 
 		for _, wf := range summary.Workflows {
 			for _, sample := range wf.Samples {
-				sampleAnalysis := Analysis{
-					Path:            runAnalysis.Path,
-					AnalysisId:      runAnalysis.AnalysisId,
-					ParentId:        sample.SampleID,
-					Level:           LevelSample,
-					Software:        runAnalysis.Software,
-					SoftwareVersion: runAnalysis.SoftwareVersion,
-				}
 				// Add the fastq files to the analysis
 				fqRegex, err := regexp.Compile(`^` + regexp.QuoteMeta(sample.SampleID) + `.*\.f(ast)?q(\.gz)?$`)
 				if err != nil {
-					return analyses, fmt.Errorf("failed to compile regex for sample fastq files: %w", err)
+					return analysis, fmt.Errorf("failed to compile regex for sample fastq files: %w", err)
 				}
 				for _, f := range manifest.FindFiles(fqRegex) {
-					sampleAnalysis.Files = append(sampleAnalysis.Files, AnalysisFile{
+					analysis.OutputFiles = append(analysis.OutputFiles, AnalysisFile{
 						Path:     f,
 						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: sample.SampleID,
 					})
 				}
-				if len(sampleAnalysis.Files) == 0 {
-					slog.Warn("no fastq files found", "run", run.RunID, "sample", sample.SampleID)
-				}
-				analyses = append(analyses, sampleAnalysis)
 			}
 		}
 	}
 
-	return analyses, nil
+	return analysis, nil
 }
 
 // dragenAnalysisState identifies the state of a Dragen analysis. This is just

@@ -44,10 +44,16 @@ func mockSummaryJson(samples int, state State) string {
 
 func mockManifest(samples int, lanes int) string {
 	var manifest string
+	var i int
+	manifest += fmt.Sprintf("Data/Demux/Demultiplex_Stats.csv\thash%d\n", i+1)
+	manifest += fmt.Sprintf("Data/Demux/Index_Hopping_Counts.csv\thash%d\n", i+2)
+	manifest += fmt.Sprintf("Data/Demux/Top_Unknown_Barcodes.csv\thash%d\n", i+3)
+	i += 3
 	for s := range samples {
 		for l := range lanes {
-			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_1.fastq.gz\thash%d\n", s+1, l+1, s*l+l+1)
-			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_2.fastq.gz\thash%d\n", s+1, l+1, s*l+l+1)
+			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_1.fastq.gz\thash%d\n", s+1, l+1, i+1)
+			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_2.fastq.gz\thash%d\n", s+1, l+1, i+2)
+			i += 2
 		}
 	}
 	return manifest
@@ -68,6 +74,7 @@ func mockAnalysisDirectory(t *testing.T, state State, dragenVersion string, samp
 		if err := mockFile(filepath.Join(analysisDir, "CopyComplete.txt"), ""); err != nil {
 			return analysisDir, err
 		}
+		t.Logf("%+v", mockManifest(samples, lanes))
 		if err := mockFile(filepath.Join(analysisDir, "Manifest.tsv"), mockManifest(samples, lanes)); err != nil {
 			return analysisDir, err
 		}
@@ -99,11 +106,12 @@ func mockAnalysisDirectory(t *testing.T, state State, dragenVersion string, samp
 
 func TestDragenAnalysis(t *testing.T) {
 	testcases := []struct {
-		name    string
-		run     Run
-		state   State
-		samples int
-		lanes   int
+		name          string
+		run           Run
+		state         State
+		samples       int
+		lanes         int
+		expectedFiles int
 	}{
 		{
 			name: "analysis ready",
@@ -115,9 +123,10 @@ func TestDragenAnalysis(t *testing.T) {
 					},
 				},
 			},
-			samples: 3,
-			lanes:   8,
-			state:   StateReady,
+			samples:       3,
+			lanes:         8,
+			expectedFiles: 3*8*2 + 3, // 2 fastq per sample per lane + 3 stats files
+			state:         StateReady,
 		},
 		{
 			name: "analysis pending",
@@ -129,7 +138,8 @@ func TestDragenAnalysis(t *testing.T) {
 					},
 				},
 			},
-			state: StatePending,
+			expectedFiles: 0,
+			state:         StatePending,
 		},
 		{
 			name: "error in analysis",
@@ -141,7 +151,8 @@ func TestDragenAnalysis(t *testing.T) {
 					},
 				},
 			},
-			state: StateError,
+			expectedFiles: 0,
+			state:         StateError,
 		},
 	}
 	for _, c := range testcases {
@@ -150,28 +161,16 @@ func TestDragenAnalysis(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			analyses, err := NewDragenAnalysis(dir, &c.run)
+			analysis, err := NewDragenAnalysis(dir, &c.run)
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Logf("analysis count: %d", len(analyses))
-			if len(analyses) != c.samples+1 {
-				t.Fatalf("expected %d analyses, got %d", c.samples+1, len(analyses))
-			}
-			state := analyses[0].StateHistory.LastState()
+			state := analysis.StateHistory.LastState()
 			if state != c.state {
 				t.Errorf("expected state %s, got %s", c.state, state)
 			}
-			if analyses[0].Level != LevelRun {
-				t.Error("first analysis should be on the run level")
-			}
-			for i, a := range analyses[1:] {
-				if a.Level != LevelSample {
-					t.Errorf("analysis %d is not on sample level (sample %s)", i+1, a.ParentId)
-				}
-				if len(a.Files) != c.lanes*2 {
-					t.Errorf("expected %d files for %s, got %d", c.lanes*2, a.ParentId, len(a.Files))
-				}
+			if len(analysis.OutputFiles) != c.expectedFiles {
+				t.Errorf("expected %d files, got %d", c.expectedFiles, len(analysis.OutputFiles))
 			}
 		})
 	}
@@ -417,14 +416,18 @@ func TestGetFiles(t *testing.T) {
 			name: "no fastq files",
 			analysis: Analysis{
 				Path: "/path/to/analysis/1",
-				Files: []AnalysisFile{
+				OutputFiles: []AnalysisFile{
 					{
 						Path:     "data/sample1.vcf.gz",
 						FileType: FileSnvVcf,
+						Level:    LevelSample,
+						ParentId: "sample1",
 					},
 					{
 						Path:     "data/sample2.vcf.gz",
 						FileType: FileSnvVcf,
+						Level:    LevelSample,
+						ParentId: "sample1",
 					},
 				},
 			},
@@ -435,14 +438,18 @@ func TestGetFiles(t *testing.T) {
 			name: "1 fastq file",
 			analysis: Analysis{
 				Path: "/path/to/analysis/1",
-				Files: []AnalysisFile{
+				OutputFiles: []AnalysisFile{
 					{
 						Path:     "data/sample1.vcf.gz",
 						FileType: FileSnvVcf,
+						Level:    LevelSample,
+						ParentId: "sample1",
 					},
 					{
 						Path:     "data/sample1.fastq.gz",
 						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample1",
 					},
 				},
 			},

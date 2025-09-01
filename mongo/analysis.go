@@ -30,14 +30,6 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		})
 	}
 
-	if filter.ParentId != "" {
-		pipeline = append(pipeline, bson.D{
-			{Key: "$match", Value: bson.D{
-				{Key: "parent_id", Value: filter.ParentId},
-			}},
-		})
-	}
-
 	if filter.Software != "" {
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
@@ -65,14 +57,6 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 						filter.State,
 					}},
 				}},
-			}},
-		})
-	}
-
-	if filter.Level.IsValid() {
-		pipeline = append(pipeline, bson.D{
-			{Key: "$match", Value: bson.D{
-				{Key: "level", Value: filter.Level},
 			}},
 		})
 	}
@@ -145,10 +129,9 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 	return analyses, nil
 }
 
-func (db DB) Analysis(analysisId string, parentId string) (*cleve.Analysis, error) {
+func (db DB) Analysis(analysisId string) (*cleve.Analysis, error) {
 	filter := cleve.NewAnalysisFilter()
 	filter.AnalysisId = analysisId
-	filter.ParentId = parentId
 	analyses, err := db.Analyses(filter)
 	if err != nil {
 		return nil, err
@@ -231,7 +214,6 @@ func (db DB) SetAnalysesIndex() (string, error) {
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
 			{Key: "analysis_id", Value: 1},
-			{Key: "parent_id", Value: 1},
 		},
 		Options: options.Index().SetUnique(true),
 	}
