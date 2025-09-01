@@ -116,9 +116,27 @@ type AnalysisFile struct {
 
 type AnalysisFileFilter struct {
 	AnalysisId string
-	Type       AnalysisFileType
+	FileType   AnalysisFileType
 	Level      AnalysisLevel
+	ParentId   string
 	Pattern    *regexp.Regexp
+}
+
+func (f *AnalysisFileFilter) Apply(file AnalysisFile) bool {
+	pass := true
+	if f.FileType.IsValid() && f.FileType != file.FileType {
+		return false
+	}
+	if f.Level.IsValid() && f.Level != file.Level {
+		return false
+	}
+	if f.ParentId != "" && f.ParentId != file.ParentId {
+		return false
+	}
+	if f.Pattern != nil {
+		pass = f.Pattern.Match([]byte(file.Path))
+	}
+	return pass
 }
 
 type AnalysisLevel int
@@ -221,12 +239,12 @@ type Analysis struct {
 	OutputFiles     []AnalysisFile       `bson:"files" json:"files"`
 }
 
-// GetFiles returns all paths to files of a particular type associated with an analysis.
-// If there are no such files, and empty slice is returned.
-func (a *Analysis) GetFiles(t AnalysisFileType) []string {
+// GetFiles returns all paths to analysis output files of a particular type that are
+// associated with the analysis. If there are no such files, and empty slice is returned.
+func (a *Analysis) GetFiles(filter AnalysisFileFilter) []string {
 	var files []string
 	for _, f := range a.OutputFiles {
-		if f.FileType == t {
+		if filter.Apply(f) {
 			files = append(files, filepath.Join(a.Path, f.Path))
 		}
 	}

@@ -410,6 +410,8 @@ func TestGetFiles(t *testing.T) {
 		name     string
 		analysis Analysis
 		filetype AnalysisFileType
+		level    AnalysisLevel
+		parentId string
 		files    []string
 	}{
 		{
@@ -435,7 +437,7 @@ func TestGetFiles(t *testing.T) {
 			files:    []string{},
 		},
 		{
-			name: "1 fastq file",
+			name: "2 fastq files",
 			analysis: Analysis{
 				Path: "/path/to/analysis/1",
 				OutputFiles: []AnalysisFile{
@@ -451,16 +453,107 @@ func TestGetFiles(t *testing.T) {
 						Level:    LevelSample,
 						ParentId: "sample1",
 					},
+					{
+						Path:     "data/sample2.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample2",
+					},
 				},
 			},
 			filetype: FileFastq,
-			files:    []string{"/path/to/analysis/1/data/sample1.fastq.gz"},
+			level:    LevelSample,
+			files: []string{
+				"/path/to/analysis/1/data/sample1.fastq.gz",
+				"/path/to/analysis/1/data/sample2.fastq.gz",
+			},
+		},
+		{
+			name: "1 fastq files for specific sample",
+			analysis: Analysis{
+				Path: "/path/to/analysis/1",
+				OutputFiles: []AnalysisFile{
+					{
+						Path:     "data/sample1.vcf.gz",
+						FileType: FileSnvVcf,
+						Level:    LevelSample,
+						ParentId: "sample1",
+					},
+					{
+						Path:     "data/sample1.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample1",
+					},
+					{
+						Path:     "data/sample2.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample2",
+					},
+				},
+			},
+			filetype: FileFastq,
+			level:    LevelSample,
+			parentId: "sample1",
+			files: []string{
+				"/path/to/analysis/1/data/sample1.fastq.gz",
+			},
+		},
+		{
+			name: "3 run level text files",
+			analysis: Analysis{
+				Path: "/path/to/analysis/1",
+				OutputFiles: []AnalysisFile{
+					{
+						Path:     "data/stats1.tsv",
+						FileType: FileText,
+						Level:    LevelRun,
+						ParentId: "run1",
+					},
+					{
+						Path:     "data/sample1.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample1",
+					},
+					{
+						Path:     "data/stats2.csv",
+						FileType: FileText,
+						Level:    LevelRun,
+						ParentId: "run1",
+					},
+					{
+						Path:     "data/sample2.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample2",
+					},
+					{
+						Path:     "data/stats3.txt",
+						FileType: FileText,
+						Level:    LevelRun,
+						ParentId: "run1",
+					},
+				},
+			},
+			filetype: FileText,
+			level:    LevelRun,
+			files: []string{
+				"/path/to/analysis/1/data/stats1.tsv",
+				"/path/to/analysis/1/data/stats2.csv",
+				"/path/to/analysis/1/data/stats3.txt",
+			},
 		},
 	}
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
-			files := c.analysis.GetFiles(c.filetype)
+			files := c.analysis.GetFiles(AnalysisFileFilter{
+				FileType: c.filetype,
+				Level:    c.level,
+				ParentId: c.parentId,
+			})
 			if len(files) != len(c.files) {
 				t.Fatalf("expected %d files, got %d", len(c.files), len(files))
 			}
