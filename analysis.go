@@ -237,7 +237,7 @@ type Analysis struct {
 	SoftwareVersion string               `bson:"software_version" json:"software_version"`
 	StateHistory    StateHistory         `bson:"state_history" json:"state_history"`
 	InputFiles      []AnalysisFileFilter `bson:"input_files" json:"input_files"`
-	OutputFiles     []AnalysisFile       `bson:"files" json:"files"`
+	OutputFiles     []AnalysisFile       `bson:"output_files" json:"output_files"`
 }
 
 // GetFiles returns all paths to analysis output files of a particular type that are
