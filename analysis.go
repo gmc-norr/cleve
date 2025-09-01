@@ -287,10 +287,8 @@ func ParseDragenAnalysisSummary(r io.Reader) (DragenAnalysisSummary, error) {
 	return summary, err
 }
 
-// NewDragenAnalysis creates a slice of Analysis representing a Dragen analysis,
-// specifically the results from BCLConvert. The first element in the slice will
-// represent all samples in the sequencing run, and the rest of the analyses represent
-// each individual sample in run.
+// NewDragenAnalysis creates an Analysis representing a Dragen analysis,
+// specifically the results from BCLConvert.
 func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 	state := dragenAnalysisState(path)
 	id := run.RunID + "_" + filepath.Base(path) + "_bclconvert"
