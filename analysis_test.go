@@ -220,7 +220,7 @@ func TestDragenManifest(t *testing.T) {
 	}
 }
 
-func TestDragenManifestFind(t *testing.T) {
+func TestDragenManifestFindFiles(t *testing.T) {
 	testcases := []struct {
 		name     string
 		manifest DragenManifest
@@ -284,6 +284,74 @@ func TestDragenManifestFind(t *testing.T) {
 				if matches[i] != c.matches[i] {
 					t.Errorf("expected match %d to be %q, got %q", i+1, c.matches[i], matches[i])
 				}
+			}
+		})
+	}
+}
+
+func TestDragenManifestFindFile(t *testing.T) {
+	testcases := []struct {
+		name      string
+		manifest  DragenManifest
+		matchWith string
+		match     string
+		error     bool
+	}{
+		{
+			name: "multiple matches",
+			manifest: DragenManifest{
+				Files: []string{
+					"data/subdir1/file1.txt",
+					"data/subdir1/file1.fastq.gz",
+					"data/subdir2/file2.txt",
+					"data/subdir2/file2.fastq.gz",
+					"data/subdir2-1/file2.txt",
+					"data/subdir2-1/file2.fastq.gz",
+				},
+			},
+			matchWith: "file2.txt",
+			error:     true,
+		},
+		{
+			name: "no matches",
+			manifest: DragenManifest{
+				Files: []string{
+					"data/subdir1/file1.txt",
+					"data/subdir1/file1.fastq.gz",
+					"data/subdir2/file2.txt",
+					"data/subdir2/file2.fastq.gz",
+					"data/subdir2-1/file2.txt",
+					"data/subdir2-1/file2.fastq.gz",
+				},
+			},
+			matchWith: "file3.txt",
+			error:     true,
+		},
+		{
+			name: "single matches",
+			manifest: DragenManifest{
+				Files: []string{
+					"data/subdir1/file1.txt",
+					"data/subdir1/file1.fastq.gz",
+					"data/subdir2/file2.txt",
+					"data/subdir2/file2.fastq.gz",
+					"data/subdir2-1/file2.txt",
+					"data/subdir2-1/file2.fastq.gz",
+				},
+			},
+			matchWith: "file1.fastq.gz",
+			match:     "data/subdir1/file1.fastq.gz",
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			match, err := c.manifest.FindFile(c.matchWith)
+			if c.error != (err != nil) {
+				t.Fatalf("expected error to be %t, got %q", c.error, err)
+			}
+			if match != c.match {
+				t.Fatalf("expected %s, got %s", c.match, match)
 			}
 		})
 	}

@@ -441,3 +441,21 @@ func (m *DragenManifest) FindFiles(r *regexp.Regexp) []string {
 	}
 	return matches
 }
+
+// FindFile finds a single file whose base name matches the input name. A non-nil error
+// is returned if more than one match is found, or if no matches are found.
+func (m *DragenManifest) FindFile(name string) (string, error) {
+	var foundFile string
+	for _, f := range m.Files {
+		if filepath.Base(f) == name {
+			if foundFile != "" {
+				return "", fmt.Errorf("more than one match found")
+			}
+			foundFile = f
+		}
+	}
+	if foundFile == "" {
+		return "", fmt.Errorf("no matches found")
+	}
+	return foundFile, nil
+}
