@@ -89,7 +89,7 @@ func (r *Run) UnmarshalBSON(data []byte) error {
 			return err
 		}
 		*r = rpV1
-	case 2:
+	case 2, 3:
 		type RunAlias Run
 		if err := bson.Unmarshal(data, (*RunAlias)(r)); err != nil {
 			return err
