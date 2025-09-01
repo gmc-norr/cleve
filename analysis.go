@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -339,25 +340,6 @@ func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 	analysis.StateHistory.Add(state)
 
 	if state == StateReady {
-		// Add the stats files to the analysis
-		analysis.OutputFiles = []AnalysisFile{
-			{
-				Path:     "Data/Demux/Demultiplex_Stats.csv",
-				FileType: FileText,
-				Level:    LevelRun,
-			},
-			{
-				Path:     "Data/Demux/Index_Hopping_Counts.csv",
-				FileType: FileText,
-				Level:    LevelRun,
-			},
-			{
-				Path:     "Data/Demux/Top_Unknown_Barcodes.csv",
-				FileType: FileText,
-				Level:    LevelRun,
-			},
-		}
-
 		f, err := os.Open(filepath.Join(analysis.Path, "Manifest.tsv"))
 		if err != nil {
 			return analysis, err
@@ -366,6 +348,21 @@ func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 		manifest, err := ReadDragenManifest(f)
 		if err != nil {
 			return analysis, fmt.Errorf("failed to read dragen manifest: %w", err)
+		}
+
+		// Stats files that are expected from BCLConvert
+		statsFiles := []string{"Demultiplex_Stats.csv", "Index_Hopping_Counts.csv", "Top_Unknown_Barcodes.csv"}
+		for _, sf := range statsFiles {
+			if f, err := manifest.FindFile(sf); err == nil {
+				analysis.OutputFiles = append(analysis.OutputFiles, AnalysisFile{
+					Path:     f,
+					FileType: FileText,
+					Level:    LevelRun,
+					ParentId: run.RunID,
+				})
+			} else {
+				slog.Warn("file not found in manifest", "name", sf)
+			}
 		}
 
 		for _, wf := range summary.Workflows {
