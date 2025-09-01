@@ -120,6 +120,7 @@ type AnalysisFileFilter struct {
 	FileType   AnalysisFileType
 	Level      AnalysisLevel
 	ParentId   string
+	Name       string
 	Pattern    *regexp.Regexp
 }
 
@@ -132,6 +133,9 @@ func (f *AnalysisFileFilter) Apply(file AnalysisFile) bool {
 		return false
 	}
 	if f.ParentId != "" && f.ParentId != file.ParentId {
+		return false
+	}
+	if f.Name != "" && f.Name != filepath.Base(file.Path) {
 		return false
 	}
 	if f.Pattern != nil {
