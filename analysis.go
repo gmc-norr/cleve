@@ -291,7 +291,6 @@ func ParseDragenAnalysisSummary(r io.Reader) (DragenAnalysisSummary, error) {
 // NewDragenAnalysis creates an Analysis representing a Dragen analysis,
 // specifically the results from BCLConvert.
 func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
-	state := dragenAnalysisState(path)
 	id := run.RunID + "_" + filepath.Base(path) + "_bclconvert"
 	analysis := Analysis{
 		AnalysisId: id,
@@ -299,6 +298,12 @@ func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 		Software:   "Dragen BCLConvert",
 		Path:       path,
 	}
+
+	if !filepath.IsAbs(path) {
+		return analysis, fmt.Errorf("path must be absolute")
+	}
+
+	state := dragenAnalysisState(path)
 	var dragenVersion string
 	for _, sw := range run.RunParameters.Software {
 		if strings.ToLower(sw.Name) != "dragen" {
