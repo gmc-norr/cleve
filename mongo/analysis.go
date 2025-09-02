@@ -119,6 +119,12 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		if err != nil {
 			return analyses, err
 		}
+		if analysis.InputFiles == nil {
+			analysis.InputFiles = make([]cleve.AnalysisFileFilter, 0)
+		}
+		if analysis.OutputFiles == nil {
+			analysis.OutputFiles = make([]cleve.AnalysisFile, 0)
+		}
 		analyses.Count += 1
 		analyses.Analyses = append(analyses.Analyses, &analysis)
 	}
