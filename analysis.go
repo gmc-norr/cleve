@@ -116,12 +116,12 @@ type AnalysisFile struct {
 }
 
 type AnalysisFileFilter struct {
-	AnalysisId string
-	FileType   AnalysisFileType
-	Level      AnalysisLevel
-	ParentId   string
-	Name       string
-	Pattern    *regexp.Regexp
+	AnalysisId string           `bson:"analysis_id,omitzero" json:"analysis_id,omitzero"`
+	FileType   AnalysisFileType `bson:"type,omitzero" json:"type,omitzero"`
+	Level      AnalysisLevel    `bson:"level,omitzero" json:"level,omitzero"`
+	ParentId   string           `bson:"parent_id,omitzero" json:"parent_id,omitzero"`
+	Name       string           `bson:"name,omitzero" json:"name,omitzero"`
+	Pattern    *regexp.Regexp   `bson:"-" json:"-"`
 }
 
 func (f *AnalysisFileFilter) Apply(file AnalysisFile) bool {
