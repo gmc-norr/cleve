@@ -150,6 +150,8 @@ func AnalysisLevelFromString(level string) (AnalysisLevel, error) {
 		return LevelCase, nil
 	case "sample":
 		return LevelSample, nil
+	case "":
+		return 0, nil
 	default:
 		return 0, fmt.Errorf("invalid analysis level %q", level)
 	}
