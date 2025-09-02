@@ -235,6 +235,31 @@ func (db DB) SetAnalysisFiles(analysisId string, parentId string, files []cleve.
 	return err
 }
 
+func (db DB) AnalysesIndex() ([]map[string]string, error) {
+	cursor, err := db.AnalysesCollection().Indexes().List(context.TODO())
+	if err != nil {
+		return []map[string]string{}, err
+	}
+	defer closeCursor(cursor, context.TODO())
+
+	var indexes []map[string]string
+
+	var result []bson.M
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return []map[string]string{}, err
+	}
+
+	for _, v := range result {
+		i := map[string]string{}
+		for k, val := range v {
+			i[k] = fmt.Sprintf("%v", val)
+		}
+		indexes = append(indexes, i)
+	}
+
+	return indexes, nil
+}
+
 func (db DB) SetAnalysesIndex() (string, error) {
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
