@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -143,9 +144,19 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 	return analyses, nil
 }
 
-func (db DB) Analysis(analysisId string) (*cleve.Analysis, error) {
+// Analysis fetches a single analysis based on its ID. An optional run ID constraint can be given
+// as the second argument in order to constrain the anlyses to a particular run. If more than one
+// run ID is given, a non-nil error will be returned. If no documents are found given the
+// analysis ID and any run ID constraint, a `mongo.ErrNoDocuments` error will be returned.
+func (db DB) Analysis(analysisId string, runId ...string) (*cleve.Analysis, error) {
+	if len(runId) > 1 {
+		return nil, fmt.Errorf("only a single run ID can be given")
+	}
 	filter := cleve.NewAnalysisFilter()
 	filter.AnalysisId = analysisId
+	if len(runId) == 1 {
+		filter.RunId = runId[0]
+	}
 	analyses, err := db.Analyses(filter)
 	if err != nil {
 		return nil, err

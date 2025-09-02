@@ -12,7 +12,7 @@ import (
 // Interface for reading analyses from the database.
 type AnalysisGetter interface {
 	Analyses(cleve.AnalysisFilter) (cleve.AnalysisResult, error)
-	Analysis(analysisId string) (*cleve.Analysis, error)
+	Analysis(analysisId string, runId ...string) (*cleve.Analysis, error)
 }
 
 // Interface for storing/updating analyses in the database.
@@ -31,7 +31,11 @@ type AnalysisGetterSetter interface {
 
 func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		runId := c.Param("runId")
 		filter, err := getAnalysisFilter(c)
+		if runId != "" {
+			filter.RunId = runId
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -52,15 +56,20 @@ func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		analysisId := c.Param("analysisId")
-		analysis, err := db.Analysis(analysisId)
+		runId := c.Param("runId")
+		analysis, err := db.Analysis(analysisId, runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
+				payload := gin.H{
+					"error":       "analysis not found",
+					"analysis_id": analysisId,
+				}
+				if runId != "" {
+					payload["run_id"] = runId
+				}
 				c.AbortWithStatusJSON(
 					http.StatusNotFound,
-					gin.H{
-						"error":       "analysis not found",
-						"analysis_id": analysisId,
-					},
+					payload,
 				)
 				return
 			}
