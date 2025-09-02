@@ -115,35 +115,6 @@ type AnalysisFile struct {
 	ParentId string           `bson:"parent_id" json:"parent_id"`
 }
 
-type AnalysisFileFilter struct {
-	AnalysisId string           `bson:"analysis_id,omitzero" json:"analysis_id,omitzero"`
-	FileType   AnalysisFileType `bson:"type,omitzero" json:"type,omitzero"`
-	Level      AnalysisLevel    `bson:"level,omitzero" json:"level,omitzero"`
-	ParentId   string           `bson:"parent_id,omitzero" json:"parent_id,omitzero"`
-	Name       string           `bson:"name,omitzero" json:"name,omitzero"`
-	Pattern    *regexp.Regexp   `bson:"-" json:"-"`
-}
-
-func (f *AnalysisFileFilter) Apply(file AnalysisFile) bool {
-	pass := true
-	if f.FileType.IsValid() && f.FileType != file.FileType {
-		return false
-	}
-	if f.Level.IsValid() && f.Level != file.Level {
-		return false
-	}
-	if f.ParentId != "" && f.ParentId != file.ParentId {
-		return false
-	}
-	if f.Name != "" && f.Name != filepath.Base(file.Path) {
-		return false
-	}
-	if f.Pattern != nil {
-		pass = f.Pattern.Match([]byte(file.Path))
-	}
-	return pass
-}
-
 type AnalysisLevel int
 
 const (
