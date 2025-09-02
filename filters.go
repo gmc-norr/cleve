@@ -137,12 +137,12 @@ func NewAnalysisFilter() AnalysisFilter {
 
 // Analysis file filtering
 type AnalysisFileFilter struct {
-	AnalysisId string           `bson:"analysis_id,omitzero" json:"analysis_id,omitzero"`
-	FileType   AnalysisFileType `bson:"type,omitzero" json:"type,omitzero"`
-	Level      AnalysisLevel    `bson:"level,omitzero" json:"level,omitzero"`
-	ParentId   string           `bson:"parent_id,omitzero" json:"parent_id,omitzero"`
-	Name       string           `bson:"name,omitzero" json:"name,omitzero"`
-	Pattern    *regexp.Regexp   `bson:"-" json:"-"`
+	AnalysisId string           `form:"analysis_id" bson:"analysis_id,omitzero" json:"analysis_id,omitzero"`
+	FileType   AnalysisFileType `form:"type" bson:"type,omitzero" json:"type,omitzero"`
+	Level      AnalysisLevel    `form:"level" bson:"level,omitzero" json:"level,omitzero"`
+	ParentId   string           `form:"parent_id" bson:"parent_id,omitzero" json:"parent_id,omitzero"`
+	Name       string           `form:"name" bson:"name,omitzero" json:"name,omitzero"`
+	Pattern    *regexp.Regexp   `form:"-" bson:"-" json:"-"`
 }
 
 func (f *AnalysisFileFilter) Apply(file AnalysisFile) bool {
