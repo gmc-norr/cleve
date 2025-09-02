@@ -83,13 +83,14 @@ func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var params struct {
-			Path            string               `json:"path" binding:"required"`
-			RunId           string               `json:"run_id" binding:"required"`
-			AnalysisId      string               `json:"analysis_id" binding:"required"`
-			State           cleve.State          `json:"state" binding:"required"`
-			Software        string               `json:"software" binding:"required"`
-			SoftwareVersion string               `json:"software_version" binding:"required"`
-			Files           []cleve.AnalysisFile `json:"files"`
+			Path            string                     `json:"path" binding:"required"`
+			RunId           string                     `json:"run_id" binding:"required"`
+			AnalysisId      string                     `json:"analysis_id" binding:"required"`
+			State           cleve.State                `json:"state" binding:"required"`
+			Software        string                     `json:"software" binding:"required"`
+			SoftwareVersion string                     `json:"software_version" binding:"required"`
+			InputFiles      []cleve.AnalysisFileFilter `json:"input_files"`
+			OutputFiles     []cleve.AnalysisFile       `json:"output_files"`
 		}
 
 		if err := c.ShouldBind(&params); err != nil {
@@ -106,7 +107,8 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			Path:            params.Path,
 			Software:        params.Software,
 			SoftwareVersion: params.SoftwareVersion,
-			OutputFiles:     params.Files,
+			InputFiles:      params.InputFiles,
+			OutputFiles:     params.OutputFiles,
 		}
 		a.StateHistory.Add(params.State)
 		if a.OutputFiles == nil {
