@@ -185,8 +185,8 @@ func (db DB) CreateAnalysis(analysis *cleve.Analysis) error {
 	return err
 }
 
-func (db DB) SetAnalysisState(analysisId string, parentId string, state cleve.State) error {
-	filter := bson.D{{Key: "analysis_id", Value: analysisId}, {Key: "parent_id", Value: parentId}}
+func (db DB) SetAnalysisState(analysisId string, state cleve.State) error {
+	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$push", Value: bson.D{
 			{Key: "state_history", Value: cleve.TimedRunState{
@@ -205,8 +205,8 @@ func (db DB) SetAnalysisState(analysisId string, parentId string, state cleve.St
 	return err
 }
 
-func (db DB) SetAnalysisPath(analysisId string, parentId string, path string) error {
-	filter := bson.D{{Key: "analysis_id", Value: analysisId}, {Key: "parent_id", Value: parentId}}
+func (db DB) SetAnalysisPath(analysisId string, path string) error {
+	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "path", Value: path},
@@ -220,8 +220,8 @@ func (db DB) SetAnalysisPath(analysisId string, parentId string, path string) er
 	return err
 }
 
-func (db DB) SetAnalysisFiles(analysisId string, parentId string, files []cleve.AnalysisFile) error {
-	filter := bson.D{{Key: "analysis_id", Value: analysisId}, {Key: "parent_id", Value: parentId}}
+func (db DB) SetAnalysisFiles(analysisId string, files []cleve.AnalysisFile) error {
+	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "files", Value: files},

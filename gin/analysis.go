@@ -18,9 +18,9 @@ type AnalysisGetter interface {
 // Interface for storing/updating analyses in the database.
 type AnalysisSetter interface {
 	CreateAnalysis(*cleve.Analysis) error
-	SetAnalysisState(analysisId string, parentId string, state cleve.State) error
-	SetAnalysisPath(analysisId string, parentId string, path string) error
-	SetAnalysisFiles(analysisId string, parentId string, files []cleve.AnalysisFile) error
+	SetAnalysisState(analysisId string, state cleve.State) error
+	SetAnalysisPath(analysisId string, path string) error
+	SetAnalysisFiles(analysisId string, files []cleve.AnalysisFile) error
 }
 
 // Interface for both getting and storing/updating analyses.
@@ -150,20 +150,8 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	}
 }
 
-func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.HandlerFunc {
-	var parentIdKey string
-	switch level {
-	case cleve.LevelRun:
-		parentIdKey = "runId"
-	case cleve.LevelCase:
-		parentIdKey = "caseId"
-	case cleve.LevelSample:
-		parentIdKey = "sampleId"
-	default:
-		parentIdKey = "parentId"
-	}
+func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		parentId := c.Param(parentIdKey)
 		analysisId := c.Param("analysisId")
 		stateUpdated := false
 		pathUpdated := false
@@ -181,14 +169,12 @@ func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.Han
 		}
 
 		if updateRequest.State.IsValid() {
-			err := db.SetAnalysisState(analysisId, parentId, updateRequest.State)
+			err := db.SetAnalysisState(analysisId, updateRequest.State)
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 						"error":       "analysis not found",
-						"parent_id":   parentId,
 						"analysis_id": analysisId,
-						"level":       level,
 					})
 					return
 				}
@@ -202,14 +188,12 @@ func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.Han
 		}
 
 		if updateRequest.Path != "" {
-			err := db.SetAnalysisPath(analysisId, parentId, updateRequest.Path)
+			err := db.SetAnalysisPath(analysisId, updateRequest.Path)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {
 					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 						"error":       "analysis not found",
-						"parent_id":   parentId,
 						"analysis_id": analysisId,
-						"level":       level,
 					})
 					return
 				}
@@ -223,14 +207,12 @@ func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.Han
 		}
 
 		if len(updateRequest.Files) > 0 {
-			err := db.SetAnalysisFiles(analysisId, parentId, updateRequest.Files)
+			err := db.SetAnalysisFiles(analysisId, updateRequest.Files)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {
 					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 						"error":       "analysis not found",
-						"parent_id":   parentId,
 						"analysis_id": analysisId,
-						"level":       level,
 					})
 					return
 				}
@@ -250,7 +232,6 @@ func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.Han
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":       msg,
-			"parent_id":     parentId,
 			"analysis_id":   analysisId,
 			"updated_state": stateUpdated,
 			"updated_path":  pathUpdated,
