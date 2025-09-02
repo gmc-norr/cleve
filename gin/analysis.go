@@ -209,6 +209,16 @@ func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 		}
 
 		if len(updateRequest.Files) > 0 {
+			for _, f := range updateRequest.Files {
+				if err := f.IsComplete(); err != nil {
+					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+						"error":   "invalid file entry",
+						"details": err.Error(),
+						"file":    f,
+					})
+					return
+				}
+			}
 			err := db.SetAnalysisFiles(analysisId, updateRequest.Files)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {

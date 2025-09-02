@@ -224,7 +224,7 @@ func (db DB) SetAnalysisFiles(analysisId string, files []cleve.AnalysisFile) err
 	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
-			{Key: "files", Value: files},
+			{Key: "output_files", Value: files},
 			{Key: "updated", Value: time.Now()},
 		}},
 	}

@@ -3,6 +3,7 @@ package cleve
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -113,6 +114,26 @@ type AnalysisFile struct {
 	FileType AnalysisFileType `bson:"type" json:"type"`
 	Level    AnalysisLevel    `bson:"level" json:"level"`
 	ParentId string           `bson:"parent_id" json:"parent_id"`
+}
+
+func (f *AnalysisFile) IsComplete() error {
+	var errs []error
+	if filepath.IsAbs(f.Path) {
+		errs = append(errs, fmt.Errorf("path must be relative"))
+	}
+	if !f.FileType.IsValid() {
+		errs = append(errs, fmt.Errorf("invalid file type"))
+	}
+	if !f.Level.IsValid() {
+		errs = append(errs, fmt.Errorf("invalid level"))
+	}
+	if f.ParentId == "" {
+		errs = append(errs, fmt.Errorf("missing parent id"))
+	}
+	if len(errs) == 0 {
+		return nil
+	}
+	return errors.Join(errs...)
 }
 
 type AnalysisLevel int
