@@ -185,6 +185,27 @@ func (db DB) CreateAnalysis(analysis *cleve.Analysis) error {
 	return err
 }
 
+func (db DB) UpdateAnalysis(analysis *cleve.Analysis) error {
+	res, err := db.AnalysesCollection().UpdateOne(
+		context.TODO(),
+		bson.D{{Key: "analysis_id", Value: analysis.AnalysisId}},
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "state_history", Value: analysis.StateHistory},
+				{Key: "output_files", Value: analysis.OutputFiles},
+			}},
+			{Key: "$currentDate", Value: bson.D{{Key: "updated", Value: true}}},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return ErrNoDocuments
+	}
+	return nil
+}
+
 func (db DB) SetAnalysisState(analysisId string, state cleve.State) error {
 	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
