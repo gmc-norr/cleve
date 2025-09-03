@@ -678,6 +678,9 @@ func TestUnmarshalJSONLevel(t *testing.T) {
 			if err != nil && l != c.expect {
 				t.Errorf("expected level %s, got %s", c.expect, l)
 			}
+			if c.isValid != l.IsValid() {
+				t.Errorf("expected IsValid to be %t, got %t", c.isValid, l.IsValid())
+			}
 		})
 	}
 }
