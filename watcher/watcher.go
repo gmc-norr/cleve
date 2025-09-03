@@ -11,6 +11,10 @@ type runHandler interface {
 	Runs(filter cleve.RunFilter) (cleve.RunResult, error)
 }
 
+type analysisHandler interface {
+	Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
+}
+
 type RunWatcherEvent struct {
 	Id           string
 	Path         string
@@ -118,4 +122,84 @@ func (w *RunWatcher) Poll() {
 		w.emit <- events
 	}
 	w.logger.Debug("run watcher end poll")
+}
+
+type AnalysisWatcherEvent struct {
+	Analysis     *cleve.Analysis
+	New          bool
+	StateChanged bool
+}
+
+type DragenAnalysisWatcher struct {
+	PollInterval time.Duration
+
+	store interface {
+		runHandler
+		analysisHandler
+	}
+	analysisRoot string
+	runFilter    cleve.RunFilter
+	logger       *slog.Logger
+
+	quit chan struct{}
+	done chan struct{}
+	emit chan []AnalysisWatcherEvent
+}
+
+func NewDragenAnalysisWatcher(
+	pollInterval time.Duration,
+	db interface {
+		runHandler
+		analysisHandler
+	},
+	logger *slog.Logger,
+) DragenAnalysisWatcher {
+	filter := cleve.NewRunFilter()
+	filter.PageSize = 30
+	filter.State = cleve.StateReady.String()
+	return DragenAnalysisWatcher{
+		PollInterval: pollInterval,
+		store:        db,
+		analysisRoot: "Analysis",
+		runFilter:    filter,
+		logger:       logger,
+		quit:         make(chan struct{}),
+		done:         make(chan struct{}),
+		emit:         make(chan []AnalysisWatcherEvent, 1),
+	}
+}
+
+func (w *DragenAnalysisWatcher) Start() chan []AnalysisWatcherEvent {
+	w.logger.Info("starting dragen analysis watcher", "poll_interval", w.PollInterval)
+	go w.start()
+	return w.emit
+}
+
+func (w *DragenAnalysisWatcher) start() {
+	defer close(w.done)
+
+	ticker := time.NewTicker(w.PollInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			w.Poll()
+		case <-w.quit:
+			close(w.emit)
+			return
+		}
+	}
+}
+
+func (w *DragenAnalysisWatcher) Stop() {
+	w.logger.Info("stopping dragen analysis watcher, waiting for current poll (if any) finishes")
+	close(w.quit)
+	<-w.done
+	w.logger.Info("dragen analysis watcher stopped")
+}
+
+func (w *DragenAnalysisWatcher) Poll() {
+	w.logger.Debug("dragen analysis watcher start poll")
+	w.logger.Debug("dragen analysis watcher end poll")
 }
