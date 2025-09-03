@@ -41,23 +41,14 @@ var (
 			logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: loglevel}))
 			slog.SetDefault(logger)
 
-			pollInterval := viper.GetInt("run_poll_interval")
-			if pollInterval < 1 {
+			runPollInterval := viper.GetInt("run_poll_interval")
+			if runPollInterval < 1 {
 				slog.Error("poll interval must be a positive, non-zero integer")
 				os.Exit(1)
 			}
-			runWatcher := watcher.NewRunWatcher(time.Duration(pollInterval)*time.Second, db, logger)
+			runWatcher := watcher.NewRunWatcher(time.Duration(runPollInterval)*time.Second, db, logger)
 			defer runWatcher.Stop()
 			runStateEvents := runWatcher.Start()
-
-			interrupt := make(chan os.Signal, 1)
-			signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
-			go func() {
-				s := <-interrupt
-				slog.Error("signal received, shutting down", "signal", s)
-				runWatcher.Stop()
-				os.Exit(1)
-			}()
 
 			go func() {
 				for events := range runStateEvents {
@@ -72,6 +63,33 @@ var (
 					}
 				}
 				slog.Info("stop handling run watcher events")
+			}()
+
+			analysisPollInterval := viper.GetInt("analysis_poll_interval")
+			if analysisPollInterval < 1 {
+				slog.Error("poll interval must be a positive, non-zero integer")
+				os.Exit(1)
+			}
+			analysisWatcher := watcher.NewDragenAnalysisWatcher(time.Duration(analysisPollInterval)*time.Second, db, logger)
+			defer analysisWatcher.Stop()
+			analysisEvents := analysisWatcher.Start()
+
+			go func() {
+				for events := range analysisEvents {
+					for _, e := range events {
+						logger.Debug("analysis event", "analysis_id", e.Analysis.AnalysisId)
+					}
+				}
+			}()
+
+			interrupt := make(chan os.Signal, 1)
+			signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
+			go func() {
+				s := <-interrupt
+				slog.Error("signal received, shutting down", "signal", s)
+				runWatcher.Stop()
+				analysisWatcher.Stop()
+				os.Exit(1)
 			}()
 
 			router := gin.NewRouter(db, debug)
@@ -91,10 +109,11 @@ func init() {
 	serveCmd.Flags().StringVar(&host, "host", "localhost", "host")
 	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "port")
 	serveCmd.Flags().StringVar(&logfile, "logfile", "", "file to write logs in")
-	serveCmd.Flags().Int("poll-interval", defaultPollInterval, "how often, in seconds, that state changes to runs should be checked")
+	serveCmd.Flags().Int("poll-interval", defaultPollInterval, "how often, in seconds, that state changes to runs and analyses should be checked")
 	_ = viper.BindPFlag("host", serveCmd.Flags().Lookup("host"))
 	_ = viper.BindPFlag("port", serveCmd.Flags().Lookup("port"))
 	_ = viper.BindPFlag("logfile", serveCmd.Flags().Lookup("logfile"))
 	_ = viper.BindPFlag("run_poll_interval", serveCmd.Flags().Lookup("poll-interval"))
+	_ = viper.BindPFlag("analysis_poll_interval", serveCmd.Flags().Lookup("poll-interval"))
 	viper.SetDefault("run_poll_interval", defaultPollInterval)
 }

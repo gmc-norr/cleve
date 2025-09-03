@@ -10,10 +10,11 @@ database:
 # If not set, logs will only be written to stdout
 logfile: cleve.log
 
-# How often, in seconds, that Cleve should poll runs in the database
-# for state changes. Setting this too low could potentially have big
-# impact on I/O. The default is 30 seconds.
+# How often, in seconds, that Cleve should poll runs and analyses
+# in the database for state changes. Setting this too low could
+# potentially have big impact on I/O. The default is 30 seconds.
 run_poll_interval: 30
+analysis_poll_interval: 30
 
 # Path to a yaml file containing the api specification
 apidoc: cleve_api.yaml
