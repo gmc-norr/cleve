@@ -1,6 +1,7 @@
 package cleve
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -143,6 +144,23 @@ type AnalysisFileFilter struct {
 	ParentId   string           `form:"parent_id" bson:"parent_id,omitzero" json:"parent_id,omitzero"`
 	Name       string           `form:"name" bson:"name,omitzero" json:"name,omitzero"`
 	Pattern    *regexp.Regexp   `form:"-" bson:"-" json:"-"`
+}
+
+func (f *AnalysisFileFilter) IsValid() error {
+	var errs []error
+	if f.AnalysisId == "" {
+		errs = append(errs, fmt.Errorf("analysis id cannot be empty"))
+	}
+	if !f.Level.IsValid() {
+		errs = append(errs, fmt.Errorf("invalid analysis level"))
+	}
+	if !f.FileType.IsValid() && f.ParentId == "" && f.Name == "" && f.Pattern == nil {
+		errs = append(errs, fmt.Errorf("one of FileType, ParentId, Name or Pattern must be defined"))
+	}
+	if f.Pattern != nil && f.Name != "" {
+		errs = append(errs, fmt.Errorf("cannot use both name and pattern"))
+	}
+	return errors.Join(errs...)
 }
 
 func (f *AnalysisFileFilter) Apply(file AnalysisFile) bool {
