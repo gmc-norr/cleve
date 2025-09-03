@@ -137,6 +137,18 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			return
 		}
 
+		// Check the input files
+		for _, f := range params.InputFiles {
+			if err := f.Validate(); err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error":   "invalid input file entry",
+					"details": err.Error(),
+					"file":    f,
+				})
+				return
+			}
+		}
+
 		// Check the output files
 		for _, f := range params.OutputFiles {
 			if err := f.Validate(); err != nil {
