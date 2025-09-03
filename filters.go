@@ -146,7 +146,7 @@ type AnalysisFileFilter struct {
 	Pattern    *regexp.Regexp   `form:"-" bson:"-" json:"-"`
 }
 
-func (f *AnalysisFileFilter) IsValid() error {
+func (f *AnalysisFileFilter) Validate() error {
 	var errs []error
 	if f.AnalysisId == "" {
 		errs = append(errs, fmt.Errorf("analysis id cannot be empty"))

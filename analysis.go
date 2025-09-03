@@ -116,7 +116,7 @@ type AnalysisFile struct {
 	ParentId string           `bson:"parent_id" json:"parent_id"`
 }
 
-func (f *AnalysisFile) IsComplete() error {
+func (f *AnalysisFile) Validate() error {
 	var errs []error
 	if filepath.IsAbs(f.Path) {
 		errs = append(errs, fmt.Errorf("path must be relative"))

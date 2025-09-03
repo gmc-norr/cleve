@@ -7,9 +7,9 @@ import (
 
 func TestAnalysisFileFilter(t *testing.T) {
 	testcases := []struct {
-		name       string
-		filter     AnalysisFileFilter
-		isComplete bool
+		name    string
+		filter  AnalysisFileFilter
+		isValid bool
 	}{
 		{
 			name: "complete filter filetype",
@@ -18,7 +18,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 				Level:      LevelSample,
 				FileType:   FileFastq,
 			},
-			isComplete: true,
+			isValid: true,
 		},
 		{
 			name: "complete filter name",
@@ -27,7 +27,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 				Level:      LevelSample,
 				Name:       "sample1.fastq.gz",
 			},
-			isComplete: true,
+			isValid: true,
 		},
 		{
 			name: "complete filter pattern",
@@ -36,7 +36,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 				Level:      LevelSample,
 				Pattern:    regexp.MustCompile(`\.fastq\.gz$`),
 			},
-			isComplete: true,
+			isValid: true,
 		},
 		{
 			name: "complete filter parent id",
@@ -45,7 +45,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 				Level:      LevelSample,
 				ParentId:   "sample1",
 			},
-			isComplete: true,
+			isValid: true,
 		},
 		{
 			name: "complete filter parent id filetype",
@@ -55,7 +55,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 				ParentId:   "sample1",
 				FileType:   FileFastq,
 			},
-			isComplete: true,
+			isValid: true,
 		},
 		{
 			name: "incomplete filter analysis id",
@@ -64,7 +64,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 				ParentId: "sample1",
 				FileType: FileFastq,
 			},
-			isComplete: false,
+			isValid: false,
 		},
 		{
 			name: "conflicting filter",
@@ -76,18 +76,18 @@ func TestAnalysisFileFilter(t *testing.T) {
 				Name:       "sample1.fastq.gz",
 				Pattern:    regexp.MustCompile(`\.fastq\.gz$`),
 			},
-			isComplete: false,
+			isValid: false,
 		},
 	}
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
-			err := c.filter.IsValid()
-			if c.isComplete != (err == nil) {
-				if c.isComplete {
-					t.Errorf("expected filter to be complete, but got error=%v", err)
+			err := c.filter.Validate()
+			if c.isValid != (err == nil) {
+				if c.isValid {
+					t.Errorf("expected filter to be valid, but got error=%v", err)
 				} else {
-					t.Errorf("expected filter to be incomplete, but got error=%v", err)
+					t.Errorf("expected filter to be invalid, but got error=%v", err)
 				}
 			}
 		})

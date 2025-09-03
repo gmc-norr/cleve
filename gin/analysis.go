@@ -139,7 +139,7 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 
 		// Check the output files
 		for _, f := range params.OutputFiles {
-			if err := f.IsComplete(); err != nil {
+			if err := f.Validate(); err != nil {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 					"error":   "invalid output file entry",
 					"details": err.Error(),
@@ -222,7 +222,7 @@ func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 
 		if len(updateRequest.Files) > 0 {
 			for _, f := range updateRequest.Files {
-				if err := f.IsComplete(); err != nil {
+				if err := f.Validate(); err != nil {
 					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 						"error":   "invalid file entry",
 						"details": err.Error(),
