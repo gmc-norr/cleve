@@ -33,14 +33,14 @@ func TestRunWatcher(t *testing.T) {
 	testcases := []struct {
 		name   string
 		dbRuns cleve.RunResult
-		events []WatcherEvent
+		events []RunWatcherEvent
 	}{
 		{
 			name: "no runs",
 			dbRuns: cleve.RunResult{
 				PaginationMetadata: cleve.PaginationMetadata{},
 			},
-			events: []WatcherEvent{},
+			events: []RunWatcherEvent{},
 		},
 		{
 			name: "single run state unchanged",
@@ -54,7 +54,7 @@ func TestRunWatcher(t *testing.T) {
 					},
 				},
 			},
-			events: []WatcherEvent{},
+			events: []RunWatcherEvent{},
 		},
 		{
 			name: "single run state changed",
@@ -68,7 +68,7 @@ func TestRunWatcher(t *testing.T) {
 					},
 				},
 			},
-			events: []WatcherEvent{{Id: "run1", State: cleve.StatePending, StateChanged: true}},
+			events: []RunWatcherEvent{{Id: "run1", State: cleve.StatePending, StateChanged: true}},
 		},
 		{
 			name: "two runs state changed for both",
@@ -89,7 +89,7 @@ func TestRunWatcher(t *testing.T) {
 					},
 				},
 			},
-			events: []WatcherEvent{
+			events: []RunWatcherEvent{
 				{Id: "run1", State: cleve.StatePending, StateChanged: true},
 				{Id: "run2", State: cleve.StatePending, StateChanged: true},
 			},
@@ -108,7 +108,7 @@ func TestRunWatcher(t *testing.T) {
 					},
 				},
 			},
-			events: []WatcherEvent{},
+			events: []RunWatcherEvent{},
 		},
 		{
 			name: "moved run",
@@ -123,7 +123,7 @@ func TestRunWatcher(t *testing.T) {
 					},
 				},
 			},
-			events: []WatcherEvent{{Id: "run1", State: cleve.StateMoved}},
+			events: []RunWatcherEvent{{Id: "run1", State: cleve.StateMoved}},
 		},
 	}
 
@@ -164,7 +164,7 @@ func TestRunWatcher(t *testing.T) {
 			if len(c.events) == 0 {
 				assertFunc = assertFalse
 			}
-			var e []WatcherEvent
+			var e []RunWatcherEvent
 			assertFunc(t, func() bool {
 				select {
 				case e = <-events:

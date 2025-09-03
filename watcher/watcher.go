@@ -11,7 +11,7 @@ type runHandler interface {
 	Runs(filter cleve.RunFilter) (cleve.RunResult, error)
 }
 
-type WatcherEvent struct {
+type RunWatcherEvent struct {
 	Id           string
 	Path         string
 	State        cleve.State
@@ -27,7 +27,7 @@ type RunWatcher struct {
 
 	quit chan struct{}
 	done chan struct{}
-	emit chan []WatcherEvent
+	emit chan []RunWatcherEvent
 }
 
 // NewRunWatcher creates a new RunWatcher.
@@ -41,11 +41,11 @@ func NewRunWatcher(pollInterval time.Duration, db runHandler, logger *slog.Logge
 		logger:       logger,
 		quit:         make(chan struct{}),
 		done:         make(chan struct{}),
-		emit:         make(chan []WatcherEvent, 1),
+		emit:         make(chan []RunWatcherEvent, 1),
 	}
 }
 
-func (w *RunWatcher) Start() chan []WatcherEvent {
+func (w *RunWatcher) Start() chan []RunWatcherEvent {
 	w.logger.Info("starting run watcher", "poll_interval", w.PollInterval)
 	go w.start()
 	return w.emit
@@ -78,7 +78,7 @@ func (w *RunWatcher) Stop() {
 func (w *RunWatcher) Poll() {
 	w.logger.Debug("run watcher start poll")
 	w.runFilter.Page = 1
-	events := make([]WatcherEvent, 0)
+	events := make([]RunWatcherEvent, 0)
 	for {
 		w.logger.Debug("fetching runs", "page", w.runFilter.Page)
 		runs, err := w.store.Runs(w.runFilter)
@@ -101,7 +101,7 @@ func (w *RunWatcher) Poll() {
 			if currentState == knownState {
 				continue
 			}
-			events = append(events, WatcherEvent{
+			events = append(events, RunWatcherEvent{
 				Id:           r.RunID,
 				Path:         r.Path,
 				State:        currentState,
