@@ -394,6 +394,9 @@ func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 // a temporary state indicating whether the data is avaliable. The analysis could
 // still be in a bad/incomplete state, and this has to be checked downstream.
 func dragenAnalysisState(path string) State {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return StateMoved
+	}
 	copyComplete := filepath.Join(path, "CopyComplete.txt")
 	analysisComplete := filepath.Join(path, "Data", "Secondary_Analysis_Complete.txt")
 	if _, err := os.Stat(copyComplete); os.IsNotExist(err) {
