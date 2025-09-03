@@ -205,7 +205,7 @@ func (l *AnalysisLevel) UnmarshalBSONValue(t bsontype.Type, data []byte) error {
 	return nil
 }
 
-func (l *AnalysisLevel) MarshalJSON() ([]byte, error) {
+func (l AnalysisLevel) MarshalJSON() ([]byte, error) {
 	return json.Marshal(l.String())
 }
 
