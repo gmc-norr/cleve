@@ -390,6 +390,17 @@ func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 	return analysis, nil
 }
 
+// DetectState detects the state of a Dragen analysis. If the analysis is not
+// a Dragen analysis, the last known state of the analysis is returned.
+// A caveat of this method is that the Dragen state will only represent the
+// overall state of the analysis, not that of individual samples in the analysis.
+func (a *Analysis) DetectState() State {
+	if strings.HasPrefix(strings.ToLower(a.Software), "dragen") {
+		return dragenAnalysisState(a.Path)
+	}
+	return a.StateHistory.LastState()
+}
+
 // dragenAnalysisState identifies the state of a Dragen analysis. This is just
 // a temporary state indicating whether the data is avaliable. The analysis could
 // still be in a bad/incomplete state, and this has to be checked downstream.
