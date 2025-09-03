@@ -127,6 +127,7 @@ func (w *RunWatcher) Poll() {
 type AnalysisWatcherEvent struct {
 	Analysis     *cleve.Analysis
 	New          bool
+	State        cleve.State
 	StateChanged bool
 }
 
