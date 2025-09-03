@@ -640,26 +640,31 @@ func TestUnmarshalJSONLevel(t *testing.T) {
 		json    []byte
 		expect  AnalysisLevel
 		isError bool
+		isValid bool
 	}{
 		{
-			name:   "level run",
-			json:   []byte(`"run"`),
-			expect: LevelRun,
+			name:    "level run",
+			json:    []byte(`"run"`),
+			expect:  LevelRun,
+			isValid: true,
 		},
 		{
-			name:   "level case",
-			json:   []byte(`"case"`),
-			expect: LevelCase,
+			name:    "level case",
+			json:    []byte(`"case"`),
+			expect:  LevelCase,
+			isValid: true,
 		},
 		{
-			name:   "level sample",
-			json:   []byte(`"sample"`),
-			expect: LevelSample,
+			name:    "level sample",
+			json:    []byte(`"sample"`),
+			expect:  LevelSample,
+			isValid: true,
 		},
 		{
 			name:    "empty string",
 			json:    []byte(`""`),
-			isError: true,
+			expect:  0,
+			isValid: false,
 		},
 	}
 
@@ -682,22 +687,27 @@ func TestBSONLevel(t *testing.T) {
 		name    string
 		level   AnalysisLevel
 		isError bool
+		isValid bool
 	}{
 		{
-			name:  "level run",
-			level: LevelRun,
+			name:    "level run",
+			level:   LevelRun,
+			isValid: true,
 		},
 		{
-			name:  "level case",
-			level: LevelCase,
+			name:    "level case",
+			level:   LevelCase,
+			isValid: true,
 		},
 		{
-			name:  "level sample",
-			level: LevelSample,
+			name:    "level sample",
+			level:   LevelSample,
+			isValid: true,
 		},
 		{
 			name:    "empty string",
-			isError: true,
+			level:   0,
+			isValid: false,
 		},
 	}
 
@@ -714,8 +724,8 @@ func TestBSONLevel(t *testing.T) {
 			if c.isError != (err != nil) {
 				t.Fatalf("isError is %t, but got %s", c.isError, err)
 			}
-			if err == nil && !tmp.Level.IsValid() {
-				t.Errorf("level is invalid: %s", c.level)
+			if c.isValid != tmp.Level.IsValid() {
+				t.Errorf("expected IsValid to be %t, got %t", c.isValid, tmp.Level.IsValid())
 			}
 			if err == nil && tmp.Level != c.level {
 				t.Errorf("expected level %s, got %s", c.level, tmp.Level)
