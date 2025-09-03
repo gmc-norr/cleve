@@ -102,6 +102,12 @@ func (db *DB) SetIndexes() error {
 	}
 	log.Printf("Set index %s on runs", name)
 
+	name, err = db.SetAnalysesIndex()
+	if err != nil {
+		return fmt.Errorf("failed to set index on analyses, does the collection exist? %w", err)
+	}
+	log.Printf("Set index %s on analyses", name)
+
 	name, err = db.SetRunQCIndex()
 	if err != nil {
 		return fmt.Errorf("failed to set index on run qc, does the collection exist? %w", err)
@@ -184,6 +190,11 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 		return nil, err
 	}
 
+	analysesIndex, err := db.AnalysesIndex()
+	if err != nil {
+		return nil, err
+	}
+
 	runQcIndex, err := db.RunQCIndex()
 	if err != nil {
 		return nil, err
@@ -201,6 +212,7 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 
 	indexes := make(map[string][]map[string]string)
 	indexes["runs"] = runIndex
+	indexes["analyses"] = analysesIndex
 	indexes["run_qc"] = runQcIndex
 	indexes["samplesheets"] = sampleSheetIndex
 	indexes["panels"] = panelIndex

@@ -1,7 +1,10 @@
 package cleve
 
 import (
+	"errors"
 	"fmt"
+	"path/filepath"
+	"regexp"
 	"time"
 )
 
@@ -120,11 +123,10 @@ func (f QcFilter) UrlParams() string {
 
 // Analysis filtering
 type AnalysisFilter struct {
-	AnalysisId       string        `form:"analysis_id"`
-	ParentId         string        `form:"parent_id"`
-	Level            AnalysisLevel `form:"level"`
-	Software         string        `form:"software"`
-	State            State         `form:"state"`
+	AnalysisId       string `form:"analysis_id"`
+	RunId            string `form:"run_id"`
+	Software         string `form:"software"`
+	State            State  `form:"state"`
 	PaginationFilter `form:",inline"`
 }
 
@@ -132,6 +134,53 @@ func NewAnalysisFilter() AnalysisFilter {
 	return AnalysisFilter{
 		PaginationFilter: NewPaginationFilter(),
 	}
+}
+
+// Analysis file filtering
+type AnalysisFileFilter struct {
+	AnalysisId string           `form:"analysis_id" bson:"analysis_id,omitempty" json:"analysis_id,omitzero"`
+	FileType   AnalysisFileType `form:"type" bson:"type,omitempty" json:"type,omitzero"`
+	Level      AnalysisLevel    `form:"level" bson:"level,omitempty" json:"level,omitzero"`
+	ParentId   string           `form:"parent_id" bson:"parent_id,omitempty" json:"parent_id,omitzero"`
+	Name       string           `form:"name" bson:"name,omitempty" json:"name,omitzero"`
+	Pattern    *regexp.Regexp   `form:"-" bson:"-" json:"-"`
+}
+
+func (f *AnalysisFileFilter) Validate() error {
+	var errs []error
+	if f.AnalysisId == "" {
+		errs = append(errs, fmt.Errorf("analysis id cannot be empty"))
+	}
+	if !f.Level.IsValid() {
+		errs = append(errs, fmt.Errorf("invalid analysis level"))
+	}
+	if !f.FileType.IsValid() && f.ParentId == "" && f.Name == "" && f.Pattern == nil {
+		errs = append(errs, fmt.Errorf("one of FileType, ParentId, Name or Pattern must be defined"))
+	}
+	if f.Pattern != nil && f.Name != "" {
+		errs = append(errs, fmt.Errorf("cannot use both name and pattern"))
+	}
+	return errors.Join(errs...)
+}
+
+func (f *AnalysisFileFilter) Apply(file AnalysisFile) bool {
+	pass := true
+	if f.FileType.IsValid() && f.FileType != file.FileType {
+		return false
+	}
+	if f.Level.IsValid() && f.Level != file.Level {
+		return false
+	}
+	if f.ParentId != "" && f.ParentId != file.ParentId {
+		return false
+	}
+	if f.Name != "" && f.Name != filepath.Base(file.Path) {
+		return false
+	}
+	if f.Pattern != nil {
+		pass = f.Pattern.Match([]byte(file.Path))
+	}
+	return pass
 }
 
 // Sample filtering.

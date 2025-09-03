@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -30,10 +31,10 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		})
 	}
 
-	if filter.ParentId != "" {
+	if filter.RunId != "" {
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
-				{Key: "parent_id", Value: filter.ParentId},
+				{Key: "runs", Value: filter.RunId},
 			}},
 		})
 	}
@@ -65,14 +66,6 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 						filter.State,
 					}},
 				}},
-			}},
-		})
-	}
-
-	if filter.Level.IsValid() {
-		pipeline = append(pipeline, bson.D{
-			{Key: "$match", Value: bson.D{
-				{Key: "level", Value: filter.Level},
 			}},
 		})
 	}
@@ -127,6 +120,12 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		if err != nil {
 			return analyses, err
 		}
+		if analysis.InputFiles == nil {
+			analysis.InputFiles = make([]cleve.AnalysisFileFilter, 0)
+		}
+		if analysis.OutputFiles == nil {
+			analysis.OutputFiles = make([]cleve.AnalysisFile, 0)
+		}
 		analyses.Count += 1
 		analyses.Analyses = append(analyses.Analyses, &analysis)
 	}
@@ -145,10 +144,19 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 	return analyses, nil
 }
 
-func (db DB) Analysis(analysisId string, parentId string) (*cleve.Analysis, error) {
+// Analysis fetches a single analysis based on its ID. An optional run ID constraint can be given
+// as the second argument in order to constrain the anlyses to a particular run. If more than one
+// run ID is given, a non-nil error will be returned. If no documents are found given the
+// analysis ID and any run ID constraint, a `mongo.ErrNoDocuments` error will be returned.
+func (db DB) Analysis(analysisId string, runId ...string) (*cleve.Analysis, error) {
+	if len(runId) > 1 {
+		return nil, fmt.Errorf("only a single run ID can be given")
+	}
 	filter := cleve.NewAnalysisFilter()
 	filter.AnalysisId = analysisId
-	filter.ParentId = parentId
+	if len(runId) == 1 {
+		filter.RunId = runId[0]
+	}
 	analyses, err := db.Analyses(filter)
 	if err != nil {
 		return nil, err
@@ -177,8 +185,8 @@ func (db DB) CreateAnalysis(analysis *cleve.Analysis) error {
 	return err
 }
 
-func (db DB) SetAnalysisState(analysisId string, parentId string, state cleve.State) error {
-	filter := bson.D{{Key: "analysis_id", Value: analysisId}, {Key: "parent_id", Value: parentId}}
+func (db DB) SetAnalysisState(analysisId string, state cleve.State) error {
+	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$push", Value: bson.D{
 			{Key: "state_history", Value: cleve.TimedRunState{
@@ -197,8 +205,8 @@ func (db DB) SetAnalysisState(analysisId string, parentId string, state cleve.St
 	return err
 }
 
-func (db DB) SetAnalysisPath(analysisId string, parentId string, path string) error {
-	filter := bson.D{{Key: "analysis_id", Value: analysisId}, {Key: "parent_id", Value: parentId}}
+func (db DB) SetAnalysisPath(analysisId string, path string) error {
+	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "path", Value: path},
@@ -212,11 +220,11 @@ func (db DB) SetAnalysisPath(analysisId string, parentId string, path string) er
 	return err
 }
 
-func (db DB) SetAnalysisFiles(analysisId string, parentId string, files []cleve.AnalysisFile) error {
-	filter := bson.D{{Key: "analysis_id", Value: analysisId}, {Key: "parent_id", Value: parentId}}
+func (db DB) SetAnalysisFiles(analysisId string, files []cleve.AnalysisFile) error {
+	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
-			{Key: "files", Value: files},
+			{Key: "output_files", Value: files},
 			{Key: "updated", Value: time.Now()},
 		}},
 	}
@@ -227,11 +235,35 @@ func (db DB) SetAnalysisFiles(analysisId string, parentId string, files []cleve.
 	return err
 }
 
+func (db DB) AnalysesIndex() ([]map[string]string, error) {
+	cursor, err := db.AnalysesCollection().Indexes().List(context.TODO())
+	if err != nil {
+		return []map[string]string{}, err
+	}
+	defer closeCursor(cursor, context.TODO())
+
+	var indexes []map[string]string
+
+	var result []bson.M
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return []map[string]string{}, err
+	}
+
+	for _, v := range result {
+		i := map[string]string{}
+		for k, val := range v {
+			i[k] = fmt.Sprintf("%v", val)
+		}
+		indexes = append(indexes, i)
+	}
+
+	return indexes, nil
+}
+
 func (db DB) SetAnalysesIndex() (string, error) {
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
 			{Key: "analysis_id", Value: 1},
-			{Key: "parent_id", Value: 1},
 		},
 		Options: options.Index().SetUnique(true),
 	}

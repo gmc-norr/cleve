@@ -44,10 +44,16 @@ func mockSummaryJson(samples int, state State) string {
 
 func mockManifest(samples int, lanes int) string {
 	var manifest string
+	var i int
+	manifest += fmt.Sprintf("Data/Demux/Demultiplex_Stats.csv\thash%d\n", i+1)
+	manifest += fmt.Sprintf("Data/Demux/Index_Hopping_Counts.csv\thash%d\n", i+2)
+	manifest += fmt.Sprintf("Data/Demux/Top_Unknown_Barcodes.csv\thash%d\n", i+3)
+	i += 3
 	for s := range samples {
 		for l := range lanes {
-			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_1.fastq.gz\thash%d\n", s+1, l+1, s*l+l+1)
-			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_2.fastq.gz\thash%d\n", s+1, l+1, s*l+l+1)
+			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_1.fastq.gz\thash%d\n", s+1, l+1, i+1)
+			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_2.fastq.gz\thash%d\n", s+1, l+1, i+2)
+			i += 2
 		}
 	}
 	return manifest
@@ -68,6 +74,7 @@ func mockAnalysisDirectory(t *testing.T, state State, dragenVersion string, samp
 		if err := mockFile(filepath.Join(analysisDir, "CopyComplete.txt"), ""); err != nil {
 			return analysisDir, err
 		}
+		t.Logf("%+v", mockManifest(samples, lanes))
 		if err := mockFile(filepath.Join(analysisDir, "Manifest.tsv"), mockManifest(samples, lanes)); err != nil {
 			return analysisDir, err
 		}
@@ -99,11 +106,12 @@ func mockAnalysisDirectory(t *testing.T, state State, dragenVersion string, samp
 
 func TestDragenAnalysis(t *testing.T) {
 	testcases := []struct {
-		name    string
-		run     Run
-		state   State
-		samples int
-		lanes   int
+		name          string
+		run           Run
+		state         State
+		samples       int
+		lanes         int
+		expectedFiles int
 	}{
 		{
 			name: "analysis ready",
@@ -115,9 +123,10 @@ func TestDragenAnalysis(t *testing.T) {
 					},
 				},
 			},
-			samples: 3,
-			lanes:   8,
-			state:   StateReady,
+			samples:       3,
+			lanes:         8,
+			expectedFiles: 3*8*2 + 3, // 2 fastq per sample per lane + 3 stats files
+			state:         StateReady,
 		},
 		{
 			name: "analysis pending",
@@ -129,7 +138,8 @@ func TestDragenAnalysis(t *testing.T) {
 					},
 				},
 			},
-			state: StatePending,
+			expectedFiles: 0,
+			state:         StatePending,
 		},
 		{
 			name: "error in analysis",
@@ -141,7 +151,8 @@ func TestDragenAnalysis(t *testing.T) {
 					},
 				},
 			},
-			state: StateError,
+			expectedFiles: 0,
+			state:         StateError,
 		},
 	}
 	for _, c := range testcases {
@@ -150,28 +161,16 @@ func TestDragenAnalysis(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			analyses, err := NewDragenAnalysis(dir, &c.run)
+			analysis, err := NewDragenAnalysis(dir, &c.run)
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Logf("analysis count: %d", len(analyses))
-			if len(analyses) != c.samples+1 {
-				t.Fatalf("expected %d analyses, got %d", c.samples+1, len(analyses))
-			}
-			state := analyses[0].StateHistory.LastState()
+			state := analysis.StateHistory.LastState()
 			if state != c.state {
 				t.Errorf("expected state %s, got %s", c.state, state)
 			}
-			if analyses[0].Level != LevelRun {
-				t.Error("first analysis should be on the run level")
-			}
-			for i, a := range analyses[1:] {
-				if a.Level != LevelSample {
-					t.Errorf("analysis %d is not on sample level (sample %s)", i+1, a.ParentId)
-				}
-				if len(a.Files) != c.lanes*2 {
-					t.Errorf("expected %d files for %s, got %d", c.lanes*2, a.ParentId, len(a.Files))
-				}
+			if len(analysis.OutputFiles) != c.expectedFiles {
+				t.Errorf("expected %d files, got %d", c.expectedFiles, len(analysis.OutputFiles))
 			}
 		})
 	}
@@ -221,7 +220,7 @@ func TestDragenManifest(t *testing.T) {
 	}
 }
 
-func TestDragenManifestFind(t *testing.T) {
+func TestDragenManifestFindFiles(t *testing.T) {
 	testcases := []struct {
 		name     string
 		manifest DragenManifest
@@ -285,6 +284,74 @@ func TestDragenManifestFind(t *testing.T) {
 				if matches[i] != c.matches[i] {
 					t.Errorf("expected match %d to be %q, got %q", i+1, c.matches[i], matches[i])
 				}
+			}
+		})
+	}
+}
+
+func TestDragenManifestFindFile(t *testing.T) {
+	testcases := []struct {
+		name      string
+		manifest  DragenManifest
+		matchWith string
+		match     string
+		error     bool
+	}{
+		{
+			name: "multiple matches",
+			manifest: DragenManifest{
+				Files: []string{
+					"data/subdir1/file1.txt",
+					"data/subdir1/file1.fastq.gz",
+					"data/subdir2/file2.txt",
+					"data/subdir2/file2.fastq.gz",
+					"data/subdir2-1/file2.txt",
+					"data/subdir2-1/file2.fastq.gz",
+				},
+			},
+			matchWith: "file2.txt",
+			error:     true,
+		},
+		{
+			name: "no matches",
+			manifest: DragenManifest{
+				Files: []string{
+					"data/subdir1/file1.txt",
+					"data/subdir1/file1.fastq.gz",
+					"data/subdir2/file2.txt",
+					"data/subdir2/file2.fastq.gz",
+					"data/subdir2-1/file2.txt",
+					"data/subdir2-1/file2.fastq.gz",
+				},
+			},
+			matchWith: "file3.txt",
+			error:     true,
+		},
+		{
+			name: "single matches",
+			manifest: DragenManifest{
+				Files: []string{
+					"data/subdir1/file1.txt",
+					"data/subdir1/file1.fastq.gz",
+					"data/subdir2/file2.txt",
+					"data/subdir2/file2.fastq.gz",
+					"data/subdir2-1/file2.txt",
+					"data/subdir2-1/file2.fastq.gz",
+				},
+			},
+			matchWith: "file1.fastq.gz",
+			match:     "data/subdir1/file1.fastq.gz",
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			match, err := c.manifest.FindFile(c.matchWith)
+			if c.error != (err != nil) {
+				t.Fatalf("expected error to be %t, got %q", c.error, err)
+			}
+			if match != c.match {
+				t.Fatalf("expected %s, got %s", c.match, match)
 			}
 		})
 	}
@@ -411,20 +478,26 @@ func TestGetFiles(t *testing.T) {
 		name     string
 		analysis Analysis
 		filetype AnalysisFileType
+		level    AnalysisLevel
+		parentId string
 		files    []string
 	}{
 		{
 			name: "no fastq files",
 			analysis: Analysis{
 				Path: "/path/to/analysis/1",
-				Files: []AnalysisFile{
+				OutputFiles: []AnalysisFile{
 					{
 						Path:     "data/sample1.vcf.gz",
 						FileType: FileSnvVcf,
+						Level:    LevelSample,
+						ParentId: "sample1",
 					},
 					{
 						Path:     "data/sample2.vcf.gz",
 						FileType: FileSnvVcf,
+						Level:    LevelSample,
+						ParentId: "sample1",
 					},
 				},
 			},
@@ -432,28 +505,123 @@ func TestGetFiles(t *testing.T) {
 			files:    []string{},
 		},
 		{
-			name: "1 fastq file",
+			name: "2 fastq files",
 			analysis: Analysis{
 				Path: "/path/to/analysis/1",
-				Files: []AnalysisFile{
+				OutputFiles: []AnalysisFile{
 					{
 						Path:     "data/sample1.vcf.gz",
 						FileType: FileSnvVcf,
+						Level:    LevelSample,
+						ParentId: "sample1",
 					},
 					{
 						Path:     "data/sample1.fastq.gz",
 						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample1",
+					},
+					{
+						Path:     "data/sample2.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample2",
 					},
 				},
 			},
 			filetype: FileFastq,
-			files:    []string{"/path/to/analysis/1/data/sample1.fastq.gz"},
+			level:    LevelSample,
+			files: []string{
+				"/path/to/analysis/1/data/sample1.fastq.gz",
+				"/path/to/analysis/1/data/sample2.fastq.gz",
+			},
+		},
+		{
+			name: "1 fastq files for specific sample",
+			analysis: Analysis{
+				Path: "/path/to/analysis/1",
+				OutputFiles: []AnalysisFile{
+					{
+						Path:     "data/sample1.vcf.gz",
+						FileType: FileSnvVcf,
+						Level:    LevelSample,
+						ParentId: "sample1",
+					},
+					{
+						Path:     "data/sample1.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample1",
+					},
+					{
+						Path:     "data/sample2.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample2",
+					},
+				},
+			},
+			filetype: FileFastq,
+			level:    LevelSample,
+			parentId: "sample1",
+			files: []string{
+				"/path/to/analysis/1/data/sample1.fastq.gz",
+			},
+		},
+		{
+			name: "3 run level text files",
+			analysis: Analysis{
+				Path: "/path/to/analysis/1",
+				OutputFiles: []AnalysisFile{
+					{
+						Path:     "data/stats1.tsv",
+						FileType: FileText,
+						Level:    LevelRun,
+						ParentId: "run1",
+					},
+					{
+						Path:     "data/sample1.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample1",
+					},
+					{
+						Path:     "data/stats2.csv",
+						FileType: FileText,
+						Level:    LevelRun,
+						ParentId: "run1",
+					},
+					{
+						Path:     "data/sample2.fastq.gz",
+						FileType: FileFastq,
+						Level:    LevelSample,
+						ParentId: "sample2",
+					},
+					{
+						Path:     "data/stats3.txt",
+						FileType: FileText,
+						Level:    LevelRun,
+						ParentId: "run1",
+					},
+				},
+			},
+			filetype: FileText,
+			level:    LevelRun,
+			files: []string{
+				"/path/to/analysis/1/data/stats1.tsv",
+				"/path/to/analysis/1/data/stats2.csv",
+				"/path/to/analysis/1/data/stats3.txt",
+			},
 		},
 	}
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
-			files := c.analysis.GetFiles(c.filetype)
+			files := c.analysis.GetFiles(AnalysisFileFilter{
+				FileType: c.filetype,
+				Level:    c.level,
+				ParentId: c.parentId,
+			})
 			if len(files) != len(c.files) {
 				t.Fatalf("expected %d files, got %d", len(c.files), len(files))
 			}
@@ -472,26 +640,31 @@ func TestUnmarshalJSONLevel(t *testing.T) {
 		json    []byte
 		expect  AnalysisLevel
 		isError bool
+		isValid bool
 	}{
 		{
-			name:   "level run",
-			json:   []byte(`"run"`),
-			expect: LevelRun,
+			name:    "level run",
+			json:    []byte(`"run"`),
+			expect:  LevelRun,
+			isValid: true,
 		},
 		{
-			name:   "level case",
-			json:   []byte(`"case"`),
-			expect: LevelCase,
+			name:    "level case",
+			json:    []byte(`"case"`),
+			expect:  LevelCase,
+			isValid: true,
 		},
 		{
-			name:   "level sample",
-			json:   []byte(`"sample"`),
-			expect: LevelSample,
+			name:    "level sample",
+			json:    []byte(`"sample"`),
+			expect:  LevelSample,
+			isValid: true,
 		},
 		{
 			name:    "empty string",
 			json:    []byte(`""`),
-			isError: true,
+			expect:  0,
+			isValid: false,
 		},
 	}
 
@@ -505,6 +678,9 @@ func TestUnmarshalJSONLevel(t *testing.T) {
 			if err != nil && l != c.expect {
 				t.Errorf("expected level %s, got %s", c.expect, l)
 			}
+			if c.isValid != l.IsValid() {
+				t.Errorf("expected IsValid to be %t, got %t", c.isValid, l.IsValid())
+			}
 		})
 	}
 }
@@ -514,22 +690,27 @@ func TestBSONLevel(t *testing.T) {
 		name    string
 		level   AnalysisLevel
 		isError bool
+		isValid bool
 	}{
 		{
-			name:  "level run",
-			level: LevelRun,
+			name:    "level run",
+			level:   LevelRun,
+			isValid: true,
 		},
 		{
-			name:  "level case",
-			level: LevelCase,
+			name:    "level case",
+			level:   LevelCase,
+			isValid: true,
 		},
 		{
-			name:  "level sample",
-			level: LevelSample,
+			name:    "level sample",
+			level:   LevelSample,
+			isValid: true,
 		},
 		{
 			name:    "empty string",
-			isError: true,
+			level:   0,
+			isValid: false,
 		},
 	}
 
@@ -546,8 +727,8 @@ func TestBSONLevel(t *testing.T) {
 			if c.isError != (err != nil) {
 				t.Fatalf("isError is %t, but got %s", c.isError, err)
 			}
-			if err == nil && !tmp.Level.IsValid() {
-				t.Errorf("level is invalid: %s", c.level)
+			if c.isValid != tmp.Level.IsValid() {
+				t.Errorf("expected IsValid to be %t, got %t", c.isValid, tmp.Level.IsValid())
 			}
 			if err == nil && tmp.Level != c.level {
 				t.Errorf("expected level %s, got %s", c.level, tmp.Level)

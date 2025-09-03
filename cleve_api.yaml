@@ -82,7 +82,7 @@ endpoints:
   - path: /runs/{run_id}/analyses
     method: GET
     section: runs
-    description: Get analyses associated with the run
+    description: Get all analyses associated with the run
     params:
       - key: run_id
         type: string
@@ -109,7 +109,7 @@ endpoints:
   - path: /runs/{run_id}/analyses/{analysis_id}
     method: GET
     section: runs
-    description: Get a single analysis associated with the run
+    description: Get a specific analysis associated with the run
     params:
       - key: run_id
         type: string
@@ -207,13 +207,9 @@ endpoints:
         type: integer
         description: number of items per page
         default: 10
-      - key: analysis_id
+      - key: run_id
         type: string
-        description: analysis ID to filter on
-        required: false
-      - key: parent_id
-        type: string
-        description: analysis parent ID to filter on
+        description: run ID to filter on
         required: false
       - key: state
         type: string
@@ -223,31 +219,43 @@ endpoints:
         type: string
         description: analysis software to filter on
         required: false
-      - key: level
+
+  - path: /analyses/{analysis_id}
+    method: GET
+    section: analysis
+    description: Get an analysis by ID
+    params:
+      - key: analysis_id
         type: string
-        description: analysis level to filter on
+        description: the ID of the analysis to get
+        required: false
+    query_params:
+      - key: run_id
+        type: string
+        description: constrain the analysis to a specific run
         required: false
 
   - path: /analyses
     method: POST
     section: analysis
     description: Add an analysis
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
     params:
       - key: analysis_id
         type: string
         description: analysis ID
         required: true
-      - key: parent_id
+      - key: run_id
         type: string
-        description: analysis parent ID
+        description: ID of the sequencing run that this analysis is primarily associated with
         required: true
       - key: path
         type: string
         description: absolute path to the analysis directory
-        required: true
-      - key: level
-        type: string
-        description: analysis level
         required: true
       - key: state
         type: string
@@ -261,41 +269,55 @@ endpoints:
         type: string
         description: analysis software version
         required: true
-      - key: files
+      - key: input_files
         type: array
         description: >
-          An array of file objects with the mandatory keys `path` (string) and `type` (string)
-          which represent the path to the file relative to the analysis directory path, and
-          the file type, respectively.
+          An array of file filter objects with the mandatory keys `analysis_id` (string) and `level`
+          (string) which represent the ID of the analysis in which the files were generated, and the
+          analysis level (run/case/sample) that the file represents, respectively. In addition, at least
+          one of the keys `parent_id` (string), `name` (string)`, or `type` (string) are required in order
+          to unambiguously resolve the paths to the files.
+        required: false
+      - key: output_files
+        type: array
+        description: >
+          An array of file objects with the mandatory keys `path` (string), `type` (string),
+          `level` (string), and `parent_id` (string) which represent the path to the file
+          relative to the analysis directory path, the file type, the analysis level that the
+          file represents (run, case, or sample), and the ID of the run/case/sample that the
+          file is associated with, respectively.
         required: false
 
-  - path: /analyses/{parent_id}/{analysis_id}
+  - path: /analyses/{analysis_id}
     method: PATCH
     section: analysis
     description: Update an analysis
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
     params:
       - key: analysis_id
         type: string
         description: analysis ID
         required: true
-      - key: parent_id
-        type: string
-        description: analysis parent ID
-        required: true
       - key: path
         type: string
-        description: path to the analysis
+        description: new path to the analysis
         required: false
       - key: state
         type: string
-        description: analysis state
+        description: new analysis state
         required: false
       - key: files
         type: array
         description: >
-          An array of file objects with the mandatory keys `path` (string) and `type` (string)
-          which represent the path to the file relative to the analysis directory path, and
-          the file type, respectively.
+          An array of file objects with the mandatory keys `path` (string), `type` (string),
+          `level` (string), and `parent_id` (string) which represent the path to the file
+          relative to the analysis directory path, the file type, the analysis level that the
+          file represents (run, case, or sample), and the ID of the run/case/sample that the
+          file is associated with, respectively.
         required: false
 
   - path: /samples

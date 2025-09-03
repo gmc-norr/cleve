@@ -12,15 +12,15 @@ import (
 // Interface for reading analyses from the database.
 type AnalysisGetter interface {
 	Analyses(cleve.AnalysisFilter) (cleve.AnalysisResult, error)
-	Analysis(analysisId string, parentId string) (*cleve.Analysis, error)
+	Analysis(analysisId string, runId ...string) (*cleve.Analysis, error)
 }
 
 // Interface for storing/updating analyses in the database.
 type AnalysisSetter interface {
 	CreateAnalysis(*cleve.Analysis) error
-	SetAnalysisState(analysisId string, parentId string, state cleve.State) error
-	SetAnalysisPath(analysisId string, parentId string, path string) error
-	SetAnalysisFiles(analysisId string, parentId string, files []cleve.AnalysisFile) error
+	SetAnalysisState(analysisId string, state cleve.State) error
+	SetAnalysisPath(analysisId string, path string) error
+	SetAnalysisFiles(analysisId string, files []cleve.AnalysisFile) error
 }
 
 // Interface for both getting and storing/updating analyses.
@@ -29,24 +29,16 @@ type AnalysisGetterSetter interface {
 	AnalysisSetter
 }
 
-func AnalysesHandler(db AnalysisGetter, level cleve.AnalysisLevel) gin.HandlerFunc {
-	var parentIdKey string
-	switch level {
-	case cleve.LevelRun:
-		parentIdKey = "runId"
-	case cleve.LevelCase:
-		parentIdKey = "caseId"
-	case cleve.LevelSample:
-		parentIdKey = "sampleId"
-	}
+func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		runId := c.Param("runId")
 		filter, err := getAnalysisFilter(c)
+		if runId != "" {
+			filter.RunId = runId
+		}
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
-		}
-		if parentIdKey != "" {
-			filter.ParentId = c.Param(parentIdKey)
 		}
 		analyses, err := db.Analyses(filter)
 		if err != nil {
@@ -61,31 +53,23 @@ func AnalysesHandler(db AnalysisGetter, level cleve.AnalysisLevel) gin.HandlerFu
 	}
 }
 
-func AnalysisHandler(db AnalysisGetter, level cleve.AnalysisLevel) gin.HandlerFunc {
-	var parentIdKey string
-	switch level {
-	case cleve.LevelRun:
-		parentIdKey = "runId"
-	case cleve.LevelCase:
-		parentIdKey = "caseId"
-	case cleve.LevelSample:
-		parentIdKey = "sampleId"
-	default:
-		parentIdKey = "parentId"
-	}
+func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		parentId := c.Param(parentIdKey)
 		analysisId := c.Param("analysisId")
-		analysis, err := db.Analysis(analysisId, parentId)
+		runId := c.Param("runId")
+		analysis, err := db.Analysis(analysisId, runId)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
+				payload := gin.H{
+					"error":       "analysis not found",
+					"analysis_id": analysisId,
+				}
+				if runId != "" {
+					payload["run_id"] = runId
+				}
 				c.AbortWithStatusJSON(
 					http.StatusNotFound,
-					gin.H{
-						"error":       "analysis not found",
-						"parent_id":   parentId,
-						"analysis_id": analysisId,
-					},
+					payload,
 				)
 				return
 			}
@@ -99,14 +83,14 @@ func AnalysisHandler(db AnalysisGetter, level cleve.AnalysisLevel) gin.HandlerFu
 func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var params struct {
-			Path            string               `json:"path" binding:"required"`
-			AnalysisId      string               `json:"analysis_id" binding:"required"`
-			ParentId        string               `json:"parent_id" binding:"required"`
-			Level           cleve.AnalysisLevel  `json:"level" binding:"required"`
-			State           cleve.State          `json:"state" binding:"required"`
-			Software        string               `json:"software" binding:"required"`
-			SoftwareVersion string               `json:"software_version" binding:"required"`
-			Files           []cleve.AnalysisFile `json:"files"`
+			Path            string                     `json:"path" binding:"required"`
+			RunId           string                     `json:"run_id" binding:"required"`
+			AnalysisId      string                     `json:"analysis_id" binding:"required"`
+			State           cleve.State                `json:"state" binding:"required"`
+			Software        string                     `json:"software" binding:"required"`
+			SoftwareVersion string                     `json:"software_version" binding:"required"`
+			InputFiles      []cleve.AnalysisFileFilter `json:"input_files"`
+			OutputFiles     []cleve.AnalysisFile       `json:"output_files"`
 		}
 
 		if err := c.ShouldBind(&params); err != nil {
@@ -119,28 +103,26 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 
 		a := cleve.Analysis{
 			AnalysisId:      params.AnalysisId,
-			ParentId:        params.ParentId,
-			Level:           params.Level,
+			Runs:            []string{params.RunId},
 			Path:            params.Path,
 			Software:        params.Software,
 			SoftwareVersion: params.SoftwareVersion,
-			Files:           params.Files,
+			InputFiles:      params.InputFiles,
+			OutputFiles:     params.OutputFiles,
 		}
 		a.StateHistory.Add(params.State)
-		if a.Files == nil {
-			a.Files = make([]cleve.AnalysisFile, 0)
+		if a.OutputFiles == nil {
+			a.OutputFiles = make([]cleve.AnalysisFile, 0)
 		}
 
 		// Check that the analysis doesn't already exist
-		_, err := db.Analysis(a.AnalysisId, a.ParentId)
+		_, err := db.Analysis(a.AnalysisId)
 		if err == nil {
 			c.AbortWithStatusJSON(
 				http.StatusConflict,
 				gin.H{
 					"error":       "analysis already exists",
-					"parent_id":   a.ParentId,
 					"analysis_id": a.AnalysisId,
-					"level":       a.Level,
 				},
 			)
 			return
@@ -155,6 +137,30 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			return
 		}
 
+		// Check the input files
+		for _, f := range params.InputFiles {
+			if err := f.Validate(); err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error":   "invalid input file entry",
+					"details": err.Error(),
+					"file":    f,
+				})
+				return
+			}
+		}
+
+		// Check the output files
+		for _, f := range params.OutputFiles {
+			if err := f.Validate(); err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error":   "invalid output file entry",
+					"details": err.Error(),
+					"file":    f,
+				})
+				return
+			}
+		}
+
 		if err := db.CreateAnalysis(&a); err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
@@ -165,27 +171,13 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":     "analysis added",
-			"parent_id":   a.ParentId,
 			"analysis_id": a.AnalysisId,
-			"level":       a.Level,
 		})
 	}
 }
 
-func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.HandlerFunc {
-	var parentIdKey string
-	switch level {
-	case cleve.LevelRun:
-		parentIdKey = "runId"
-	case cleve.LevelCase:
-		parentIdKey = "caseId"
-	case cleve.LevelSample:
-		parentIdKey = "sampleId"
-	default:
-		parentIdKey = "parentId"
-	}
+func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		parentId := c.Param(parentIdKey)
 		analysisId := c.Param("analysisId")
 		stateUpdated := false
 		pathUpdated := false
@@ -203,14 +195,12 @@ func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.Han
 		}
 
 		if updateRequest.State.IsValid() {
-			err := db.SetAnalysisState(analysisId, parentId, updateRequest.State)
+			err := db.SetAnalysisState(analysisId, updateRequest.State)
 			if err != nil {
 				if err == mongo.ErrNoDocuments {
 					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 						"error":       "analysis not found",
-						"parent_id":   parentId,
 						"analysis_id": analysisId,
-						"level":       level,
 					})
 					return
 				}
@@ -224,14 +214,12 @@ func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.Han
 		}
 
 		if updateRequest.Path != "" {
-			err := db.SetAnalysisPath(analysisId, parentId, updateRequest.Path)
+			err := db.SetAnalysisPath(analysisId, updateRequest.Path)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {
 					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 						"error":       "analysis not found",
-						"parent_id":   parentId,
 						"analysis_id": analysisId,
-						"level":       level,
 					})
 					return
 				}
@@ -245,14 +233,22 @@ func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.Han
 		}
 
 		if len(updateRequest.Files) > 0 {
-			err := db.SetAnalysisFiles(analysisId, parentId, updateRequest.Files)
+			for _, f := range updateRequest.Files {
+				if err := f.Validate(); err != nil {
+					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+						"error":   "invalid file entry",
+						"details": err.Error(),
+						"file":    f,
+					})
+					return
+				}
+			}
+			err := db.SetAnalysisFiles(analysisId, updateRequest.Files)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {
 					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 						"error":       "analysis not found",
-						"parent_id":   parentId,
 						"analysis_id": analysisId,
-						"level":       level,
 					})
 					return
 				}
@@ -272,7 +268,6 @@ func UpdateAnalysisHandler(db AnalysisSetter, level cleve.AnalysisLevel) gin.Han
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":       msg,
-			"parent_id":     parentId,
 			"analysis_id":   analysisId,
 			"updated_state": stateUpdated,
 			"updated_path":  pathUpdated,
