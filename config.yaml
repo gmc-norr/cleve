@@ -13,7 +13,7 @@ logfile: cleve.log
 # How often, in seconds, that Cleve should poll runs in the database
 # for state changes. Setting this too low could potentially have big
 # impact on I/O. The default is 30 seconds.
-run_polling_interval: 30
+run_poll_interval: 30
 
 # Path to a yaml file containing the api specification
 apidoc: cleve_api.yaml
