@@ -138,11 +138,11 @@ func NewAnalysisFilter() AnalysisFilter {
 
 // Analysis file filtering
 type AnalysisFileFilter struct {
-	AnalysisId string           `form:"analysis_id" bson:"analysis_id,omitzero" json:"analysis_id,omitzero"`
-	FileType   AnalysisFileType `form:"type" bson:"type,omitzero" json:"type,omitzero"`
-	Level      AnalysisLevel    `form:"level" bson:"level,omitzero" json:"level,omitzero"`
-	ParentId   string           `form:"parent_id" bson:"parent_id,omitzero" json:"parent_id,omitzero"`
-	Name       string           `form:"name" bson:"name,omitzero" json:"name,omitzero"`
+	AnalysisId string           `form:"analysis_id" bson:"analysis_id,omitempty" json:"analysis_id,omitzero"`
+	FileType   AnalysisFileType `form:"type" bson:"type,omitempty" json:"type,omitzero"`
+	Level      AnalysisLevel    `form:"level" bson:"level,omitempty" json:"level,omitzero"`
+	ParentId   string           `form:"parent_id" bson:"parent_id,omitempty" json:"parent_id,omitzero"`
+	Name       string           `form:"name" bson:"name,omitempty" json:"name,omitzero"`
 	Pattern    *regexp.Regexp   `form:"-" bson:"-" json:"-"`
 }
 
