@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/gmc-norr/cleve"
@@ -231,6 +232,11 @@ func (w *DragenAnalysisWatcher) Poll() {
 			// Known analyses
 			analysisPaths := make([]string, 0)
 			for _, a := range analyses.Analyses {
+				if !strings.HasPrefix(a.Path, r.Path) {
+					// If the analysis is not a direct child of this run, skip it.
+					// This should normally not happen for Dragen analyses.
+					continue
+				}
 				s := a.StateHistory.LastState()
 				currentState := a.DetectState()
 				w.logger.Debug("existing analysis", "id", a.AnalysisId, "run_ids", a.Runs, "path", a.Path, "state", s, "detected_state", currentState)
