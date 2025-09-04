@@ -217,7 +217,11 @@ endpoints:
         required: false
       - key: software
         type: string
-        description: analysis software to filter on
+        description: analysis software to filter on, cannot be used together with `software_pattern`
+        required: false
+      - key: software_pattern
+        type: string
+        description: regex that will be matched against analysis software, cannot be used together with `software`
         required: false
 
   - path: /analyses/{analysis_id}

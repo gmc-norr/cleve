@@ -126,6 +126,7 @@ type AnalysisFilter struct {
 	AnalysisId       string `form:"analysis_id"`
 	RunId            string `form:"run_id"`
 	Software         string `form:"software"`
+	SoftwarePattern  string `form:"software_pattern"`
 	State            State  `form:"state"`
 	PaginationFilter `form:",inline"`
 }
@@ -134,6 +135,14 @@ func NewAnalysisFilter() AnalysisFilter {
 	return AnalysisFilter{
 		PaginationFilter: NewPaginationFilter(),
 	}
+}
+
+func (f *AnalysisFilter) Validate() error {
+	errs := []error{f.PaginationFilter.Validate()}
+	if f.Software != "" && f.SoftwarePattern != "" {
+		errs = append(errs, fmt.Errorf("only one of software and software pattern can be used"))
+	}
+	return errors.Join(errs...)
 }
 
 // Analysis file filtering

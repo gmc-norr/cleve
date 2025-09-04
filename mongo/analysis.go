@@ -8,6 +8,7 @@ import (
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -35,6 +36,16 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "runs", Value: filter.RunId},
+			}},
+		})
+	}
+
+	if filter.SoftwarePattern != "" {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "software", Value: bson.D{
+					{Key: "$regex", Value: primitive.Regex{Pattern: filter.SoftwarePattern, Options: "i"}},
+				}},
 			}},
 		})
 	}
