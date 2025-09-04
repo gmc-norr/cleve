@@ -1,7 +1,10 @@
 package watcher
 
 import (
+	"io/fs"
 	"log/slog"
+	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/gmc-norr/cleve"
@@ -202,5 +205,85 @@ func (w *DragenAnalysisWatcher) Stop() {
 
 func (w *DragenAnalysisWatcher) Poll() {
 	w.logger.Debug("dragen analysis watcher start poll")
+	w.runFilter.Page = 1
+	events := make([]AnalysisWatcherEvent, 0)
+	for {
+		w.logger.Debug("fetching runs", "page", w.runFilter.Page)
+		runs, err := w.store.Runs(w.runFilter)
+		if err != nil {
+			w.logger.Error("failed to get runs", "error", err)
+		}
+		w.logger.Debug("got runs", "pagination", runs.PaginationMetadata)
+		if runs.Count == 0 {
+			w.logger.Debug("no runs, bail out")
+			break
+		}
+		for _, r := range runs.Runs {
+			filter := cleve.NewAnalysisFilter()
+			filter.PageSize = 0 // Disable pagination
+			filter.RunId = r.RunID
+			analyses, err := w.store.Analyses(filter)
+			if err != nil {
+				w.logger.Error("failed to get analyses", "error", err)
+			}
+			w.logger.Debug("got analyses", "pagination", analyses.PaginationMetadata)
+
+			// Known analyses
+			analysisPaths := make([]string, 0)
+			for _, a := range analyses.Analyses {
+				s := a.StateHistory.LastState()
+				currentState := a.DetectState()
+				w.logger.Debug("existing analysis", "id", a.AnalysisId, "run_ids", a.Runs, "path", a.Path, "state", s, "detected_state", currentState)
+				if currentState != s {
+					w.logger.Info("state change", "id", a.AnalysisId, "old_state", s, "new_state", currentState)
+					events = append(events, AnalysisWatcherEvent{
+						Analysis:     a,
+						State:        currentState,
+						StateChanged: true,
+					})
+				}
+				analysisPaths = append(analysisPaths, a.Path)
+			}
+
+			analysisRoot := filepath.Join(r.Path, w.analysisRoot)
+			w.logger.Debug("looking for analyses", "path", analysisRoot)
+			err = filepath.WalkDir(analysisRoot, func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					w.logger.Warn("failed to read directory", "path", path, "error", err)
+					return filepath.SkipDir
+				}
+				if !d.IsDir() || path == analysisRoot {
+					return nil
+				}
+				w.logger.Debug("checking potential analysis directory", "path", path)
+				if slices.Contains(analysisPaths, path) {
+					w.logger.Debug("analysis already added", "path", path)
+					return filepath.SkipDir
+				}
+				w.logger.Debug("new analysis found", "path", path)
+				newAnalysis, err := cleve.NewDragenAnalysis(path, r)
+				if err != nil {
+					w.logger.Error("failed to read analysis", "path", path, "error", err)
+				}
+				events = append(events, AnalysisWatcherEvent{
+					Analysis: &newAnalysis,
+					State:    newAnalysis.StateHistory.LastState(),
+					New:      true,
+				})
+				return filepath.SkipDir
+			})
+			if err != nil {
+				w.logger.Error("failed to walk analyses", "path", analysisRoot)
+			}
+		}
+		if w.runFilter.Page >= runs.TotalPages {
+			break
+		}
+		w.runFilter.Page += 1
+	}
+	if len(events) > 0 {
+		w.logger.Debug("emitting events", "count", len(events))
+		w.emit <- events
+	}
 	w.logger.Debug("dragen analysis watcher end poll")
 }
