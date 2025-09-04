@@ -26,6 +26,14 @@ var (
 	}
 )
 
+func IsRegexError(err error) bool {
+	var cmderr mongo.CommandError
+	if ok := errors.As(err, &cmderr); !ok {
+		return false
+	}
+	return cmderr.HasErrorCode(51091)
+}
+
 type DB struct {
 	*mongo.Database
 }

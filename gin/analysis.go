@@ -46,6 +46,10 @@ func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 				c.JSON(http.StatusOK, analyses)
 				return
 			}
+			if mongo.IsRegexError(err) {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
