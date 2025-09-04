@@ -264,6 +264,44 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 				{{dir: "Analysis/1", copyComplete: true, secondaryAnalysisComplete: true}},
 			},
 		},
+		{
+			// Single analysis pointing to two individual runs, only one event should be emitted.
+			// This particular case shouldn't be possible for Dragen analyses, but it should be
+			// covered for the sake of completeness.
+			name: "two runs single pending analysis",
+			dbRuns: []*cleve.Run{
+				{
+					RunID:        "run1",
+					Path:         t.TempDir(),
+					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateReady}},
+					RunParameters: interop.RunParameters{
+						Software: []interop.Software{{Name: "Dragen", Version: "4.3.16"}},
+					},
+				},
+				{
+					RunID:        "run2",
+					Path:         t.TempDir(),
+					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateReady}},
+					RunParameters: interop.RunParameters{
+						Software: []interop.Software{{Name: "Dragen", Version: "4.3.16"}},
+					},
+				},
+			},
+			dbAnalyses: []*cleve.Analysis{
+				{
+					AnalysisId:   "run2_1_bclconvert",
+					Runs:         []string{"run1", "run2"},
+					Path:         "Analysis/1",
+					Software:     "Dragen BCLConvert",
+					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateReady}},
+				},
+			},
+			events: []AnalysisWatcherEvent{{New: true, State: cleve.StatePending, StateChanged: false}},
+			diskAnalyses: [][]*diskAnalysis{
+				nil,
+				{{dir: "Analysis/1", copyComplete: false, secondaryAnalysisComplete: false}},
+			},
+		},
 	}
 
 	db := struct {
