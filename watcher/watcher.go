@@ -227,9 +227,9 @@ func (w *DragenAnalysisWatcher) Poll() {
 			if err != nil {
 				w.logger.Error("failed to get analyses", "error", err)
 			}
-			w.logger.Debug("got analyses", "pagination", analyses.PaginationMetadata)
 
-			// Known analyses
+			w.logger.Debug("checking states for existing analyses", "run_id", r.RunID)
+
 			analysisPaths := make([]string, 0)
 			for _, a := range analyses.Analyses {
 				if !strings.HasPrefix(a.Path, r.Path) {
@@ -239,9 +239,9 @@ func (w *DragenAnalysisWatcher) Poll() {
 				}
 				s := a.StateHistory.LastState()
 				currentState := a.DetectState()
-				w.logger.Debug("existing analysis", "id", a.AnalysisId, "run_ids", a.Runs, "path", a.Path, "state", s, "detected_state", currentState)
+				slog.Debug("analysis state", "analysis_id", a.AnalysisId, "analysis_path", a.Path, "known_state", s, "current_state", currentState)
 				if currentState != s {
-					w.logger.Info("state change", "id", a.AnalysisId, "old_state", s, "new_state", currentState)
+					w.logger.Info("analysis state changed", "id", a.AnalysisId, "old_state", s, "new_state", currentState)
 					events = append(events, AnalysisWatcherEvent{
 						Analysis:     a,
 						State:        currentState,
@@ -252,7 +252,7 @@ func (w *DragenAnalysisWatcher) Poll() {
 			}
 
 			analysisRoot := filepath.Join(r.Path, w.analysisRoot)
-			w.logger.Debug("looking for analyses", "path", analysisRoot)
+			w.logger.Debug("looking for new analyses", "run_id", r.RunID, "path", analysisRoot)
 			err = filepath.WalkDir(analysisRoot, func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
 					w.logger.Warn("failed to read directory", "path", path, "error", err)
@@ -263,10 +263,10 @@ func (w *DragenAnalysisWatcher) Poll() {
 				}
 				w.logger.Debug("checking potential analysis directory", "path", path)
 				if slices.Contains(analysisPaths, path) {
-					w.logger.Debug("analysis already added", "path", path)
+					w.logger.Debug("analysis already added to database", "path", path)
 					return filepath.SkipDir
 				}
-				w.logger.Debug("new analysis found", "path", path)
+				w.logger.Debug("new analysis found", "run_id", r.RunID, "path", path)
 				newAnalysis, err := cleve.NewDragenAnalysis(path, r)
 				if err != nil {
 					w.logger.Error("failed to read analysis", "path", path, "error", err)
@@ -288,7 +288,7 @@ func (w *DragenAnalysisWatcher) Poll() {
 		w.runFilter.Page += 1
 	}
 	if len(events) > 0 {
-		w.logger.Debug("emitting events", "count", len(events))
+		w.logger.Debug("emitting dragen analysis watcher events", "count", len(events))
 		w.emit <- events
 	}
 	w.logger.Debug("dragen analysis watcher end poll")
