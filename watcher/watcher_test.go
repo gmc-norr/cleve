@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -13,23 +14,20 @@ import (
 	"github.com/gmc-norr/cleve/mock"
 )
 
-func assertTrue(t *testing.T, assertion func() bool, maxRetries int, waitTime time.Duration) {
+// tryConsumeChannel will try to consume a single value from a channel.
+// The resulting value is returned, but if the channel stays blocked for
+// all retries, an error is returned.
+func tryConsumeChannel[T any](ch chan T, maxRetries int, waitTime time.Duration) (T, error) {
+	var v T
 	for range maxRetries {
-		if assertion() {
-			return
+		select {
+		case v = <-ch:
+			return v, nil
+		case <-time.After(waitTime):
+			time.Sleep(waitTime)
 		}
-		time.Sleep(waitTime)
 	}
-	t.Fail()
-}
-
-func assertFalse(t *testing.T, assertion func() bool, maxRetries int, waitTime time.Duration) {
-	for range maxRetries {
-		if assertion() {
-			t.Fail()
-		}
-		time.Sleep(waitTime)
-	}
+	return v, fmt.Errorf("failed to read from channel")
 }
 
 func TestRunWatcher(t *testing.T) {
@@ -155,7 +153,7 @@ func TestRunWatcher(t *testing.T) {
 				}, nil
 			}
 			w := NewRunWatcher(1*time.Minute, &db, logger)
-			events := w.Start()
+			eventCh := w.Start()
 			defer w.Stop()
 
 			for _, r := range c.dbRuns.Runs {
@@ -163,22 +161,13 @@ func TestRunWatcher(t *testing.T) {
 			}
 
 			go w.Poll()
-			assertFunc := assertTrue
-			if len(c.events) == 0 {
-				assertFunc = assertFalse
+			events, err := tryConsumeChannel(eventCh, 10, 10*time.Millisecond)
+			if err != nil && len(c.events) > 0 || len(events) != len(c.events) {
+				t.Fatalf("expected %d events, got %d", len(c.events), len(events))
 			}
-			var e []RunWatcherEvent
-			assertFunc(t, func() bool {
-				select {
-				case e = <-events:
-					return len(e) == len(c.events)
-				case <-time.After(5 * time.Millisecond):
-					return false
-				}
-			}, 10, 10*time.Millisecond)
 
-			for i, event := range e {
-				if event.Id != c.events[i].Id || event.State != c.events[i].State {
+			for i, e := range events {
+				if e.Id != c.events[i].Id || e.State != c.events[i].State {
 					t.Error("states mismatching")
 				}
 			}
@@ -388,21 +377,8 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 			defer w.Stop()
 
 			go w.Poll()
-			assertFunc := assertTrue
-			if len(c.events) == 0 {
-				assertFunc = assertFalse
-			}
-			var events []AnalysisWatcherEvent
-			assertFunc(t, func() bool {
-				select {
-				case events = <-eventCh:
-					return len(events) == len(c.events)
-				case <-time.After(5 * time.Millisecond):
-					return false
-				}
-			}, 10, 10*time.Millisecond)
-
-			if t.Failed() {
+			events, err := tryConsumeChannel(eventCh, 10, 10*time.Millisecond)
+			if err != nil && len(c.events) > 0 || len(events) != len(c.events) {
 				t.Fatalf("expected %d events, got %d", len(c.events), len(events))
 			}
 
