@@ -343,57 +343,107 @@ func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
 	analysis.StateHistory.Add(state)
 
 	if state == StateReady {
-		f, err := os.Open(filepath.Join(analysis.Path, "Manifest.tsv"))
+		files, err := bclConvertFiles(&analysis, summary)
 		if err != nil {
 			return analysis, err
 		}
-		defer func() { _ = f.Close() }()
-		manifest, err := ReadDragenManifest(f)
-		if err != nil {
-			return analysis, fmt.Errorf("failed to read dragen manifest: %w", err)
-		}
+		analysis.OutputFiles = files
+	}
 
-		// Stats files that are expected from BCLConvert
-		statsFiles := []string{"Demultiplex_Stats.csv", "Index_Hopping_Counts.csv", "Top_Unknown_Barcodes.csv"}
-		for _, sf := range statsFiles {
-			if f, err := manifest.FindFile(sf); err == nil {
-				analysis.OutputFiles = append(analysis.OutputFiles, AnalysisFile{
-					Path:     f,
-					FileType: FileText,
-					Level:    LevelRun,
-					ParentId: run.RunID,
-				})
-			} else {
-				slog.Warn("file not found in manifest", "name", sf)
+	return analysis, nil
+}
+
+// DetectState detects the state of a Dragen analysis. If the analysis is not
+// a Dragen analysis, the last known state of the analysis is returned.
+// A caveat of this method is that the Dragen state will only represent the
+// overall state of the analysis, not that of individual samples in the analysis.
+func (a *Analysis) DetectState() State {
+	if strings.HasPrefix(strings.ToLower(a.Software), "dragen") {
+		return dragenAnalysisState(a.Path)
+	}
+	return a.StateHistory.LastState()
+}
+
+// UpdateOutputFiles updates the output files for Dragen analyses. Nothing is done
+// for other types of analyses.
+func (a *Analysis) UpdateOutputFiles() error {
+	if strings.HasPrefix(strings.ToLower(a.Software), "dragen") {
+		if strings.Contains(strings.ToLower(a.Software), "bclconvert") {
+			var summary DragenAnalysisSummary
+			f, err := os.Open(filepath.Join(a.Path, "Data", "summary", a.SoftwareVersion, "detailed_summary.json"))
+			if err != nil {
+				return fmt.Errorf("failed to read dragen analysis summary: %w", err)
 			}
+			summary, err = ParseDragenAnalysisSummary(f)
+			if err != nil {
+				return fmt.Errorf("failed to parse dragen analysis summary: %w", err)
+			}
+			files, err := bclConvertFiles(a, summary)
+			if err != nil {
+				return err
+			}
+			a.OutputFiles = files
 		}
+	}
+	return nil
+}
 
-		for _, wf := range summary.Workflows {
-			for _, sample := range wf.Samples {
-				// Add the fastq files to the analysis
-				fqRegex, err := regexp.Compile(`^` + regexp.QuoteMeta(sample.SampleID) + `.*\.f(ast)?q(\.gz)?$`)
-				if err != nil {
-					return analysis, fmt.Errorf("failed to compile regex for sample fastq files: %w", err)
-				}
-				for _, f := range manifest.FindFiles(fqRegex) {
-					analysis.OutputFiles = append(analysis.OutputFiles, AnalysisFile{
-						Path:     f,
-						FileType: FileFastq,
-						Level:    LevelSample,
-						ParentId: sample.SampleID,
-					})
-				}
+func bclConvertFiles(analysis *Analysis, summary DragenAnalysisSummary) ([]AnalysisFile, error) {
+	f, err := os.Open(filepath.Join(analysis.Path, "Manifest.tsv"))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	manifest, err := ReadDragenManifest(f)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read dragen manifest: %w", err)
+	}
+
+	var files []AnalysisFile
+
+	// Stats files that are expected from BCLConvert
+	statsFiles := []string{"Demultiplex_Stats.csv", "Index_Hopping_Counts.csv", "Top_Unknown_Barcodes.csv"}
+	for _, sf := range statsFiles {
+		if f, err := manifest.FindFile(sf); err == nil {
+			files = append(files, AnalysisFile{
+				Path:     f,
+				FileType: FileText,
+				Level:    LevelRun,
+				ParentId: analysis.Runs[0],
+			})
+		} else {
+			slog.Warn("file not found in manifest", "name", sf)
+		}
+	}
+
+	for _, wf := range summary.Workflows {
+		for _, sample := range wf.Samples {
+			// Add the fastq files to the analysis
+			fqRegex, err := regexp.Compile(`^` + regexp.QuoteMeta(sample.SampleID) + `.*\.f(ast)?q(\.gz)?$`)
+			if err != nil {
+				return files, fmt.Errorf("failed to compile regex for sample fastq files: %w", err)
+			}
+			for _, f := range manifest.FindFiles(fqRegex) {
+				files = append(files, AnalysisFile{
+					Path:     f,
+					FileType: FileFastq,
+					Level:    LevelSample,
+					ParentId: sample.SampleID,
+				})
 			}
 		}
 	}
 
-	return analysis, nil
+	return files, nil
 }
 
 // dragenAnalysisState identifies the state of a Dragen analysis. This is just
 // a temporary state indicating whether the data is avaliable. The analysis could
 // still be in a bad/incomplete state, and this has to be checked downstream.
 func dragenAnalysisState(path string) State {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return StateMoved
+	}
 	copyComplete := filepath.Join(path, "CopyComplete.txt")
 	analysisComplete := filepath.Join(path, "Data", "Secondary_Analysis_Complete.txt")
 	if _, err := os.Stat(copyComplete); os.IsNotExist(err) {

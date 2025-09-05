@@ -8,6 +8,7 @@ import (
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -35,6 +36,16 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "runs", Value: filter.RunId},
+			}},
+		})
+	}
+
+	if filter.SoftwarePattern != "" {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "software", Value: bson.D{
+					{Key: "$regex", Value: primitive.Regex{Pattern: filter.SoftwarePattern, Options: "i"}},
+				}},
 			}},
 		})
 	}
@@ -183,6 +194,27 @@ func (db DB) CreateAnalysis(analysis *cleve.Analysis) error {
 		auxAnalysis,
 	)
 	return err
+}
+
+func (db DB) UpdateAnalysis(analysis *cleve.Analysis) error {
+	res, err := db.AnalysesCollection().UpdateOne(
+		context.TODO(),
+		bson.D{{Key: "analysis_id", Value: analysis.AnalysisId}},
+		bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "state_history", Value: analysis.StateHistory},
+				{Key: "output_files", Value: analysis.OutputFiles},
+			}},
+			{Key: "$currentDate", Value: bson.D{{Key: "updated", Value: true}}},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return ErrNoDocuments
+	}
+	return nil
 }
 
 func (db DB) SetAnalysisState(analysisId string, state cleve.State) error {

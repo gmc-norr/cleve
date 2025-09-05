@@ -78,3 +78,14 @@ func (h *RunHandler) SetRunState(runId string, state cleve.State) error {
 	h.SetRunStateInvoked = true
 	return h.SetRunStateFn(runId, state)
 }
+
+// Mock implementing the analysesHandler for DragenAnalysisWatcher
+type AnalysesHandler struct {
+	AnalysesFn      func(cleve.AnalysisFilter) (cleve.AnalysisResult, error)
+	AnalysesInvoked bool
+}
+
+func (h *AnalysesHandler) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error) {
+	h.AnalysesInvoked = true
+	return h.AnalysesFn(filter)
+}
