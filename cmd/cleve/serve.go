@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/gin"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/gmc-norr/cleve/watcher"
@@ -78,6 +79,27 @@ var (
 				for events := range analysisEvents {
 					for _, e := range events {
 						logger.Debug("analysis event", "analysis_id", e.Analysis.AnalysisId)
+						if e.New {
+							slog.Info("new analysis, adding", "path", e.Analysis.Path)
+							if err := db.CreateAnalysis(e.Analysis); err != nil {
+								logger.Error("failed to save analysis", "path", e.Analysis.Path, "analysis_id", e.Analysis.AnalysisId, "run_id", e.Analysis.AnalysisId, "error", err)
+							}
+							continue
+						}
+						if e.StateChanged {
+							slog.Info("updating analysis state", "analysis_id", e.Analysis.AnalysisId, "path", e.Analysis.Path, "state", e.Analysis.StateHistory.LastState(), "new_state", e.State)
+							e.Analysis.StateHistory.Add(e.Analysis.DetectState())
+							if e.State == cleve.StateReady {
+								slog.Info("updating analysis files", "analysis_id", e.Analysis.AnalysisId)
+								if err := e.Analysis.UpdateOutputFiles(); err != nil {
+									slog.Error("failed to update output files", "analysis_id", e.Analysis.AnalysisId, "error", err)
+									continue
+								}
+							}
+							if err := db.UpdateAnalysis(e.Analysis); err != nil {
+								slog.Error("failed to update analysis", "analysis_id", e.Analysis.AnalysisId, "error", err)
+							}
+						}
 					}
 				}
 			}()
