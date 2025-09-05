@@ -87,17 +87,17 @@ var (
 							continue
 						}
 						if e.StateChanged {
-							slog.Info("updating analysis state", "analysis_id", e.Analysis.AnalysisId, "path", e.Analysis.Path, "state", e.Analysis.StateHistory.LastState(), "new_state", e.State)
+							logger.Info("updating analysis state", "analysis_id", e.Analysis.AnalysisId, "path", e.Analysis.Path, "state", e.Analysis.StateHistory.LastState(), "new_state", e.State)
 							e.Analysis.StateHistory.Add(e.Analysis.DetectState())
 							if e.State == cleve.StateReady {
-								slog.Info("updating analysis files", "analysis_id", e.Analysis.AnalysisId)
+								logger.Info("updating analysis files", "analysis_id", e.Analysis.AnalysisId)
 								if err := e.Analysis.UpdateOutputFiles(); err != nil {
 									slog.Error("failed to update output files", "analysis_id", e.Analysis.AnalysisId, "error", err)
 									continue
 								}
 							}
 							if err := db.UpdateAnalysis(e.Analysis); err != nil {
-								slog.Error("failed to update analysis", "analysis_id", e.Analysis.AnalysisId, "error", err)
+								logger.Error("failed to update analysis", "analysis_id", e.Analysis.AnalysisId, "error", err)
 							}
 						}
 					}
