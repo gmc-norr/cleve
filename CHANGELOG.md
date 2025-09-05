@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.8.0](https://github.com/gmc-norr/cleve/compare/v0.7.0...v0.8.0) (2025-09-05)
+
+
+### Features
+
+* ability to update run metadata from API ([#120](https://github.com/gmc-norr/cleve/issues/120)) ([bbce877](https://github.com/gmc-norr/cleve/commit/bbce8777ea36e778057f1d4ec6c67e2120e77a6f))
+* ability to update run QC from API ([#121](https://github.com/gmc-norr/cleve/issues/121)) ([51dc9c5](https://github.com/gmc-norr/cleve/commit/51dc9c5d5d0f6f64a1c6b19988a891c27309de56))
+* add Dragen analysis watcher ([#134](https://github.com/gmc-norr/cleve/issues/134)) ([eae1fbe](https://github.com/gmc-norr/cleve/commit/eae1fbe4572ccb2f77c798b3f8d0b045f274a23f))
+* add functions for detecting run state ([#114](https://github.com/gmc-norr/cleve/issues/114)) ([ed1b529](https://github.com/gmc-norr/cleve/commit/ed1b5298af233ff6bf1ac2281c7a5c0bd4e92a55))
+* check run state in the background ([#117](https://github.com/gmc-norr/cleve/issues/117)) ([099dce0](https://github.com/gmc-norr/cleve/commit/099dce0793752ed9c12f725d49a3268979822884))
+* even more general handling of analyses ([#132](https://github.com/gmc-norr/cleve/issues/132)) ([80e5305](https://github.com/gmc-norr/cleve/commit/80e530524ec369e534948cc873f15d1b63eecd3e))
+* more general handling of analyses ([#123](https://github.com/gmc-norr/cleve/issues/123)) ([d636706](https://github.com/gmc-norr/cleve/commit/d636706e20756072e71de01b4adb86a4ef13a71a))
+* remove brief flag from runs ([#130](https://github.com/gmc-norr/cleve/issues/130)) ([cb3f90b](https://github.com/gmc-norr/cleve/commit/cb3f90b4e30276d2693bf7a748612c02f83fa355))
+* simplify run update endpoint ([#109](https://github.com/gmc-norr/cleve/issues/109)) ([b346fda](https://github.com/gmc-norr/cleve/commit/b346fdac8c88659954298d1ae90a9b31ef3a48e4))
+
+
+### Bug Fixes
+
+* add css class that was missed at some point ([518319b](https://github.com/gmc-norr/cleve/commit/518319beccb46a0adee9812bc12b5f97f3c9a098))
+* better run state update logic ([#119](https://github.com/gmc-norr/cleve/issues/119)) ([668ed43](https://github.com/gmc-norr/cleve/commit/668ed43f53ea3ae8450c4c108749b323385af6fc))
+* better watcher implementation ([#122](https://github.com/gmc-norr/cleve/issues/122)) ([fdcba20](https://github.com/gmc-norr/cleve/commit/fdcba20870ba1914c25a821cdba5169881675961))
+* correct name for run polling interval parameter ([#133](https://github.com/gmc-norr/cleve/issues/133)) ([77e5e59](https://github.com/gmc-norr/cleve/commit/77e5e596b49813bf6c6a0d0d67c2199ece2e03cf))
+* proper handling of latest run schema version ([#131](https://github.com/gmc-norr/cleve/issues/131)) ([00fc0a4](https://github.com/gmc-norr/cleve/commit/00fc0a424de7b7716554ddd7d00294d763025340))
+* update state handling in templates ([#124](https://github.com/gmc-norr/cleve/issues/124)) ([43dd743](https://github.com/gmc-norr/cleve/commit/43dd7435e115270e11b645ada4405a6f7bb05c9f))
+
 ## [0.7.0](https://github.com/gmc-norr/cleve/compare/v0.6.0...v0.7.0) (2025-06-18)
 
 
