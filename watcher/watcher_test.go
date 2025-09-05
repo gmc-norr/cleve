@@ -184,7 +184,7 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 	testcases := []struct {
 		name         string
 		dbRuns       []*cleve.Run
-		dbAnalyses   []*cleve.Analysis
+		dbAnalyses   [][]*cleve.Analysis
 		events       []AnalysisWatcherEvent
 		diskAnalyses [][]*diskAnalysis
 	}{
@@ -204,6 +204,7 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 					},
 				},
 			},
+			dbAnalyses: [][]*cleve.Analysis{nil},
 			diskAnalyses: [][]*diskAnalysis{
 				{{dir: "Analysis/1", copyComplete: false, secondaryAnalysisComplete: false}},
 			},
@@ -221,7 +222,8 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 					},
 				},
 			},
-			events: []AnalysisWatcherEvent{{New: true, State: cleve.StatePending}},
+			dbAnalyses: [][]*cleve.Analysis{nil},
+			events:     []AnalysisWatcherEvent{{New: true, State: cleve.StatePending}},
 			diskAnalyses: [][]*diskAnalysis{
 				{{dir: "Analysis/1", copyComplete: false, secondaryAnalysisComplete: false}},
 			},
@@ -239,13 +241,15 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 					},
 				},
 			},
-			dbAnalyses: []*cleve.Analysis{
+			dbAnalyses: [][]*cleve.Analysis{
 				{
-					AnalysisId:   "run1_1_bclconvert",
-					Runs:         []string{"run1"},
-					Path:         "Analysis/1",
-					Software:     "Dragen BCLConvert",
-					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StatePending}},
+					{
+						AnalysisId:   "run1_1_bclconvert",
+						Runs:         []string{"run1"},
+						Path:         "Analysis/1",
+						Software:     "Dragen BCLConvert",
+						StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StatePending}},
+					},
 				},
 			},
 			events: []AnalysisWatcherEvent{{New: false, State: cleve.StateReady, StateChanged: true}},
@@ -275,13 +279,16 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 					},
 				},
 			},
-			dbAnalyses: []*cleve.Analysis{
+			dbAnalyses: [][]*cleve.Analysis{
+				nil,
 				{
-					AnalysisId:   "run2_1_bclconvert",
-					Runs:         []string{"run1", "run2"},
-					Path:         "Analysis/1",
-					Software:     "Dragen BCLConvert",
-					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StatePending}},
+					{
+						AnalysisId:   "run2_1_bclconvert",
+						Runs:         []string{"run1", "run2"},
+						Path:         "Analysis/1",
+						Software:     "Dragen BCLConvert",
+						StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StatePending}},
+					},
 				},
 			},
 			diskAnalyses: [][]*diskAnalysis{
@@ -305,15 +312,15 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			db.RunsFn = func(filter cleve.RunFilter) (cleve.RunResult, error) {
 				var filteredRuns []*cleve.Run
-				// Set up analyses on disk
 				for i, r := range c.dbRuns {
-					diskAnalyses := c.diskAnalyses[i]
-					for _, a := range diskAnalyses {
-						if a == nil {
-							continue
-						}
+					if filter.State == r.StateHistory.LastState().String() {
+						filteredRuns = append(filteredRuns, r)
+					}
+					for _, a := range c.diskAnalyses[i] {
 						dir := filepath.Join(r.Path, a.dir)
-						if err := os.MkdirAll(filepath.Join(dir, "Data", "summary", r.RunParameters.Software[0].Version), 0o755); err != nil {
+						t.Logf("setting up analysis on disk for run %s in directory %s", r.RunID, dir)
+						dragenVersion := r.RunParameters.Software[0].Version
+						if err := os.MkdirAll(filepath.Join(dir, "Data", "summary", dragenVersion), 0o755); err != nil {
 							t.Fatal(err)
 						}
 						if a.copyComplete {
@@ -328,9 +335,17 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 								t.Fatal(err)
 							}
 						}
-					}
-					if filter.State == r.StateHistory.LastState().String() {
-						filteredRuns = append(filteredRuns, r)
+						if a.copyComplete && a.secondaryAnalysisComplete {
+							path := filepath.Join(dir, "Data", "summary", dragenVersion, "detailed_summary.json")
+							f, err := os.Create(path)
+							if err != nil {
+								t.Fatal(err)
+							}
+							defer func() { _ = f.Close() }()
+							if _, err := f.WriteString("{}"); err != nil {
+								t.Fatal(err)
+							}
+						}
 					}
 				}
 				runResult := cleve.RunResult{
@@ -347,10 +362,14 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 			}
 			db.AnalysesFn = func(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error) {
 				var runAnalyses []*cleve.Analysis
-				for i, a := range c.dbAnalyses {
-					if slices.Contains(a.Runs, filter.RunId) {
-						a.Path = filepath.Join(c.dbRuns[i].Path, a.Path)
-						runAnalyses = append(runAnalyses, a)
+				for i := range c.dbAnalyses {
+					for _, a := range c.dbAnalyses[i] {
+						if !filepath.IsAbs(a.Path) {
+							a.Path = filepath.Join(c.dbRuns[i].Path, a.Path)
+						}
+						if slices.Contains(a.Runs, filter.RunId) {
+							runAnalyses = append(runAnalyses, a)
+						}
 					}
 				}
 				analysisResult := cleve.AnalysisResult{
@@ -364,6 +383,10 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 					Analyses: runAnalyses,
 				}
 				return analysisResult, nil
+			}
+
+			if len(c.dbRuns) != len(c.dbAnalyses) {
+				t.Fatal("runs and analyses must have the same length, fix the test!")
 			}
 
 			if len(c.dbRuns) != len(c.diskAnalyses) {
