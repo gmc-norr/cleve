@@ -254,9 +254,8 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 			},
 		},
 		{
-			// Single analysis pointing to two individual runs, only one event should be emitted.
-			// This particular case shouldn't be possible for Dragen analyses, but it should be
-			// covered for the sake of completeness.
+			// Single analysis pointing to two individual runs. The last known state of the analysis
+			// is pending, and the current state is also pending, so no events should be emitted.
 			name: "two runs single pending analysis",
 			dbRuns: []*cleve.Run{
 				{
@@ -282,10 +281,9 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 					Runs:         []string{"run1", "run2"},
 					Path:         "Analysis/1",
 					Software:     "Dragen BCLConvert",
-					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateReady}},
+					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StatePending}},
 				},
 			},
-			events: []AnalysisWatcherEvent{{New: true, State: cleve.StatePending, StateChanged: false}},
 			diskAnalyses: [][]*diskAnalysis{
 				nil,
 				{{dir: "Analysis/1", copyComplete: false, secondaryAnalysisComplete: false}},
@@ -379,6 +377,9 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 			go w.Poll()
 			events, err := tryConsumeChannel(eventCh, 10, 10*time.Millisecond)
 			if err != nil && len(c.events) > 0 || len(events) != len(c.events) {
+				for i, e := range events {
+					t.Logf("event %d: %+v", i+1, e)
+				}
 				t.Fatalf("expected %d events, got %d", len(c.events), len(events))
 			}
 
