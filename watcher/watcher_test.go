@@ -287,6 +287,43 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 				{{dir: "Analysis/1", copyComplete: false, secondaryAnalysisComplete: false}},
 			},
 		},
+		{
+			// Single analysis pointing to two individual runs. The last known state of the analysis
+			// is pending, and the current state is ready. A single event should be emitted.
+			name: "two runs single analysis pending to ready",
+			dbRuns: []*cleve.Run{
+				{
+					RunID:        "run1",
+					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateReady}},
+					RunParameters: interop.RunParameters{
+						Software: []interop.Software{{Name: "Dragen", Version: "4.3.16"}},
+					},
+				},
+				{
+					RunID:        "run2",
+					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StateReady}},
+					RunParameters: interop.RunParameters{
+						Software: []interop.Software{{Name: "Dragen", Version: "4.3.16"}},
+					},
+				},
+			},
+			dbAnalyses: []*cleve.Analysis{
+				{
+					AnalysisId:   "run2_1_bclconvert",
+					Runs:         []string{"run2", "run1"},
+					Path:         "Analysis/1",
+					Software:     "Dragen BCLConvert",
+					StateHistory: cleve.StateHistory{{Time: time.Now(), State: cleve.StatePending}},
+				},
+			},
+			diskAnalyses: [][]*diskAnalysis{
+				nil,
+				{{dir: "Analysis/1", copyComplete: true, secondaryAnalysisComplete: true}},
+			},
+			events: []AnalysisWatcherEvent{
+				{New: false, State: cleve.StateReady, StateChanged: true},
+			},
+		},
 	}
 
 	db := struct {
