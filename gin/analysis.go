@@ -167,6 +167,13 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 					"file":    f,
 				})
 				return
+			} else if f.AnalysisId == "" {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error":   "analysis id cannot be empty",
+					"details": "the analysis id must be defined for input files",
+					"file":    f,
+				})
+				return
 			}
 		}
 

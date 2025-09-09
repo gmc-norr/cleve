@@ -161,9 +161,6 @@ func NewAnalysisFileFilter() AnalysisFileFilter {
 
 func (f *AnalysisFileFilter) Validate() error {
 	var errs []error
-	if f.AnalysisId == "" {
-		errs = append(errs, fmt.Errorf("analysis id cannot be empty"))
-	}
 	if !f.Level.IsValid() {
 		errs = append(errs, fmt.Errorf("invalid analysis level"))
 	}
