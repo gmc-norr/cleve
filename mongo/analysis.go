@@ -155,6 +155,63 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 	return analyses, nil
 }
 
+func (db DB) AnalysesFiles(filter cleve.AnalysisFileFilter) ([]string, error) {
+	var pipeline mongo.Pipeline
+
+	// Get a filtered set of analyses where at least one of the output files
+	// matches the filter, and then extract these files from the analysis using
+	// said filter.
+	if filter.AnalysisId != "" {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "analysis_id", Value: filter.AnalysisId},
+			}},
+		})
+	}
+
+	if filter.FileType.IsValid() {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "output_files.type", Value: filter.FileType},
+			}},
+		})
+	}
+
+	if filter.Level.IsValid() {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "output_files.level", Value: filter.Level},
+			}},
+		})
+	}
+
+	if filter.ParentId != "" {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "output_files.parent_id", Value: filter.ParentId},
+			}},
+		})
+	}
+
+	cursor, err := db.AnalysesCollection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer closeCursor(cursor, context.TODO())
+
+	filePaths := make([]string, 0)
+	for cursor.Next(context.TODO()) {
+		var a cleve.Analysis
+		err := cursor.Decode(&a)
+		if err != nil {
+			return nil, err
+		}
+		filePaths = append(filePaths, a.GetFiles(filter)...)
+	}
+
+	return filePaths, nil
+}
+
 // Analysis fetches a single analysis based on its ID. An optional run ID constraint can be given
 // as the second argument in order to constrain the anlyses to a particular run. If more than one
 // run ID is given, a non-nil error will be returned. If no documents are found given the

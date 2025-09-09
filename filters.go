@@ -155,6 +155,10 @@ type AnalysisFileFilter struct {
 	Pattern    *regexp.Regexp   `form:"-" bson:"-" json:"-"`
 }
 
+func NewAnalysisFileFilter() AnalysisFileFilter {
+	return AnalysisFileFilter{}
+}
+
 func (f *AnalysisFileFilter) Validate() error {
 	var errs []error
 	if f.AnalysisId == "" {

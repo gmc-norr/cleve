@@ -24,6 +24,14 @@ func getAnalysisFilter(c *gin.Context) (cleve.AnalysisFilter, error) {
 	return filter, filter.Validate()
 }
 
+func getAnalysisFileFilter(c *gin.Context) (cleve.AnalysisFileFilter, error) {
+	filter := cleve.NewAnalysisFileFilter()
+	if err := c.BindQuery(&filter); err != nil && !errors.Is(err, io.EOF) {
+		return filter, err
+	}
+	return filter, filter.Validate()
+}
+
 func getSampleFilter(c *gin.Context) (cleve.SampleFilter, error) {
 	filter := cleve.NewSampleFilter()
 	if err := c.BindQuery(&filter); err != nil {

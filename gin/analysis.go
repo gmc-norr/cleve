@@ -12,6 +12,7 @@ import (
 // Interface for reading analyses from the database.
 type AnalysisGetter interface {
 	Analyses(cleve.AnalysisFilter) (cleve.AnalysisResult, error)
+	AnalysesFiles(cleve.AnalysisFileFilter) ([]string, error)
 	Analysis(analysisId string, runId ...string) (*cleve.Analysis, error)
 }
 
@@ -54,6 +55,22 @@ func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, analyses)
+	}
+}
+
+func AnalysesFileHandler(db AnalysisGetter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		filter, err := getAnalysisFileFilter(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		files, err := db.AnalysesFiles(filter)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, files)
 	}
 }
 
