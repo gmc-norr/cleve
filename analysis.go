@@ -85,6 +85,11 @@ func (ft *AnalysisFileType) UnmarshalBSONValue(t bsontype.Type, data []byte) err
 	return nil
 }
 
+func (ft *AnalysisFileType) UnmarshalParam(param string) error {
+	*ft = AnalysisFileTypeFromString(param)
+	return nil
+}
+
 func (ft AnalysisFileType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ft.String())
 }
