@@ -243,13 +243,15 @@ type Analysis struct {
 	OutputFiles     []AnalysisFile       `bson:"output_files" json:"output_files"`
 }
 
-// GetFiles returns all paths to analysis output files of a particular type that are
-// associated with the analysis. If there are no such files, and empty slice is returned.
-func (a *Analysis) GetFiles(filter AnalysisFileFilter) []string {
-	var files []string
+// GetFiles returns all output files of the analysis for which the supplied filter is true.
+// Since the resulting files will be detached from a specific analysis, the path to the file
+// is turned into an absolute path.
+func (a *Analysis) GetFiles(filter AnalysisFileFilter) []AnalysisFile {
+	var files []AnalysisFile
 	for _, f := range a.OutputFiles {
 		if filter.Apply(f) {
-			files = append(files, filepath.Join(a.Path, f.Path))
+			f.Path = filepath.Join(a.Path, f.Path)
+			files = append(files, f)
 		}
 	}
 	return files

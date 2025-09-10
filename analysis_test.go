@@ -626,7 +626,7 @@ func TestGetFiles(t *testing.T) {
 				t.Fatalf("expected %d files, got %d", len(c.files), len(files))
 			}
 			for i, f := range files {
-				if c.files[i] != f {
+				if c.files[i] != f.Path {
 					t.Errorf("expected file %v, got %v", c.files[i], f)
 				}
 			}

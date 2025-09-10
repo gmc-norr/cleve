@@ -155,7 +155,7 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 	return analyses, nil
 }
 
-func (db DB) AnalysesFiles(filter cleve.AnalysisFileFilter) ([]string, error) {
+func (db DB) AnalysesFiles(filter cleve.AnalysisFileFilter) ([]cleve.AnalysisFile, error) {
 	var pipeline mongo.Pipeline
 
 	// Get a filtered set of analyses where at least one of the output files
@@ -199,17 +199,17 @@ func (db DB) AnalysesFiles(filter cleve.AnalysisFileFilter) ([]string, error) {
 	}
 	defer closeCursor(cursor, context.TODO())
 
-	filePaths := make([]string, 0)
+	files := make([]cleve.AnalysisFile, 0)
 	for cursor.Next(context.TODO()) {
 		var a cleve.Analysis
 		err := cursor.Decode(&a)
 		if err != nil {
 			return nil, err
 		}
-		filePaths = append(filePaths, a.GetFiles(filter)...)
+		files = append(files, a.GetFiles(filter)...)
 	}
 
-	return filePaths, nil
+	return files, nil
 }
 
 // Analysis fetches a single analysis based on its ID. An optional run ID constraint can be given

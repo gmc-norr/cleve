@@ -12,7 +12,7 @@ import (
 // Interface for reading analyses from the database.
 type AnalysisGetter interface {
 	Analyses(cleve.AnalysisFilter) (cleve.AnalysisResult, error)
-	AnalysesFiles(cleve.AnalysisFileFilter) ([]string, error)
+	AnalysesFiles(cleve.AnalysisFileFilter) ([]cleve.AnalysisFile, error)
 	Analysis(analysisId string, runId ...string) (*cleve.Analysis, error)
 }
 
