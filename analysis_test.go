@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -256,6 +257,8 @@ func TestDragenAnalysis(t *testing.T) {
 	}
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
+			logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			slog.SetDefault(logger)
 			analysis, err := NewDragenAnalysis(c.analysisDir, &c.run)
 			if err != nil {
 				t.Fatal(err)
