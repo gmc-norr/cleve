@@ -461,6 +461,13 @@ func dragenAnalysisState(path string) State {
 	}
 	copyComplete := filepath.Join(path, "CopyComplete.txt")
 	analysisComplete := filepath.Join(path, "Data", "Secondary_Analysis_Complete.txt")
+	errorSummary := filepath.Join(path, "Data", "Error_Summary.json")
+	if f, err := os.Open(errorSummary); err == nil {
+		e, err := ReadErrorSummary(f)
+		if err == nil && e.Result == "error" {
+			return StateError
+		}
+	}
 	if _, err := os.Stat(copyComplete); os.IsNotExist(err) {
 		return StatePending
 	}
