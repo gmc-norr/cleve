@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -167,6 +168,13 @@ func (db DB) AnalysesFiles(filter cleve.AnalysisFileFilter) ([]cleve.AnalysisFil
 				{Key: "analysis_id", Value: filter.AnalysisId},
 			}},
 		})
+		// Check that the analysis exists if analysis ID is given
+		if _, err := db.Analysis(filter.AnalysisId); err != nil {
+			if errors.Is(err, ErrNoDocuments) {
+				return nil, fmt.Errorf("analysis not found: %w", err)
+			}
+			return nil, err
+		}
 	}
 
 	if filter.FileType.IsValid() {
