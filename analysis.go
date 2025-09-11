@@ -426,7 +426,7 @@ func bclConvertFiles(analysis *Analysis, summary DragenAnalysisSummary) ([]Analy
 				ParentId:       analysis.Runs[0],
 			})
 		} else {
-			slog.Warn("file not found in manifest", "name", sf)
+			slog.Warn("dragen manifest", "error", err, "name", sf, "analysis_id", analysis.AnalysisId, "path", analysis.Path)
 		}
 	}
 
@@ -461,6 +461,13 @@ func dragenAnalysisState(path string) State {
 	}
 	copyComplete := filepath.Join(path, "CopyComplete.txt")
 	analysisComplete := filepath.Join(path, "Data", "Secondary_Analysis_Complete.txt")
+	errorSummary := filepath.Join(path, "Data", "Error_Summary.json")
+	if f, err := os.Open(errorSummary); err == nil {
+		e, err := ReadErrorSummary(f)
+		if err == nil && e.Result == "error" {
+			return StateError
+		}
+	}
 	if _, err := os.Stat(copyComplete); os.IsNotExist(err) {
 		return StatePending
 	}
@@ -472,6 +479,23 @@ func dragenAnalysisState(path string) State {
 
 type DragenManifest struct {
 	Files []string
+}
+
+type DragenErrorSummary struct {
+	Result string `json:"result"`
+	Status string `json:"status"`
+}
+
+func ReadErrorSummary(r io.Reader) (DragenErrorSummary, error) {
+	var e DragenErrorSummary
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return e, err
+	}
+	if err := json.Unmarshal(b, &e); err != nil {
+		return e, err
+	}
+	return e, nil
 }
 
 // ReadDragenManifest reads a Dragen analysis manifest file and returns a slice of
