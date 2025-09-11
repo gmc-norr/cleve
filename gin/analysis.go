@@ -67,6 +67,10 @@ func AnalysesFileHandler(db AnalysisGetter) gin.HandlerFunc {
 		}
 		files, err := db.AnalysesFiles(filter)
 		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -112,6 +116,10 @@ func AnalysisFileHandler(db AnalysisGetter) gin.HandlerFunc {
 		filter.AnalysisId = analysisId
 		files, err := db.AnalysesFiles(filter)
 		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
