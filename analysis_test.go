@@ -3,8 +3,10 @@ package cleve
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,6 +15,74 @@ import (
 	"github.com/gmc-norr/cleve/interop"
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+type analysisDirOption func(*analysisDir)
+
+type analysisDir struct {
+	copyComplete     bool
+	analysisComplete bool
+	error            string
+	samples          int
+	lanes            int
+	dragenVersion    string
+}
+
+func createMockAnalysisDir(t *testing.T, options ...analysisDirOption) string {
+	d := analysisDir{
+		copyComplete:     false,
+		analysisComplete: false,
+		error:            "",
+		samples:          3,
+		lanes:            8,
+		dragenVersion:    "4.3.16",
+	}
+
+	for _, o := range options {
+		o(&d)
+	}
+
+	path, err := mockAnalysisDirectory(t, d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func withCopyComplete() analysisDirOption {
+	return func(d *analysisDir) {
+		d.copyComplete = true
+	}
+}
+
+func withAnalysisComplete() analysisDirOption {
+	return func(d *analysisDir) {
+		d.analysisComplete = true
+	}
+}
+
+func withError(e string) analysisDirOption {
+	return func(d *analysisDir) {
+		d.error = e
+	}
+}
+
+func withSamples(s int) analysisDirOption {
+	return func(d *analysisDir) {
+		d.samples = s
+	}
+}
+
+func withLanes(l int) analysisDirOption {
+	return func(d *analysisDir) {
+		d.lanes = l
+	}
+}
+
+func withDragenVersion(v string) analysisDirOption {
+	return func(d *analysisDir) {
+		d.dragenVersion = v
+	}
+}
 
 func mockFile(path string, content string) error {
 	f, err := os.Create(path)
@@ -23,15 +93,8 @@ func mockFile(path string, content string) error {
 	return err
 }
 
-func mockSummaryJson(samples int, state State) string {
-	var stringState string
-	switch state {
-	case StateReady:
-		stringState = "success"
-	case StateError:
-		stringState = "error"
-	}
-	summary := fmt.Sprintf(`{"result": "%s", "workflows": [{"workflow_name": "bcl_convert", "samples": [`, stringState)
+func mockSummaryJson(samples int) string {
+	summary := `{"result": "success", "workflows": [{"workflow_name": "bcl_convert", "samples": [`
 	for i := range samples {
 		summary += fmt.Sprintf(`{"sample_id": "sample%d"}`, i+1)
 		if i < samples-1 {
@@ -42,66 +105,76 @@ func mockSummaryJson(samples int, state State) string {
 	return summary
 }
 
-func mockManifest(samples int, lanes int) string {
-	var manifest string
-	var i int
-	manifest += fmt.Sprintf("Data/Demux/Demultiplex_Stats.csv\thash%d\n", i+1)
-	manifest += fmt.Sprintf("Data/Demux/Index_Hopping_Counts.csv\thash%d\n", i+2)
-	manifest += fmt.Sprintf("Data/Demux/Top_Unknown_Barcodes.csv\thash%d\n", i+3)
-	i += 3
-	for s := range samples {
-		for l := range lanes {
-			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_1.fastq.gz\thash%d\n", s+1, l+1, i+1)
-			manifest += fmt.Sprintf("Data/BCLConvert/fastq/sample%d_L%d_2.fastq.gz\thash%d\n", s+1, l+1, i+2)
-			i += 2
+func mockManifest(dir string) error {
+	var files []string
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
+		if !d.IsDir() {
+			files = append(files, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
-	return manifest
+	var content string
+	for i, f := range files {
+		content = fmt.Sprintf("%s%s\thash%d\n", content, f, i+1)
+	}
+	return mockFile(filepath.Join(dir, "Manifest.tsv"), content)
 }
 
-func mockAnalysisDirectory(t *testing.T, state State, dragenVersion string, samples int, lanes int) (string, error) {
+func mockAnalysisDirectory(t *testing.T, config analysisDir) (string, error) {
 	runDir := t.TempDir()
 	analysisDir := filepath.Join(runDir, "Analysis", "1")
 	if err := os.MkdirAll(analysisDir, 0o755); err != nil {
 		return analysisDir, err
 	}
-	switch state {
-	case StateReady:
-		// create CopyComplete.txt, Data/Secondary_Analysis_Complete.txt, Manifest.tsv, Data/summary/{version}/detailed_summary.json
-		if err := os.MkdirAll(filepath.Join(analysisDir, "Data", "summary", dragenVersion), 0o755); err != nil {
-			return analysisDir, err
-		}
+	if err := os.MkdirAll(filepath.Join(analysisDir, "Data", "summary", config.dragenVersion), 0o755); err != nil {
+		return analysisDir, err
+	}
+	if config.copyComplete {
 		if err := mockFile(filepath.Join(analysisDir, "CopyComplete.txt"), ""); err != nil {
-			return analysisDir, err
-		}
-		t.Logf("%+v", mockManifest(samples, lanes))
-		if err := mockFile(filepath.Join(analysisDir, "Manifest.tsv"), mockManifest(samples, lanes)); err != nil {
-			return analysisDir, err
-		}
-		if err := mockFile(filepath.Join(analysisDir, "Data", "Secondary_Analysis_Complete.txt"), ""); err != nil {
-			return analysisDir, err
-		}
-		if err := mockFile(filepath.Join(analysisDir, "Data", "summary", dragenVersion, "detailed_summary.json"), mockSummaryJson(samples, state)); err != nil {
-			return analysisDir, err
-		}
-	case StatePending:
-		// all good
-	case StateError:
-		// create CopyComplete.txt, Data/Secondary_Analysis_Complete.txt
-		if err := os.MkdirAll(filepath.Join(analysisDir, "Data", "summary", dragenVersion), 0o755); err != nil {
-			return analysisDir, err
-		}
-		if err := mockFile(filepath.Join(analysisDir, "CopyComplete.txt"), ""); err != nil {
-			return analysisDir, err
-		}
-		if err := mockFile(filepath.Join(analysisDir, "Data", "Secondary_Analysis_Complete.txt"), ""); err != nil {
-			return analysisDir, err
-		}
-		if err := mockFile(filepath.Join(analysisDir, "Data", "summary", dragenVersion, "detailed_summary.json"), mockSummaryJson(samples, state)); err != nil {
 			return analysisDir, err
 		}
 	}
-	return analysisDir, nil
+	if config.analysisComplete {
+		if err := mockFile(filepath.Join(analysisDir, "Data", "Secondary_Analysis_Complete.txt"), ""); err != nil {
+			return analysisDir, err
+		}
+	}
+	if config.copyComplete && config.analysisComplete && config.error == "" {
+		// Analysis is ready without errors
+		if err := mockFile(filepath.Join(analysisDir, "Data", "summary", config.dragenVersion, "detailed_summary.json"), mockSummaryJson(config.samples)); err != nil {
+			return analysisDir, err
+		}
+		demuxDir := filepath.Join(analysisDir, "Data", "Demux")
+		if err := os.MkdirAll(demuxDir, 0o755); err != nil {
+			return analysisDir, err
+		}
+		for _, name := range []string{"Index_Hopping_Counts.csv", "Demultiplex_Stats.csv", "Top_Unknown_Barcodes.csv"} {
+			if err := mockFile(filepath.Join(demuxDir, name), ""); err != nil {
+				return analysisDir, err
+			}
+		}
+		fastqDir := filepath.Join(analysisDir, "Data", "BCLConvert", "fastq")
+		if err := os.MkdirAll(fastqDir, 0o755); err != nil {
+			return analysisDir, err
+		}
+		for s := range config.samples {
+			for l := range config.lanes {
+				err1 := mockFile(filepath.Join(fastqDir, fmt.Sprintf("sample%d_L%d_1.fastq.gz", s+1, l+1)), "")
+				err2 := mockFile(filepath.Join(fastqDir, fmt.Sprintf("sample%d_L%d_2.fastq.gz", s+1, l+1)), "")
+				err := errors.Join(err1, err2)
+				if err != nil {
+					return analysisDir, err
+				}
+			}
+		}
+	}
+	return analysisDir, mockManifest(analysisDir)
 }
 
 func TestDragenAnalysis(t *testing.T) {
@@ -109,9 +182,8 @@ func TestDragenAnalysis(t *testing.T) {
 		name          string
 		run           Run
 		state         State
-		samples       int
-		lanes         int
 		expectedFiles int
+		analysisDir   string
 	}{
 		{
 			name: "analysis ready",
@@ -123,8 +195,14 @@ func TestDragenAnalysis(t *testing.T) {
 					},
 				},
 			},
-			samples:       3,
-			lanes:         8,
+			analysisDir: createMockAnalysisDir(
+				t,
+				withCopyComplete(),
+				withAnalysisComplete(),
+				withDragenVersion("4.3.16"),
+				withSamples(3),
+				withLanes(8),
+			),
 			expectedFiles: 3*8*2 + 3, // 2 fastq per sample per lane + 3 stats files
 			state:         StateReady,
 		},
@@ -138,6 +216,7 @@ func TestDragenAnalysis(t *testing.T) {
 					},
 				},
 			},
+			analysisDir:   createMockAnalysisDir(t),
 			expectedFiles: 0,
 			state:         StatePending,
 		},
@@ -151,17 +230,20 @@ func TestDragenAnalysis(t *testing.T) {
 					},
 				},
 			},
+			analysisDir: createMockAnalysisDir(
+				t,
+				withCopyComplete(),
+				withAnalysisComplete(),
+				withDragenVersion("4.3.16"),
+				withError("error"),
+			),
 			expectedFiles: 0,
 			state:         StateError,
 		},
 	}
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
-			dir, err := mockAnalysisDirectory(t, c.state, c.run.RunParameters.Software[0].Version, c.samples, c.lanes)
-			if err != nil {
-				t.Fatal(err)
-			}
-			analysis, err := NewDragenAnalysis(dir, &c.run)
+			analysis, err := NewDragenAnalysis(c.analysisDir, &c.run)
 			if err != nil {
 				t.Fatal(err)
 			}
