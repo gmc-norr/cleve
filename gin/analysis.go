@@ -101,6 +101,24 @@ func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 	}
 }
 
+func AnalysisFileHandler(db AnalysisGetter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		analysisId := c.Param("analysisId")
+		filter, err := getAnalysisFileFilter(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		filter.AnalysisId = analysisId
+		files, err := db.AnalysesFiles(filter)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, files)
+	}
+}
+
 func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var params struct {
