@@ -474,6 +474,23 @@ type DragenManifest struct {
 	Files []string
 }
 
+type DragenErrorSummary struct {
+	Result string `json:"result"`
+	Status string `json:"status"`
+}
+
+func ReadErrorSummary(r io.Reader) (DragenErrorSummary, error) {
+	var e DragenErrorSummary
+	b, err := io.ReadAll(r)
+	if err != nil {
+		return e, err
+	}
+	if err := json.Unmarshal(b, &e); err != nil {
+		return e, err
+	}
+	return e, nil
+}
+
 // ReadDragenManifest reads a Dragen analysis manifest file and returns a slice of
 // strings with all paths listed in the manifest.
 func ReadDragenManifest(r io.Reader) (DragenManifest, error) {

@@ -145,6 +145,19 @@ func mockAnalysisDirectory(t *testing.T, config analysisDir) (string, error) {
 			return analysisDir, err
 		}
 	}
+	if config.error != "" {
+		// Analysis is "ready" with errors
+		s := DragenErrorSummary{
+			Result: config.error,
+		}
+		b, err := json.Marshal(s)
+		if err != nil {
+			return analysisDir, err
+		}
+		if err := mockFile(filepath.Join(analysisDir, "Data", "Error_Summary.json"), string(b)); err != nil {
+			return analysisDir, err
+		}
+	}
 	if config.copyComplete && config.analysisComplete && config.error == "" {
 		// Analysis is ready without errors
 		if err := mockFile(filepath.Join(analysisDir, "Data", "summary", config.dragenVersion, "detailed_summary.json"), mockSummaryJson(config.samples)); err != nil {
