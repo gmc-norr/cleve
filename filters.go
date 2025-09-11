@@ -161,9 +161,6 @@ func NewAnalysisFileFilter() AnalysisFileFilter {
 
 func (f *AnalysisFileFilter) Validate() error {
 	var errs []error
-	if !f.Level.IsValid() {
-		errs = append(errs, fmt.Errorf("invalid analysis level"))
-	}
 	if !f.FileType.IsValid() && f.ParentId == "" && f.Name == "" && f.Pattern == nil {
 		errs = append(errs, fmt.Errorf("one of FileType, ParentId, Name or Pattern must be defined"))
 	}
