@@ -58,13 +58,13 @@ func TestAnalysisFileFilter(t *testing.T) {
 			isValid: true,
 		},
 		{
-			name: "incomplete filter analysis id",
+			name: "valid filter without analysis id",
 			filter: AnalysisFileFilter{
 				Level:    LevelSample,
 				ParentId: "sample1",
 				FileType: FileFastq,
 			},
-			isValid: false,
+			isValid: true,
 		},
 		{
 			name: "conflicting filter",

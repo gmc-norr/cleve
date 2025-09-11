@@ -12,6 +12,7 @@ import (
 // Interface for reading analyses from the database.
 type AnalysisGetter interface {
 	Analyses(cleve.AnalysisFilter) (cleve.AnalysisResult, error)
+	AnalysesFiles(cleve.AnalysisFileFilter) ([]cleve.AnalysisFile, error)
 	Analysis(analysisId string, runId ...string) (*cleve.Analysis, error)
 }
 
@@ -57,6 +58,26 @@ func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 	}
 }
 
+func AnalysesFileHandler(db AnalysisGetter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		filter, err := getAnalysisFileFilter(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		files, err := db.AnalysesFiles(filter)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, files)
+	}
+}
+
 func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		analysisId := c.Param("analysisId")
@@ -81,6 +102,28 @@ func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, analysis)
+	}
+}
+
+func AnalysisFileHandler(db AnalysisGetter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		analysisId := c.Param("analysisId")
+		filter, err := getAnalysisFileFilter(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		filter.AnalysisId = analysisId
+		files, err := db.AnalysesFiles(filter)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, files)
 	}
 }
 
@@ -147,6 +190,13 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 					"error":   "invalid input file entry",
 					"details": err.Error(),
+					"file":    f,
+				})
+				return
+			} else if f.AnalysisId == "" {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error":   "analysis id cannot be empty",
+					"details": "the analysis id must be defined for input files",
 					"file":    f,
 				})
 				return

@@ -192,7 +192,9 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	})
 
 	r.GET("/api/analyses", AnalysesHandler(db))
+	r.GET("/api/analyses/files", AnalysesFileHandler(db))
 	r.GET("/api/analyses/:analysisId", AnalysisHandler(db))
+	r.GET("/api/analyses/:analysisId/files", AnalysisFileHandler(db))
 	r.GET("/api/runs", RunsHandler(db))
 	r.GET("/api/runs/:runId", RunHandler(db))
 	r.GET("/api/runs/:runId/analyses", AnalysesHandler(db))

@@ -85,6 +85,11 @@ func (ft *AnalysisFileType) UnmarshalBSONValue(t bsontype.Type, data []byte) err
 	return nil
 }
 
+func (ft *AnalysisFileType) UnmarshalParam(param string) error {
+	*ft = AnalysisFileTypeFromString(param)
+	return nil
+}
+
 func (ft AnalysisFileType) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ft.String())
 }
@@ -109,7 +114,9 @@ type TextFileOptions struct {
 }
 
 type AnalysisFile struct {
-	// Path is a relative path to the file within the analysis directory.
+	// partOfAnalysis indicates whether or not the analysis file is part of analysis or if it's standalone.
+	partOfAnalysis bool
+	// Path is a relative path to the file within the analysis directory if the file is part of an analysis, otherwise an absolute path.
 	Path     string           `bson:"path" json:"path"`
 	FileType AnalysisFileType `bson:"type" json:"type"`
 	Level    AnalysisLevel    `bson:"level" json:"level"`
@@ -118,8 +125,11 @@ type AnalysisFile struct {
 
 func (f *AnalysisFile) Validate() error {
 	var errs []error
-	if filepath.IsAbs(f.Path) {
-		errs = append(errs, fmt.Errorf("path must be relative"))
+	if f.partOfAnalysis && filepath.IsAbs(f.Path) {
+		errs = append(errs, fmt.Errorf("path must be relative for files associated with analyses"))
+	}
+	if !f.partOfAnalysis && !filepath.IsAbs(f.Path) {
+		errs = append(errs, fmt.Errorf("path must be absolute for standalone files"))
 	}
 	if !f.FileType.IsValid() {
 		errs = append(errs, fmt.Errorf("invalid file type"))
@@ -238,13 +248,16 @@ type Analysis struct {
 	OutputFiles     []AnalysisFile       `bson:"output_files" json:"output_files"`
 }
 
-// GetFiles returns all paths to analysis output files of a particular type that are
-// associated with the analysis. If there are no such files, and empty slice is returned.
-func (a *Analysis) GetFiles(filter AnalysisFileFilter) []string {
-	var files []string
+// GetFiles returns all output files of the analysis for which the supplied filter is true.
+// Since the resulting files will be detached from a specific analysis, the path to the file
+// is turned into an absolute path.
+func (a *Analysis) GetFiles(filter AnalysisFileFilter) []AnalysisFile {
+	var files []AnalysisFile
 	for _, f := range a.OutputFiles {
 		if filter.Apply(f) {
-			files = append(files, filepath.Join(a.Path, f.Path))
+			f.partOfAnalysis = false
+			f.Path = filepath.Join(a.Path, f.Path)
+			files = append(files, f)
 		}
 	}
 	return files
@@ -406,10 +419,11 @@ func bclConvertFiles(analysis *Analysis, summary DragenAnalysisSummary) ([]Analy
 	for _, sf := range statsFiles {
 		if f, err := manifest.FindFile(sf); err == nil {
 			files = append(files, AnalysisFile{
-				Path:     f,
-				FileType: FileText,
-				Level:    LevelRun,
-				ParentId: analysis.Runs[0],
+				partOfAnalysis: true,
+				Path:           f,
+				FileType:       FileText,
+				Level:          LevelRun,
+				ParentId:       analysis.Runs[0],
 			})
 		} else {
 			slog.Warn("file not found in manifest", "name", sf)
@@ -425,10 +439,11 @@ func bclConvertFiles(analysis *Analysis, summary DragenAnalysisSummary) ([]Analy
 			}
 			for _, f := range manifest.FindFiles(fqRegex) {
 				files = append(files, AnalysisFile{
-					Path:     f,
-					FileType: FileFastq,
-					Level:    LevelSample,
-					ParentId: sample.SampleID,
+					partOfAnalysis: true,
+					Path:           f,
+					FileType:       FileFastq,
+					Level:          LevelSample,
+					ParentId:       sample.SampleID,
 				})
 			}
 		}

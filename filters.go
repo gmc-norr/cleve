@@ -155,14 +155,12 @@ type AnalysisFileFilter struct {
 	Pattern    *regexp.Regexp   `form:"-" bson:"-" json:"-"`
 }
 
+func NewAnalysisFileFilter() AnalysisFileFilter {
+	return AnalysisFileFilter{}
+}
+
 func (f *AnalysisFileFilter) Validate() error {
 	var errs []error
-	if f.AnalysisId == "" {
-		errs = append(errs, fmt.Errorf("analysis id cannot be empty"))
-	}
-	if !f.Level.IsValid() {
-		errs = append(errs, fmt.Errorf("invalid analysis level"))
-	}
 	if !f.FileType.IsValid() && f.ParentId == "" && f.Name == "" && f.Pattern == nil {
 		errs = append(errs, fmt.Errorf("one of FileType, ParentId, Name or Pattern must be defined"))
 	}

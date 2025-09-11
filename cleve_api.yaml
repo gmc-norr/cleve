@@ -224,6 +224,34 @@ endpoints:
         description: regex that will be matched against analysis software, cannot be used together with `software`
         required: false
 
+  - path: /analyses/files
+    method: GET
+    section: analysis
+    description: >
+      Get output files from analyses. Although none of the query parameters are explicitly required,
+      at least one of file_type, parent_id or name must be supplied.
+    query_params:
+      - key: analysis_id
+        type: string
+        description: analysis ID to filter on
+        required: false
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the id of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path
+        required: false
+
   - path: /analyses/{analysis_id}
     method: GET
     section: analysis
@@ -232,11 +260,40 @@ endpoints:
       - key: analysis_id
         type: string
         description: the ID of the analysis to get
-        required: false
+        required: true
     query_params:
       - key: run_id
         type: string
         description: constrain the analysis to a specific run
+        required: false
+
+  - path: /analyses/{analysis_id}/files
+    method: GET
+    section: analysis
+    description: >
+      Get output files from analyses. Although none of the query parameters are explicitly required,
+      at least one of file_type, parent_id or name must be supplied.
+    params:
+      - key: analysis_id
+        type: string
+        description: analysis ID to filter on
+        required: true
+    query_params:
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the id of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path
         required: false
 
   - path: /analyses
