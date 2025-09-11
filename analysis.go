@@ -426,7 +426,7 @@ func bclConvertFiles(analysis *Analysis, summary DragenAnalysisSummary) ([]Analy
 				ParentId:       analysis.Runs[0],
 			})
 		} else {
-			slog.Warn("file not found in manifest", "name", sf)
+			slog.Warn("file not found in manifest", "name", sf, "analysis_id", analysis.AnalysisId, "path", analysis.Path)
 		}
 	}
 

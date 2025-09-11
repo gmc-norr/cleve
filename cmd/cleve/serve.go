@@ -92,7 +92,7 @@ var (
 							if e.State == cleve.StateReady {
 								logger.Info("updating analysis files", "analysis_id", e.Analysis.AnalysisId)
 								if err := e.Analysis.UpdateOutputFiles(); err != nil {
-									slog.Error("failed to update output files", "analysis_id", e.Analysis.AnalysisId, "error", err)
+									slog.Error("failed to update output files", "analysis_id", e.Analysis.AnalysisId, "path", e.Analysis.Path, "error", err)
 									continue
 								}
 							}
