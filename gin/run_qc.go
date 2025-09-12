@@ -59,7 +59,7 @@ func RunSamplesQcHandler(db RunQCGetter) gin.HandlerFunc {
 			if err == mongo.ErrNoDocuments {
 				ctx.AbortWithStatusJSON(
 					http.StatusNotFound,
-					gin.H{"error": fmt.Sprintf("qc for run %s not found", runId)})
+					gin.H{"error": "qc for run not found", "run_id": runId})
 				return
 			}
 			ctx.AbortWithStatusJSON(
@@ -88,7 +88,7 @@ func RunSampleQcHandler(db RunQCGetter) gin.HandlerFunc {
 			if err == mongo.ErrNoDocuments {
 				ctx.AbortWithStatusJSON(
 					http.StatusNotFound,
-					gin.H{"error": fmt.Sprintf("qc for run %s not found", runId)})
+					gin.H{"error": "qc for run not found", "run_id": runId})
 				return
 			}
 			ctx.AbortWithStatusJSON(
@@ -106,7 +106,7 @@ func RunSampleQcHandler(db RunQCGetter) gin.HandlerFunc {
 			}
 		}
 		if sampleQc.SampleId == "" {
-			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "no qc data found for sample", "sample_id": sampleId, "run_id": runId})
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "sample not found in run", "sample_id": sampleId, "run_id": runId})
 			return
 		}
 		ctx.JSON(http.StatusOK, sampleQc)
