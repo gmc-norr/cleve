@@ -177,6 +177,14 @@ func (db DB) AnalysesFiles(filter cleve.AnalysisFileFilter) ([]cleve.AnalysisFil
 		}
 	}
 
+	if filter.RunId != "" {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "runs", Value: filter.RunId},
+			}},
+		})
+	}
+
 	if filter.FileType.IsValid() {
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
