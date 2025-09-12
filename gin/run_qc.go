@@ -51,6 +51,68 @@ func RunQcHandler(db RunQCGetter) gin.HandlerFunc {
 	}
 }
 
+func RunSamplesQcHandler(db RunQCGetter) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		runId := ctx.Param("runId")
+		qc, err := db.RunQC(runId)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatusJSON(
+					http.StatusNotFound,
+					gin.H{"error": "qc for run not found", "run_id": runId})
+				return
+			}
+			ctx.AbortWithStatusJSON(
+				http.StatusInternalServerError,
+				gin.H{"error": err.Error()},
+			)
+			return
+		}
+		sampleQcs := make([]cleve.SampleQc, len(qc.IndexSummary.Indexes))
+		for i, sample := range qc.IndexSummary.Indexes {
+			sampleQcs[i] = cleve.SampleQc{
+				SampleId:  sample.Sample,
+				ReadCount: sample.ReadCount,
+			}
+		}
+		ctx.JSON(http.StatusOK, sampleQcs)
+	}
+}
+
+func RunSampleQcHandler(db RunQCGetter) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		runId := ctx.Param("runId")
+		sampleId := ctx.Param("sampleId")
+		qc, err := db.RunQC(runId)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				ctx.AbortWithStatusJSON(
+					http.StatusNotFound,
+					gin.H{"error": "qc for run not found", "run_id": runId})
+				return
+			}
+			ctx.AbortWithStatusJSON(
+				http.StatusInternalServerError,
+				gin.H{"error": err.Error()},
+			)
+			return
+		}
+		var sampleQc cleve.SampleQc
+		for _, sample := range qc.IndexSummary.Indexes {
+			if sample.Sample == sampleId {
+				sampleQc.SampleId = sample.Sample
+				sampleQc.ReadCount = sample.ReadCount
+				break
+			}
+		}
+		if sampleQc.SampleId == "" {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "sample not found in run", "sample_id": sampleId, "run_id": runId})
+			return
+		}
+		ctx.JSON(http.StatusOK, sampleQc)
+	}
+}
+
 func AllRunQcHandler(db RunQCGetter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		filter, err := getQcFilter(ctx)
