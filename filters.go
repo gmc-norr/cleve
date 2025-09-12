@@ -148,6 +148,7 @@ func (f *AnalysisFilter) Validate() error {
 // Analysis file filtering
 type AnalysisFileFilter struct {
 	AnalysisId string           `form:"analysis_id" bson:"analysis_id,omitempty" json:"analysis_id,omitzero"`
+	RunId      string           `form:"run_id" bson:"run_id,omitempty" json:"run_id,omitzero"`
 	FileType   AnalysisFileType `form:"type" bson:"type,omitempty" json:"type,omitzero"`
 	Level      AnalysisLevel    `form:"level" bson:"level,omitempty" json:"level,omitzero"`
 	ParentId   string           `form:"parent_id" bson:"parent_id,omitempty" json:"parent_id,omitzero"`

@@ -60,10 +60,14 @@ func AnalysesHandler(db AnalysisGetter) gin.HandlerFunc {
 
 func AnalysesFileHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		runId := c.Param("runId")
 		filter, err := getAnalysisFileFilter(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
+		}
+		if runId != "" {
+			filter.RunId = runId
 		}
 		files, err := db.AnalysesFiles(filter)
 		if err != nil {
@@ -108,12 +112,18 @@ func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 func AnalysisFileHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		analysisId := c.Param("analysisId")
+		runId := c.Param("runId")
 		filter, err := getAnalysisFileFilter(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		filter.AnalysisId = analysisId
+		if filter.AnalysisId != "" {
+			filter.AnalysisId = analysisId
+		}
+		if filter.RunId != "" {
+			filter.RunId = runId
+		}
 		files, err := db.AnalysesFiles(filter)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
