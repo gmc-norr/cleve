@@ -106,6 +106,37 @@ endpoints:
         description: state of the analysis to filter on
         required: false
 
+  - path: /runs/{run_id}/analyses/files
+    method: GET
+    section: runs
+    description: >
+      Get output files from analyses associated with the run. Although none of the query
+      parameters are explicitly required, at least one of type, parent_id or name
+      must be supplied.
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+    query_params:
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the ID of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path
+        required: false
+
+
   - path: /runs/{run_id}/analyses/{analysis_id}
     method: GET
     section: runs
@@ -119,6 +150,39 @@ endpoints:
         type: string
         description: ID of the analysis
         required: true
+
+  - path: /runs/{run_id}/analyses/{analysis_id}/files
+    method: GET
+    section: runs
+    description: >
+      Get output files from a specific analysis associated with the run. Although none of the query
+      parameters are explicitly required, at least one of type, parent_id or name must be supplied.
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+      - key: analysis_id
+        type: string
+        description: ID of the analysis
+        required: true
+    query_params:
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the ID of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path
+        required: false
 
   - path: /runs/{run_id}/state
     method: PATCH
@@ -229,7 +293,7 @@ endpoints:
     section: analysis
     description: >
       Get output files from analyses. Although none of the query parameters are explicitly required,
-      at least one of file_type, parent_id or name must be supplied.
+      at least one of type, parent_id or name must be supplied.
     query_params:
       - key: analysis_id
         type: string
@@ -272,7 +336,7 @@ endpoints:
     section: analysis
     description: >
       Get output files from analyses. Although none of the query parameters are explicitly required,
-      at least one of file_type, parent_id or name must be supplied.
+      at least one of type, parent_id or name must be supplied.
     params:
       - key: analysis_id
         type: string
@@ -536,6 +600,30 @@ endpoints:
       - key: run_id
         type: string
         description: ID of the run
+        required: true
+
+  - path: /runs/{run_id}/qc/samples
+    method: GET
+    section: qc
+    description: Get QC information for all samples associated with the run
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+
+  - path: /runs/{run_id}/qc/samples/{sample_id}
+    method: GET
+    section: qc
+    description: Get QC information for a sample in a sequencing run
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+      - key: sample_id
+        type: string
+        description: ID of the sample
         required: true
 
   - path: /panels
