@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -39,15 +40,27 @@ var (
 			if debug {
 				loglevel = slog.LevelDebug
 			}
-			logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: loglevel}))
-			slog.SetDefault(logger)
+
+			watcherLogPath := viper.GetString("watcher_logfile")
+
+			var watcherLogWriter io.Writer
+			if watcherLogPath != "" {
+				f, err := os.OpenFile(watcherLogPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o666)
+				cobra.CheckErr(err)
+				watcherLogWriter = io.MultiWriter(os.Stderr, f)
+			} else {
+				watcherLogWriter = os.Stderr
+			}
+			watcherLogger := slog.New(slog.NewTextHandler(watcherLogWriter, &slog.HandlerOptions{Level: loglevel}))
+
+			logger := slog.Default()
 
 			runPollInterval := viper.GetInt("run_poll_interval")
 			if runPollInterval < 1 {
 				slog.Error("poll interval must be a positive, non-zero integer")
 				os.Exit(1)
 			}
-			runWatcher := watcher.NewRunWatcher(time.Duration(runPollInterval)*time.Second, db, logger)
+			runWatcher := watcher.NewRunWatcher(time.Duration(runPollInterval)*time.Second, db, watcherLogger.With("watcher", "RunWatcher"))
 			defer runWatcher.Stop()
 			runStateEvents := runWatcher.Start()
 
@@ -71,7 +84,7 @@ var (
 				slog.Error("poll interval must be a positive, non-zero integer")
 				os.Exit(1)
 			}
-			analysisWatcher := watcher.NewDragenAnalysisWatcher(time.Duration(analysisPollInterval)*time.Second, db, logger)
+			analysisWatcher := watcher.NewDragenAnalysisWatcher(time.Duration(analysisPollInterval)*time.Second, db, watcherLogger.With("watcher", "DragenAnalysisWatcher"))
 			defer analysisWatcher.Stop()
 			analysisEvents := analysisWatcher.Start()
 
