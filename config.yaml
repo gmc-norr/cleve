@@ -9,6 +9,7 @@ database:
 # If set, logs will be written to this file in addition to stdout
 # If not set, logs will only be written to stdout
 logfile: cleve.log
+watcher_logfile: cleve_watcher.log
 
 # How often, in seconds, that Cleve should poll runs and analyses
 # in the database for state changes. Setting this too low could
