@@ -128,7 +128,7 @@ func LoadHTMLFS(e *gin.Engine, fs fs.FS, patterns ...string) {
 func NewRouter(db *mongo.DB, debug bool) http.Handler {
 	gin.DisableConsoleColor()
 	if viper.GetString("logfile") != "" {
-		f, err := os.OpenFile(viper.GetString("logfile"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		f, err := os.OpenFile(viper.GetString("logfile"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
 		if err != nil {
 			log.Fatal(err)
 		}
