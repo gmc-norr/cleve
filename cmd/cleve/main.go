@@ -49,9 +49,13 @@ func initConfig() {
 	} else {
 		viper.SetConfigName("config")
 		viper.SetConfigType("yaml")
-		viper.AddConfigPath("/etc/cleve")
-		viper.AddConfigPath("$HOME/.config/cleve")
 		viper.AddConfigPath(".")
+		if _, ok := os.LookupEnv("XDG_CONFIG_HOME"); ok {
+			viper.AddConfigPath("$XDG_CONFIG_HOME/cleve")
+		} else {
+			viper.AddConfigPath("$HOME/.config/cleve")
+		}
+		viper.AddConfigPath("/etc/cleve")
 	}
 
 	err := viper.ReadInConfig()

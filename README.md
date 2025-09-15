@@ -41,9 +41,10 @@ The resulting binary is `./bin/cleve`.
 Cleve looks for a yaml config file at startup.
 The following locations are checked in this order:
 
-- `/etc/cleve/config.yaml`
-- `$HOME/.config/cleve/config.yaml`
 - `$PWD/config.yaml`
+- `$XDG_CONFIG_HOME/cleve/config.yaml`
+- `$HOME/.config/cleve/config.yaml`
+- `/etc/cleve/config.yaml`
 
 The first config file that is found will be used, and the application will exit with an error if no config file is found.
 The config can also be supplied with the `-c`/`--config` flag.
