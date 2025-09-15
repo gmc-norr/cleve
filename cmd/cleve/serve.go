@@ -53,8 +53,7 @@ var (
 			}
 			watcherLogger := slog.New(slog.NewTextHandler(watcherLogWriter, &slog.HandlerOptions{Level: loglevel}))
 
-			logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: loglevel}))
-			slog.SetDefault(logger)
+			logger := slog.Default()
 
 			runPollInterval := viper.GetInt("run_poll_interval")
 			if runPollInterval < 1 {
