@@ -6,9 +6,12 @@ database:
   password: secret
   name: cleve
 
-# If set, logs will be written to this file in addition to stdout
-# If not set, logs will only be written to stdout
+# If set, web access logs will be written to this file in addition to stdout.
+# If not set, logs will only be written to stdout.
 logfile: cleve.log
+
+# Output watcher logs to this file in addition to stderr. If not set, logs
+# will only be written to stderr.
 watcher_logfile: cleve_watcher.log
 
 # How often, in seconds, that Cleve should poll runs and analyses
