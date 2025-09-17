@@ -99,6 +99,10 @@ func InteropFromDir(rundir string) (Interop, error) {
 	i := Interop{}
 	i.dir, _ = filepath.Abs(rundir)
 
+	if _, err := os.Stat(rundir); os.IsNotExist(err) {
+		return i, fmt.Errorf("run directory not found: %w", err)
+	}
+
 	// Mandatory files
 	i.runinfoFile, err = alternativeFile(i.dir, "RunInfo.xml")
 	if err != nil {
