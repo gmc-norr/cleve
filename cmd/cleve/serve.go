@@ -12,6 +12,7 @@ import (
 
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/gin"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/gmc-norr/cleve/watcher"
 	"github.com/spf13/cobra"
@@ -72,6 +73,16 @@ var (
 							slog.Info("updating run state", "run", e.Id, "path", e.Path, "state", e.State)
 							if err := db.SetRunState(e.Id, e.State); err != nil {
 								slog.Error("failed to update run state", "run", e.Id, "error", err)
+							}
+						}
+						if e.StateChanged && e.State == cleve.StateReady {
+							slog.Info("loading qc data", "run", e.Id)
+							qc, err := interop.InteropFromDir(e.Path)
+							if err != nil {
+								slog.Error("failed to read qc data", "run", e.Id, "error", err)
+							}
+							if err := db.UpdateRunQC(qc.Summarise()); err != nil {
+								slog.Error("failed to load qc data", "run", e.Id, "error", err)
 							}
 						}
 					}
