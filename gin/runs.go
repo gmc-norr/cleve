@@ -135,7 +135,7 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 			}
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "run added", "run_id": run.RunID})
+		c.JSON(http.StatusOK, gin.H{"message": "run added", "run_id": run.RunID, "state": run.StateHistory.LastState()})
 	}
 }
 
