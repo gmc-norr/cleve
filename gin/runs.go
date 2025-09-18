@@ -25,6 +25,7 @@ type RunSetter interface {
 	CreateSampleSheet(cleve.SampleSheet, ...mongo.SampleSheetOption) (*cleve.UpdateResult, error)
 	SetRunState(string, cleve.State) error
 	SetRunPath(string, string) error
+	UpdateRunQC(interop.InteropSummary) error
 }
 
 func RunsHandler(db RunGetter) gin.HandlerFunc {
@@ -120,6 +121,18 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 		if err := db.CreateRun(&run); err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
+		}
+
+		if run.StateHistory.LastState() == cleve.StateReady {
+			qc, err := interop.InteropFromDir(run.Path)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to read run qc", "run_id": run.RunID, "error": err})
+				return
+			}
+			if err := db.UpdateRunQC(qc.Summarise()); err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "failed to add qc to run", "run_id": run.RunID, "error": err})
+				return
+			}
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "run added", "run_id": run.RunID})

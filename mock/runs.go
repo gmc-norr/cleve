@@ -2,6 +2,7 @@ package mock
 
 import (
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 )
 
@@ -39,6 +40,8 @@ type RunSetter struct {
 	SetRunStateInvoked       bool
 	SetRunPathFn             func(string, string) error
 	SetRunPathInvoked        bool
+	UpdateRunQCFn            func(interop.InteropSummary) error
+	UpdateRunQCInvoked       bool
 }
 
 func (s *RunSetter) CreateRun(run *cleve.Run) error {
@@ -59,6 +62,11 @@ func (s *RunSetter) SetRunState(runId string, state cleve.State) error {
 func (s *RunSetter) SetRunPath(runId string, path string) error {
 	s.SetRunPathInvoked = true
 	return s.SetRunPathFn(runId, path)
+}
+
+func (s *RunSetter) UpdateRunQC(qc interop.InteropSummary) error {
+	s.UpdateRunQCInvoked = true
+	return s.UpdateRunQCFn(qc)
 }
 
 // Mock implementing the runHandler for RunWatcher
