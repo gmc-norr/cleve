@@ -26,25 +26,38 @@ type MarshableError struct {
 	error
 }
 
+type MessageUnit int
+
+const (
+	UnitInvalid MessageUnit = iota
+	UnitRun
+	UnitAnalysis
+)
+
+func (u MessageUnit) String() string {
+	switch u {
+	case UnitRun:
+		return "run"
+	case UnitAnalysis:
+		return "analysis"
+	}
+	return "undefined"
+}
+
+func (u MessageUnit) MarshalJSON() ([]byte, error) {
+	return json.Marshal(u.String())
+}
+
 type MessageType int
 
 const (
-	MessageInit MessageType = iota
-	MessageStart
-	MessageProgress
-	MessageEnd
+	MessageStateUpdate MessageType = iota
 )
 
 func (t MessageType) String() string {
 	switch t {
-	case MessageInit:
-		return "init"
-	case MessageStart:
-		return "start"
-	case MessageProgress:
-		return "progress"
-	case MessageEnd:
-		return "end"
+	case MessageStateUpdate:
+		return "state_update"
 	}
 	return "undefined"
 }
@@ -67,20 +80,37 @@ func (err MarshableError) MarshalJSON() ([]byte, error) {
 }
 
 type WebhookMessage struct {
-	Pipeline        string         `json:"pipeline"`
-	PipelineVersion string         `json:"pipeline_version"`
-	Workdir         string         `json:"workdir"`
-	Message         any            `json:"message"`
-	MessageType     MessageType    `json:"message_type"`
-	Success         bool           `json:"success"`
-	Error           MarshableError `json:"error"`
-	Time            time.Time      `json:"time"`
+	Unit        MessageUnit `json:"unit"`
+	Id          string      `json:"id"`
+	Message     any         `json:"message"`
+	MessageType MessageType `json:"message_type"`
+	State       State       `json:"state"`
+	Path        string      `json:"path"`
+	Time        time.Time   `json:"time"`
 }
 
-type ProgressMessage struct {
-	Message string `json:"message"`
-	// Elapsed time in seconds
-	Elapsed float64 `json:"elapsed"`
+func NewRunMessage(id string, path string, state State, message string, messageType MessageType) WebhookMessage {
+	return WebhookMessage{
+		Unit:        UnitRun,
+		Id:          id,
+		Message:     message,
+		MessageType: messageType,
+		State:       state,
+		Path:        path,
+		Time:        time.Now().Local(),
+	}
+}
+
+func NewAnalysisMessage(id string, path string, state State, message string, messageType MessageType) WebhookMessage {
+	return WebhookMessage{
+		Unit:        UnitAnalysis,
+		Id:          id,
+		Message:     message,
+		MessageType: messageType,
+		State:       state,
+		Path:        path,
+		Time:        time.Now().Local(),
+	}
 }
 
 func NewAuthWebhook(url string, apiKey string, headerKey string) *Webhook {

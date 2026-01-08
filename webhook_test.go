@@ -45,12 +45,8 @@ func TestAuthWebhook(t *testing.T) {
 		},
 		"webhook message": {
 			message: WebhookMessage{
-				Pipeline:        "test",
-				PipelineVersion: "1.0.0",
-				Message:         "this is a test",
-				MessageType:     MessageInit,
-				Success:         true,
-				Error:           NewMarshableError(nil),
+				Message:     "this is a test",
+				MessageType: MessageStateUpdate,
 			},
 			version: "2.1.0",
 			apiKey:  "supersecret",
@@ -63,12 +59,8 @@ func TestAuthWebhook(t *testing.T) {
 		},
 		"webhook message with missing key": {
 			message: WebhookMessage{
-				Pipeline:        "test",
-				PipelineVersion: "1.0.0",
-				Message:         "this is a test",
-				MessageType:     MessageInit,
-				Success:         true,
-				Error:           NewMarshableError(nil),
+				Message:     "this is a test",
+				MessageType: MessageStateUpdate,
 			},
 			version:   "2.1.0",
 			shouldErr: true,
