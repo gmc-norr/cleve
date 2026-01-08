@@ -142,7 +142,9 @@ func (h *Webhook) webhookRequest(payload any) (*http.Request, error) {
 	if err != nil {
 		return r, err
 	}
-	r.Header.Add(h.HeaderKey, h.APIKey)
+	if h.HeaderKey != "" && h.APIKey != "" {
+		r.Header.Add(h.HeaderKey, h.APIKey)
+	}
 	r.Header.Add("X-Cleve-Version", h.CleveVersion)
 	r.Header.Add("Content-Type", "application/json")
 	return r, nil
