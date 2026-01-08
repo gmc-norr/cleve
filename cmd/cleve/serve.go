@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -40,6 +41,34 @@ var (
 			loglevel := slog.LevelWarn
 			if debug {
 				loglevel = slog.LevelDebug
+			}
+
+			var webhook *cleve.Webhook
+			webhook_url := viper.GetString("webhook_url")
+			webhook_api_key := viper.GetString("webhook_api_key")
+			if webhook_url != "" {
+				api_key_header := ""
+				api_key := ""
+				if webhook_api_key != "" {
+					slog.Debug("parsing webhook api key", "input", webhook_api_key)
+					parts := strings.SplitN(webhook_api_key, "=", 2)
+					if len(parts) != 2 {
+						slog.Error("failed to parse webhook api key")
+						os.Exit(1)
+					}
+					api_key_header = parts[0]
+					api_key = parts[1]
+				}
+				webhook = cleve.NewAuthWebhook(webhook_url, api_key, api_key_header)
+				slog.Info("set up webhook", "webhook", webhook)
+			} else {
+				slog.Info("no webhook url given, won't send any webhook messages")
+			}
+
+			if webhook != nil {
+				if err := webhook.Send(map[string]string{"message": "cleve has started with webhooks setup"}); err != nil {
+					slog.Error("failed to send webhook message", "error", err)
+				}
 			}
 
 			watcherLogPath := viper.GetString("watcher_logfile")
@@ -156,10 +185,14 @@ func init() {
 	serveCmd.Flags().IntVarP(&port, "port", "p", 8080, "port")
 	serveCmd.Flags().StringVar(&logfile, "logfile", "", "file to write logs in")
 	serveCmd.Flags().Int("poll-interval", defaultPollInterval, "how often, in seconds, that state changes to runs and analyses should be checked")
+	serveCmd.Flags().String("webhook-url", "", "base URL to send webhook messages to")
+	serveCmd.Flags().String("webhook-api-key", "", "API key for the webhook service (\"<header-key>=<api-key>\")")
 	_ = viper.BindPFlag("host", serveCmd.Flags().Lookup("host"))
 	_ = viper.BindPFlag("port", serveCmd.Flags().Lookup("port"))
 	_ = viper.BindPFlag("logfile", serveCmd.Flags().Lookup("logfile"))
 	_ = viper.BindPFlag("run_poll_interval", serveCmd.Flags().Lookup("poll-interval"))
 	_ = viper.BindPFlag("analysis_poll_interval", serveCmd.Flags().Lookup("poll-interval"))
+	_ = viper.BindPFlag("webhook_url", serveCmd.Flags().Lookup("webhook-url"))
+	_ = viper.BindPFlag("webhook_api_key", serveCmd.Flags().Lookup("webhook-api-key"))
 	viper.SetDefault("run_poll_interval", defaultPollInterval)
 }
