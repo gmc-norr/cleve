@@ -83,11 +83,7 @@ type ProgressMessage struct {
 	Elapsed float64 `json:"elapsed"`
 }
 
-func NewSt2Webhook(url string, apiKey string) *Webhook {
-	return NewWebhook(url, apiKey, "St2-Api-Key")
-}
-
-func NewWebhook(url string, apiKey string, headerKey string) *Webhook {
+func NewAuthWebhook(url string, apiKey string, headerKey string) *Webhook {
 	return &Webhook{
 		Client:    http.Client{},
 		URL:       url,
@@ -95,6 +91,10 @@ func NewWebhook(url string, apiKey string, headerKey string) *Webhook {
 		HeaderKey: headerKey,
 		Method:    "POST",
 	}
+}
+
+func NewWebhook(url string) *Webhook {
+	return NewAuthWebhook(url, "", "")
 }
 
 func (h *Webhook) DisableTLSVerification() {

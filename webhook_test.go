@@ -26,8 +26,8 @@ func testServer(apiKey string, testcase *testCase, t *testing.T) *httptest.Serve
 			_, _ = w.Write([]byte("invalid api key"))
 			return
 		}
-		if r.Header.Get("X-Plumber-Version") != testcase.version {
-			t.Logf("unexpected version %s", r.Header.Get("X-Plumber-Version"))
+		if r.Header.Get("X-Cleve-Version") != testcase.version {
+			t.Logf("unexpected version %s", r.Header.Get("X-Cleve-Version"))
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{"message": "webhook received"}`))
 			return
@@ -36,7 +36,7 @@ func testServer(apiKey string, testcase *testCase, t *testing.T) *httptest.Serve
 	}))
 }
 
-func TestSt2Webhook(t *testing.T) {
+func TestAuthWebhook(t *testing.T) {
 	testcases := map[string]testCase{
 		"text message": {
 			message: "hello",
@@ -82,7 +82,7 @@ func TestSt2Webhook(t *testing.T) {
 			server := testServer(serverkey, &c, t)
 			defer server.Close()
 			t.Logf("sending webook request to test server at %s", server.URL)
-			h := NewSt2Webhook(server.URL, c.apiKey)
+			h := NewAuthWebhook(server.URL, c.apiKey, "St2-Api-Key")
 			h.CleveVersion = c.version
 			err := h.Send(c.message)
 			t.Logf("send error: %v", err)
@@ -110,7 +110,7 @@ func TestFailedConnection(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			server := testServer("supersecret", &c, t)
 			defer server.Close()
-			h := NewSt2Webhook("http://thisisnotright.localhost", c.apiKey)
+			h := NewWebhook("http://thisisnotright.localhost")
 			err := h.Send(c.message)
 			t.Logf("send error: %v", err)
 			if err == nil {
