@@ -65,12 +65,6 @@ var (
 				slog.Info("no webhook url given, won't send any webhook messages")
 			}
 
-			if webhook != nil {
-				if err := webhook.Send(map[string]string{"message": "cleve has started with webhooks setup"}); err != nil {
-					slog.Error("failed to send webhook message", "error", err)
-				}
-			}
-
 			watcherLogPath := viper.GetString("watcher_logfile")
 
 			var watcherLogWriter io.Writer
@@ -102,6 +96,12 @@ var (
 							slog.Info("updating run state", "run", e.Id, "path", e.Path, "state", e.State)
 							if err := db.SetRunState(e.Id, e.State); err != nil {
 								slog.Error("failed to update run state", "run", e.Id, "error", err)
+							}
+							if webhook != nil {
+								msg := cleve.NewRunMessage(e.Id, e.Path, e.State, "run state updated", cleve.MessageStateUpdate)
+								if err := webhook.Send(msg); err != nil {
+									slog.Error("failed to send webhook message", "error", err)
+								}
 							}
 						}
 						if e.StateChanged && e.State == cleve.StateReady {
