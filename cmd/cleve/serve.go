@@ -98,9 +98,14 @@ var (
 								slog.Error("failed to update run state", "run", e.Id, "error", err)
 							}
 							if webhook != nil {
-								msg := cleve.NewRunMessage(e.Id, e.Path, e.State, "run state updated", cleve.MessageStateUpdate)
-								if err := webhook.Send(msg); err != nil {
-									slog.Error("failed to send webhook message", "error", err)
+								run, err := db.Run(e.Id)
+								if err != nil {
+									slog.Error("failed to get a run that should definitely exist", "run", e.Id, "error", err)
+								} else {
+									msg := cleve.NewRunMessage(run, "run state updated", cleve.MessageStateUpdate)
+									if err := webhook.Send(msg); err != nil {
+										slog.Error("failed to send webhook message", "error", err)
+									}
 								}
 							}
 						}

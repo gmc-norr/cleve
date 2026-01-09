@@ -89,26 +89,26 @@ type WebhookMessage struct {
 	Time        time.Time   `json:"time"`
 }
 
-func NewRunMessage(id string, path string, state State, message string, messageType MessageType) WebhookMessage {
+func NewRunMessage(run *Run, message string, messageType MessageType) WebhookMessage {
 	return WebhookMessage{
 		Unit:        UnitRun,
-		Id:          id,
+		Id:          run.RunID,
 		Message:     message,
 		MessageType: messageType,
-		State:       state,
-		Path:        path,
+		State:       run.StateHistory.LastState(),
+		Path:        run.Path,
 		Time:        time.Now().Local(),
 	}
 }
 
-func NewAnalysisMessage(id string, path string, state State, message string, messageType MessageType) WebhookMessage {
+func NewAnalysisMessage(analysis *Analysis, message string, messageType MessageType) WebhookMessage {
 	return WebhookMessage{
 		Unit:        UnitAnalysis,
-		Id:          id,
+		Id:          analysis.AnalysisId,
 		Message:     message,
 		MessageType: messageType,
-		State:       state,
-		Path:        path,
+		State:       analysis.StateHistory.LastState(),
+		Path:        analysis.Path,
 		Time:        time.Now().Local(),
 	}
 }
