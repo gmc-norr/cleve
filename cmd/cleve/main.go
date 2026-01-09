@@ -33,6 +33,11 @@ func init() {
 
 	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file")
+	rootCmd.PersistentFlags().String("webhook-url", "", "URL to send webhook messages to")
+	rootCmd.PersistentFlags().String("webhook-api-key", "", "API key for the webhook service (\"<header-key>=<api-key>\")")
+
+	_ = viper.BindPFlag("webhook_url", rootCmd.PersistentFlags().Lookup("webhook-url"))
+	_ = viper.BindPFlag("webhook_api_key", rootCmd.PersistentFlags().Lookup("webhook-api-key"))
 
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(run.RunCmd)
