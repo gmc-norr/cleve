@@ -82,6 +82,7 @@ func (err MarshableError) MarshalJSON() ([]byte, error) {
 type WebhookMessage struct {
 	Unit        MessageUnit `json:"unit"`
 	Id          string      `json:"id"`
+	Platform    string      `json:"platform"`
 	Message     any         `json:"message"`
 	MessageType MessageType `json:"message_type"`
 	State       State       `json:"state"`
@@ -93,6 +94,7 @@ func NewRunMessage(run *Run, message string, messageType MessageType) WebhookMes
 	return WebhookMessage{
 		Unit:        UnitRun,
 		Id:          run.RunID,
+		Platform:    run.Platform,
 		Message:     message,
 		MessageType: messageType,
 		State:       run.StateHistory.LastState(),
@@ -105,6 +107,7 @@ func NewAnalysisMessage(analysis *Analysis, message string, messageType MessageT
 	return WebhookMessage{
 		Unit:        UnitAnalysis,
 		Id:          analysis.AnalysisId,
+		Platform:    analysis.Software,
 		Message:     message,
 		MessageType: messageType,
 		State:       analysis.StateHistory.LastState(),
