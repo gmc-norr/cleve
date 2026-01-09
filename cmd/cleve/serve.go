@@ -59,7 +59,12 @@ var (
 					api_key_header = parts[0]
 					api_key = parts[1]
 				}
+				slog.Info("setting up webhook", "url", webhook_url)
 				webhook = cleve.NewAuthWebhook(webhook_url, api_key, api_key_header)
+				if err := webhook.Check(); err != nil {
+					slog.Error("failed to set up webhook", "error", err)
+					os.Exit(1)
+				}
 				slog.Info("set up webhook", "webhook", webhook)
 			} else {
 				slog.Info("no webhook url given, won't send any webhook messages")

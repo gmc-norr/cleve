@@ -138,6 +138,23 @@ func (h *Webhook) DisableTLSVerification() {
 	}
 }
 
+func (h *Webhook) Check() error {
+	r, err := http.NewRequest("GET", h.URL, nil)
+	if err != nil {
+		return err
+	}
+	r.Header.Add(h.HeaderKey, h.APIKey)
+	r.Header.Add("Content-Type", "application/json")
+	res, err := h.Do(r)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		return fmt.Errorf("%s", res.Status)
+	}
+	return nil
+}
+
 func (h *Webhook) SetCertificates(certs string) error {
 	certFile, err := os.Open(certs)
 	if err != nil {
