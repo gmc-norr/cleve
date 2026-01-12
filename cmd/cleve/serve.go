@@ -50,7 +50,6 @@ var (
 				api_key_header := ""
 				api_key := ""
 				if webhook_api_key != "" {
-					slog.Debug("parsing webhook api key", "input", webhook_api_key)
 					parts := strings.SplitN(webhook_api_key, "=", 2)
 					if len(parts) != 2 {
 						slog.Error("failed to parse webhook api key")
@@ -65,7 +64,7 @@ var (
 					slog.Error("failed to set up webhook", "error", err)
 					os.Exit(1)
 				}
-				slog.Info("set up webhook", "webhook", webhook)
+				slog.Info("set up webhook", "url", webhook.URL, "method", webhook.Method, "useauth", webhook.APIKey != "")
 			} else {
 				slog.Info("no webhook url given, won't send any webhook messages")
 			}
