@@ -145,6 +145,7 @@ var (
 							slog.Info("new analysis, adding", "path", e.Analysis.Path)
 							if err := db.CreateAnalysis(e.Analysis); err != nil {
 								logger.Error("failed to save analysis", "path", e.Analysis.Path, "analysis_id", e.Analysis.AnalysisId, "run_id", e.Analysis.AnalysisId, "error", err)
+								continue
 							}
 							if webhook != nil {
 								msg := cleve.NewAnalysisMessage(e.Analysis, "analysis state updated", cleve.MessageStateUpdate)
