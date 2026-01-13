@@ -79,6 +79,12 @@ func (err MarshableError) MarshalJSON() ([]byte, error) {
 	return json.Marshal(err.Error())
 }
 
+type WebhookMessageRequest struct {
+	Message     string
+	Entity      any
+	MessageType MessageType
+}
+
 type WebhookMessage struct {
 	Unit        MessageUnit `json:"unit"`
 	Id          string      `json:"id"`
