@@ -10,16 +10,35 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
 type Webhook struct {
 	http.Client
 	URL          string
-	APIKey       string
-	HeaderKey    string
+	APIKey       WebhookApiKey
 	Method       string
 	CleveVersion string
+}
+
+type WebhookApiKey struct {
+	Key   string
+	Value string
+}
+
+func WebhookApiKeyFromString(s string) (WebhookApiKey, error) {
+	key := WebhookApiKey{}
+	if s == "" {
+		return key, nil
+	}
+	parts := strings.SplitN(s, "=", 2)
+	if len(parts) != 2 {
+		return key, fmt.Errorf("failed to parse webhook api key")
+	}
+	key.Key = parts[0]
+	key.Value = parts[1]
+	return key, nil
 }
 
 type MarshableError struct {
@@ -122,18 +141,17 @@ func NewAnalysisMessage(analysis *Analysis, message string, messageType MessageT
 	}
 }
 
-func NewAuthWebhook(url string, apiKey string, headerKey string) *Webhook {
+func NewAuthWebhook(url string, apiKey WebhookApiKey) *Webhook {
 	return &Webhook{
-		Client:    http.Client{},
-		URL:       url,
-		APIKey:    apiKey,
-		HeaderKey: headerKey,
-		Method:    "POST",
+		Client: http.Client{},
+		URL:    url,
+		APIKey: apiKey,
+		Method: "POST",
 	}
 }
 
 func NewWebhook(url string) *Webhook {
-	return NewAuthWebhook(url, "", "")
+	return NewAuthWebhook(url, WebhookApiKey{})
 }
 
 func (h *Webhook) DisableTLSVerification() {
@@ -149,7 +167,9 @@ func (h *Webhook) Check() error {
 	if err != nil {
 		return err
 	}
-	r.Header.Add(h.HeaderKey, h.APIKey)
+	if h.APIKey.Key != "" {
+		r.Header.Add(h.APIKey.Key, h.APIKey.Value)
+	}
 	r.Header.Add("Content-Type", "application/json")
 	res, err := h.Do(r)
 	if err != nil {
@@ -198,8 +218,8 @@ func (h *Webhook) webhookRequest(payload any) (*http.Request, error) {
 	if err != nil {
 		return r, err
 	}
-	if h.HeaderKey != "" && h.APIKey != "" {
-		r.Header.Add(h.HeaderKey, h.APIKey)
+	if h.APIKey.Key != "" && h.APIKey.Value != "" {
+		r.Header.Add(h.APIKey.Key, h.APIKey.Value)
 	}
 	r.Header.Add("X-Cleve-Version", h.CleveVersion)
 	r.Header.Add("Content-Type", "application/json")

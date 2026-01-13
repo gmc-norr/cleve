@@ -74,7 +74,7 @@ func TestAuthWebhook(t *testing.T) {
 			server := testServer(serverkey, &c, t)
 			defer server.Close()
 			t.Logf("sending webook request to test server at %s", server.URL)
-			h := NewAuthWebhook(server.URL, c.apiKey, "St2-Api-Key")
+			h := NewAuthWebhook(server.URL, WebhookApiKey{Key: "St2-Api-Key", Value: c.apiKey})
 			h.CleveVersion = c.version
 			err := h.Send(c.message)
 			t.Logf("send error: %v", err)

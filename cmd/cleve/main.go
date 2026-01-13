@@ -33,11 +33,8 @@ func init() {
 
 	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file")
-	rootCmd.PersistentFlags().String("webhook-url", "", "URL to send webhook messages to")
-	rootCmd.PersistentFlags().String("webhook-api-key", "", "API key for the webhook service (\"<header-key>=<api-key>\")")
-
-	_ = viper.BindPFlag("webhook_url", rootCmd.PersistentFlags().Lookup("webhook-url"))
-	_ = viper.BindPFlag("webhook_api_key", rootCmd.PersistentFlags().Lookup("webhook-api-key"))
+	rootCmd.PersistentFlags().String("webhook-url", viper.GetString("webhook_url"), "URL to send webhook messages to")
+	rootCmd.PersistentFlags().String("webhook-api-key", viper.GetString("webhook-api-key"), "API key for the webhook service (\"<header-key>=<api-key>\")")
 
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(run.RunCmd)
@@ -89,6 +86,24 @@ func initConfig() {
 	}
 	if dbConfig["name"] == nil {
 		log.Fatal("missing database name")
+	}
+
+	_ = viper.BindPFlag("webhook_url", rootCmd.PersistentFlags().Lookup("webhook-url"))
+	_ = viper.BindPFlag("webhook_api_key", rootCmd.PersistentFlags().Lookup("webhook-api-key"))
+
+	webhookApiKey, err := cleve.WebhookApiKeyFromString(viper.GetString("webhook_api_key"))
+	cobra.CheckErr(err)
+	webhookUrl := viper.GetString("webhook_url")
+	if webhookUrl != "" {
+		webhook := cleve.NewAuthWebhook(webhookUrl, webhookApiKey)
+		if err := webhook.Check(); err != nil {
+			slog.Error("failed to set up webhook", "url", webhookUrl, "error", err)
+			os.Exit(1)
+		}
+		slog.Info("set up webhook", "url", webhookUrl)
+		viper.Set("webhook", webhook)
+	} else {
+		slog.Info("no webhook url given, not setting up webhook")
 	}
 }
 

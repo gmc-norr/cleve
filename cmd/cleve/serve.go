@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -44,29 +43,8 @@ var (
 			}
 
 			var webhook *cleve.Webhook
-			webhook_url := viper.GetString("webhook_url")
-			webhook_api_key := viper.GetString("webhook_api_key")
-			if webhook_url != "" {
-				api_key_header := ""
-				api_key := ""
-				if webhook_api_key != "" {
-					parts := strings.SplitN(webhook_api_key, "=", 2)
-					if len(parts) != 2 {
-						slog.Error("failed to parse webhook api key")
-						os.Exit(1)
-					}
-					api_key_header = parts[0]
-					api_key = parts[1]
-				}
-				slog.Info("setting up webhook", "url", webhook_url)
-				webhook = cleve.NewAuthWebhook(webhook_url, api_key, api_key_header)
-				if err := webhook.Check(); err != nil {
-					slog.Error("failed to set up webhook", "error", err)
-					os.Exit(1)
-				}
-				slog.Info("set up webhook", "url", webhook.URL, "method", webhook.Method, "useauth", webhook.APIKey != "")
-			} else {
-				slog.Info("no webhook url given, won't send any webhook messages")
+			if viperWebhook, ok := viper.Get("webhook").(*cleve.Webhook); ok {
+				webhook = viperWebhook
 			}
 
 			watcherLogPath := viper.GetString("watcher_logfile")
