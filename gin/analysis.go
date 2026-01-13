@@ -2,6 +2,7 @@ package gin
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -233,6 +234,12 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			return
 		}
 
+		c.Set("webhook_message", cleve.WebhookMessageRequest{
+			Entity:      &a,
+			Message:     "new analysis added",
+			MessageType: cleve.MessageStateUpdate,
+		})
+
 		c.JSON(http.StatusOK, gin.H{
 			"message":     "analysis added",
 			"analysis_id": a.AnalysisId,
@@ -240,7 +247,7 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	}
 }
 
-func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
+func UpdateAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		analysisId := c.Param("analysisId")
 		stateUpdated := false
@@ -328,6 +335,19 @@ func UpdateAnalysisHandler(db AnalysisSetter) gin.HandlerFunc {
 		msg := "analysis updated"
 		if !stateUpdated && !pathUpdated && !filesUpdated {
 			msg = "nothing updated"
+		}
+
+		if stateUpdated {
+			a, err := db.Analysis(analysisId)
+			if err != nil {
+				_ = c.Error(fmt.Errorf("failed to fetch analysis when requesting web hook message"))
+			} else {
+				c.Set("webhook_message", cleve.WebhookMessageRequest{
+					Entity:      a,
+					Message:     "analysis state updated",
+					MessageType: cleve.MessageStateUpdate,
+				})
+			}
 		}
 
 		c.JSON(http.StatusOK, gin.H{
