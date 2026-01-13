@@ -190,7 +190,7 @@ var (
 				os.Exit(1)
 			}()
 
-			router := gin.NewRouter(db, debug)
+			router := gin.NewRouter(db, debug, webhook)
 			logger.Info("serving cleve", "address", addr)
 			err = http.ListenAndServe(addr, router)
 			if err != nil {
