@@ -11,6 +11,7 @@ import (
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -78,11 +79,18 @@ var (
 			updateQc = updateQc || reloadQc
 			updateMetadata = updateMetadata || reloadMetadata
 
+			stateUpdated := false
+			var webhook *cleve.Webhook
+			if viperWebhook, ok := viper.Get("webhook").(*cleve.Webhook); ok {
+				webhook = viperWebhook
+			}
+
 			// Update the run state. If the state was supplied on the command line, then use this state.
 			// If not, then detect the state and set it accordingly, but only if the last state of the run
 			// is not one of the ones that should be ignored.
 			lastState := run.StateHistory.LastState()
 			if stateArg != "" && lastState != stateUpdate {
+				stateUpdated = true
 				slog.Info("updating run state", "run", run.RunID, "old_state", lastState, "new_state", stateUpdate)
 				run.StateHistory.Add(stateUpdate)
 				didSomething = true
@@ -133,6 +141,11 @@ var (
 				if err := db.UpdateRun(run); err != nil {
 					slog.Error("failed to update run", "run", run.RunID, "error", err)
 					os.Exit(1)
+				}
+				if stateUpdated {
+					if err := webhook.Send(cleve.NewRunMessage(run, "run state updated", cleve.MessageStateUpdate)); err != nil {
+						slog.Error("failed to send webhook message", "error", err)
+					}
 				}
 			} else {
 				slog.Info("no changes made", "run", args[0])
