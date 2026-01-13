@@ -3,12 +3,14 @@ package run
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var addCmd = &cobra.Command{
@@ -57,6 +59,11 @@ var addCmd = &cobra.Command{
 			}
 		}
 
+		var webhook *cleve.Webhook
+		if viperWebhook, ok := viper.Get("webhook").(*cleve.Webhook); ok {
+			webhook = viperWebhook
+		}
+
 		run := cleve.Run{
 			RunID:          interopData.RunInfo.RunId,
 			ExperimentName: interopData.RunParameters.ExperimentName,
@@ -78,6 +85,10 @@ var addCmd = &cobra.Command{
 			if err := db.CreateRunQC(run.RunID, interopData.Summarise()); err != nil {
 				log.Fatal(err)
 			}
+		}
+
+		if err := webhook.Send(cleve.NewRunMessage(&run, "new run added", cleve.MessageStateUpdate)); err != nil {
+			slog.Error("failed to send webhook message", "error", err)
 		}
 
 		log.Printf("Successfully added run %s", run.RunID)
