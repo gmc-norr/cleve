@@ -112,6 +112,33 @@ In a production environment, it is highly recommended to set this up with a reve
 
 Once everything is up and running, the API documentation can be found at `<cleve-host>:<cleve-port>/api`.
 
+## Outgoing webhooks
+
+Cleve has the ability to send messages to a webhook endpoint.
+In order of precedence, this can be configured in
+
+- Command line parameters
+- Environment variables
+- The config file
+
+The configuration consists of a URL and an optional API key/token if it is needed for authentication.
+If only the URL is supplied, it is assumed that no authentication is needed.
+The command line parameters are `--webhook-url` and `--webhook-api-key`, the environment variables are `CLEVE_WEBHOOK_URL` and `CLEVE_WEBHOOK_API_KEY`, and the config keys are `webhook_url` and `webhook_api_key`.
+The URL should point to the exact endpoint that should be used, including protocol and port.
+If an API key is needed, this should be on the format `<header-key>=<header-value>` where `<header-key>` is the HTTP header that is expected by the receiving endpoint, and the `<header-value>` is the API key.
+
+Messages are sent to this endpoint whenever the state of a run or an analysis is updated.
+The message is send with `Content-Type: application/json` using HTTP POST, and the JSON body is a single object with the following keys:
+
+- `unit`: the entity represented in the message, either `"run"` or `"analysis"`
+- `id`: the ID of the run or analysis
+- `platform`: if unit is `"run"`, this is the sequencing platform; if unit is `"analysis"`, this is the analysis software
+- `message`: free text message
+- `message_type`: the only message type currently implemented is `"state_update"`.
+- `state`: the most recent state of the run or analysis
+- `path`: absolute path to the run or analysis directory
+- `time`: date and time the message was generated (not the time when the status was changed)
+
 ## Development
 
 ### Requirements
