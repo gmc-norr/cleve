@@ -91,6 +91,9 @@ func initConfig() {
 	_ = viper.BindPFlag("webhook_url", rootCmd.PersistentFlags().Lookup("webhook-url"))
 	_ = viper.BindPFlag("webhook_api_key", rootCmd.PersistentFlags().Lookup("webhook-api-key"))
 
+	cobra.CheckErr(viper.BindEnv("webhook_url", "CLEVE_WEBHOOK_URL"))
+	cobra.CheckErr(viper.BindEnv("webhook_api_key", "CLEVE_WEBHOOK_API_KEY"))
+
 	webhookApiKey, err := cleve.WebhookApiKeyFromString(viper.GetString("webhook_api_key"))
 	cobra.CheckErr(err)
 	webhookUrl := viper.GetString("webhook_url")
