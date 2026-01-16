@@ -26,3 +26,11 @@ apidoc: cleve_api.yaml
 # Host and port where cleve will be served
 host: 127.0.0.1
 port: 8080
+
+# Base URL where webhook requests should be sent. If not defined, no
+# webhook requests will be sent. The webhook API key should define
+# both the header key that will be used in the request, as well as the
+# API key itself, separated by `=`. If the webhook API key is not defined,
+# it is assumed that no authentication is needed.
+# webhook_url:
+# webhook_api_key:

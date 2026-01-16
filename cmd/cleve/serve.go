@@ -42,6 +42,11 @@ var (
 				loglevel = slog.LevelDebug
 			}
 
+			var webhook *cleve.Webhook
+			if viperWebhook, ok := viper.Get("webhook").(*cleve.Webhook); ok {
+				webhook = viperWebhook
+			}
+
 			watcherLogPath := viper.GetString("watcher_logfile")
 
 			var watcherLogWriter io.Writer
@@ -73,6 +78,17 @@ var (
 							slog.Info("updating run state", "run", e.Id, "path", e.Path, "state", e.State)
 							if err := db.SetRunState(e.Id, e.State); err != nil {
 								slog.Error("failed to update run state", "run", e.Id, "error", err)
+							}
+							if webhook != nil {
+								run, err := db.Run(e.Id)
+								if err != nil {
+									slog.Error("failed to get a run that should definitely exist", "run", e.Id, "error", err)
+								} else {
+									msg := cleve.NewRunMessage(run, "run state updated", cleve.MessageStateUpdate)
+									if err := webhook.Send(msg); err != nil {
+										slog.Error("failed to send webhook message", "error", err)
+									}
+								}
 							}
 						}
 						if e.StateChanged && e.State == cleve.StateReady {
@@ -107,6 +123,13 @@ var (
 							slog.Info("new analysis, adding", "path", e.Analysis.Path)
 							if err := db.CreateAnalysis(e.Analysis); err != nil {
 								logger.Error("failed to save analysis", "path", e.Analysis.Path, "analysis_id", e.Analysis.AnalysisId, "run_id", e.Analysis.AnalysisId, "error", err)
+								continue
+							}
+							if webhook != nil {
+								msg := cleve.NewAnalysisMessage(e.Analysis, "analysis state updated", cleve.MessageStateUpdate)
+								if err := webhook.Send(msg); err != nil {
+									slog.Error("failed to send webhook message", "error", err)
+								}
 							}
 							continue
 						}
@@ -122,6 +145,13 @@ var (
 							}
 							if err := db.UpdateAnalysis(e.Analysis); err != nil {
 								logger.Error("failed to update analysis", "analysis_id", e.Analysis.AnalysisId, "error", err)
+								continue
+							}
+							if webhook != nil {
+								msg := cleve.NewAnalysisMessage(e.Analysis, "analysis state updated", cleve.MessageStateUpdate)
+								if err := webhook.Send(msg); err != nil {
+									slog.Error("failed to send webhook message", "error", err)
+								}
 							}
 						}
 					}
@@ -138,7 +168,7 @@ var (
 				os.Exit(1)
 			}()
 
-			router := gin.NewRouter(db, debug)
+			router := gin.NewRouter(db, debug, webhook)
 			logger.Info("serving cleve", "address", addr)
 			err = http.ListenAndServe(addr, router)
 			if err != nil {

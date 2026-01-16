@@ -135,6 +135,12 @@ func AddRunHandler(db RunSetter) gin.HandlerFunc {
 			}
 		}
 
+		c.Set("webhook_message", cleve.WebhookMessageRequest{
+			Entity:      &run,
+			Message:     "a new run was added",
+			MessageType: cleve.MessageStateUpdate,
+		})
+
 		c.JSON(http.StatusOK, gin.H{"message": "run added", "run_id": run.RunID, "state": run.StateHistory.LastState()})
 	}
 }
@@ -283,6 +289,14 @@ func UpdateRunHandler(db *mongo.DB) gin.HandlerFunc {
 		msg := "update successful"
 		if !any_updated {
 			msg = "nothing updated"
+		}
+
+		if stateUpdated, ok := updated["state"]; ok && stateUpdated {
+			c.Set("webhook_message", cleve.WebhookMessageRequest{
+				Message:     "run state updated",
+				Entity:      run,
+				MessageType: cleve.MessageStateUpdate,
+			})
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": msg, "run_id": runId, "updated": updated})

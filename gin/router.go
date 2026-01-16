@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"log/slog"
 	"math"
 	"net/http"
 	"os"
@@ -38,6 +39,35 @@ func authMiddleware(db *mongo.DB) gin.HandlerFunc {
 				"message": "invalid API key",
 			})
 			return
+		}
+
+		c.Next()
+	}
+}
+
+func webhookMiddleware(webhook *cleve.Webhook) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		rawSendMessage, ok := c.Keys["webhook_message"]
+		if !ok {
+			c.Next()
+			return
+		}
+		sendMessage, ok := rawSendMessage.(cleve.WebhookMessageRequest)
+		if !ok {
+			c.Next()
+			return
+		}
+		switch e := sendMessage.Entity.(type) {
+		case *cleve.Run:
+			slog.Debug("got a run from upstream handler", "run", e.RunID)
+			if err := webhook.Send(cleve.NewRunMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
+				log.Printf("failed to send run webhook message error=%v", err)
+			}
+		case *cleve.Analysis:
+			slog.Debug("got an analysis from upstream handler", "analysis", e.AnalysisId)
+			if err := webhook.Send(cleve.NewAnalysisMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
+				log.Printf("failed to send analysis webhook message error=%v", err)
+			}
 		}
 
 		c.Next()
@@ -125,7 +155,7 @@ func LoadHTMLFS(e *gin.Engine, fs fs.FS, patterns ...string) {
 	e.SetHTMLTemplate(t)
 }
 
-func NewRouter(db *mongo.DB, debug bool) http.Handler {
+func NewRouter(db *mongo.DB, debug bool, webhook *cleve.Webhook) http.Handler {
 	gin.DisableConsoleColor()
 	if viper.GetString("logfile") != "" {
 		f, err := os.OpenFile(viper.GetString("logfile"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
@@ -218,14 +248,14 @@ func NewRouter(db *mongo.DB, debug bool) http.Handler {
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))
-	authEndpoints.POST("/api/analyses", AddAnalysisHandler(db))
-	authEndpoints.PATCH("/api/analyses/:analysisId", UpdateAnalysisHandler(db))
+	authEndpoints.POST("/api/analyses", AddAnalysisHandler(db), webhookMiddleware(webhook))
+	authEndpoints.PATCH("/api/analyses/:analysisId", UpdateAnalysisHandler(db), webhookMiddleware(webhook))
 	authEndpoints.POST("/api/panels", AddPanelHandler(db))
 	authEndpoints.PATCH("/api/panels/:panelId/archive", ArchivePanelHandler(db))
-	authEndpoints.POST("/api/runs", AddRunHandler(db))
-	authEndpoints.PATCH("/api/runs/:runId", UpdateRunHandler(db))
-	authEndpoints.PATCH("/api/runs/:runId/path", UpdateRunPathHandler(db))
-	authEndpoints.PATCH("/api/runs/:runId/state", UpdateRunStateHandler(db))
+	authEndpoints.POST("/api/runs", AddRunHandler(db), webhookMiddleware(webhook))
+	authEndpoints.PATCH("/api/runs/:runId", UpdateRunHandler(db), webhookMiddleware(webhook))
+	authEndpoints.PATCH("/api/runs/:runId/path", UpdateRunPathHandler(db), webhookMiddleware(webhook))
+	authEndpoints.PATCH("/api/runs/:runId/state", UpdateRunStateHandler(db), webhookMiddleware(webhook))
 	authEndpoints.POST("/api/runs/:runId/samplesheet", AddRunSampleSheetHandler(db))
 	authEndpoints.POST("/api/runs/:runId/qc", AddRunQcHandler(db))
 	authEndpoints.POST("/api/samples", AddSampleHandler(db))

@@ -2,13 +2,15 @@ package run
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 	"path/filepath"
 
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var addCmd = &cobra.Command{
@@ -23,38 +25,50 @@ var addCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mongo.Connect()
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("failed to connect to database", "error", err)
+			os.Exit(1)
 		}
 
 		runDir, err := filepath.Abs(args[0])
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("failed to get absolute path to run directory", "error", err)
+			os.Exit(1)
 		}
 
 		interopData, err := interop.InteropFromDir(runDir)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("failed to read interop data", "error", err)
+			os.Exit(1)
 		}
 
 		sampleSheetFile, err := cleve.MostRecentSamplesheet(runDir)
 		if err != nil {
+			// TODO: better handling of this error
 			if err.Error() == "no samplesheet found" {
-				log.Printf("no samplesheet found for run")
+				slog.Warn("no samplesheet found for run")
 			} else {
-				log.Fatal(err)
+				slog.Error("failed to get most recent samplesheet", "error", err)
+				os.Exit(1)
 			}
 		}
 
 		if sampleSheetFile != "" {
-			log.Printf("most recent samplesheet: %s", sampleSheetFile)
+			slog.Debug("most recent samplesheet", "path", sampleSheetFile)
 			samplesheet, err := cleve.ReadSampleSheet(sampleSheetFile)
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("failed to read samplesheet", "error", err)
+				os.Exit(1)
 			}
 			_, err = db.CreateSampleSheet(samplesheet, mongo.SampleSheetWithRunId(interopData.RunInfo.RunId))
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("failed to save samplesheet", "error", err)
+				os.Exit(1)
 			}
+		}
+
+		var webhook *cleve.Webhook
+		if viperWebhook, ok := viper.Get("webhook").(*cleve.Webhook); ok {
+			webhook = viperWebhook
 		}
 
 		run := cleve.Run{
@@ -67,19 +81,25 @@ var addCmd = &cobra.Command{
 		}
 		currentState := run.State(false)
 		run.StateHistory.Add(currentState)
-		log.Printf("Setting run state to %s", currentState)
+		slog.Info("current run state", "state", currentState)
 
 		if err = db.CreateRun(&run); err != nil {
-			log.Fatal(err)
+			slog.Error("failed to save run", "error", err)
+			os.Exit(1)
 		}
 
 		if run.StateHistory.LastState() == cleve.StateReady {
-			log.Printf("adding qc for run %s", run.RunID)
+			slog.Info("adding qc data for run")
 			if err := db.CreateRunQC(run.RunID, interopData.Summarise()); err != nil {
-				log.Fatal(err)
+				slog.Error("failed to save qc data", "error", err)
+				os.Exit(1)
 			}
 		}
 
-		log.Printf("Successfully added run %s", run.RunID)
+		if err := webhook.Send(cleve.NewRunMessage(&run, "new run added", cleve.MessageStateUpdate)); err != nil {
+			slog.Error("failed to send webhook message", "error", err)
+		}
+
+		slog.Info("successfully added", "run", run.RunID)
 	},
 }
