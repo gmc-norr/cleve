@@ -26,6 +26,7 @@ const (
 	FileSvVcf
 	FileFastq
 	FileText
+	FileInterop
 )
 
 var validAnalysisFileTypes = map[string]AnalysisFileType{
@@ -35,6 +36,7 @@ var validAnalysisFileTypes = map[string]AnalysisFileType{
 	"vcf_sv":  FileSvVcf,
 	"fastq":   FileFastq,
 	"text":    FileText,
+	"interop": FileInterop,
 }
 
 func (t AnalysisFileType) String() string {
@@ -51,13 +53,15 @@ func (t AnalysisFileType) String() string {
 		return "fastq"
 	case FileText:
 		return "text"
+	case FileInterop:
+		return "interop"
 	default:
 		return ""
 	}
 }
 
 func (t AnalysisFileType) IsValid() bool {
-	return t > 0 && t <= FileText
+	return t > 0 && t <= FileInterop
 }
 
 func AnalysisFileTypeFromString(stringType string) AnalysisFileType {
@@ -428,6 +432,19 @@ func bclConvertFiles(analysis *Analysis, summary DragenAnalysisSummary) ([]Analy
 		} else {
 			slog.Warn("dragen manifest", "error", err, "name", sf, "analysis_id", analysis.AnalysisId, "path", analysis.Path)
 		}
+	}
+
+	if indexMetrics, err := manifest.FindFile("IndexMetricsOut.bin"); err == nil {
+		slog.Debug("dragen manifest", "indexMetrics", indexMetrics)
+		files = append(files, AnalysisFile{
+			partOfAnalysis: true,
+			Path:           indexMetrics,
+			FileType:       FileInterop,
+			Level:          LevelRun,
+			ParentId:       analysis.Runs[0],
+		})
+	} else {
+		slog.Warn("dragen manifest", "error", err, "name", "IndexMetricsOut.bin", "analysis_id", analysis.AnalysisId, "path", analysis.Path)
 	}
 
 	for _, wf := range summary.Workflows {
