@@ -163,7 +163,8 @@ func NewAnalysisFileFilter() AnalysisFileFilter {
 func (f *AnalysisFileFilter) Validate() error {
 	var errs []error
 	if !f.FileType.IsValid() && f.ParentId == "" && f.Name == "" && f.Pattern == nil {
-		errs = append(errs, fmt.Errorf("one of FileType, ParentId, Name or Pattern must be defined"))
+		// for now, pattern is only for internal use
+		errs = append(errs, fmt.Errorf("one of type, parent id or name must be defined"))
 	}
 	if f.Pattern != nil && f.Name != "" {
 		errs = append(errs, fmt.Errorf("cannot use both name and pattern"))
