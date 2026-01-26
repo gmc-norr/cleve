@@ -29,6 +29,12 @@ func getAnalysisFileFilter(c *gin.Context) (cleve.AnalysisFileFilter, error) {
 	if err := c.BindQuery(&filter); err != nil && !errors.Is(err, io.EOF) {
 		return filter, err
 	}
+	if p, ok := c.Params.Get("runId"); ok {
+		filter.RunId = p
+	}
+	if p, ok := c.Params.Get("analysisId"); ok {
+		filter.AnalysisId = p
+	}
 	return filter, filter.Validate()
 }
 
