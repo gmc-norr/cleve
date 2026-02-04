@@ -21,6 +21,9 @@ type AnalysisFileType int
 const (
 	_ AnalysisFileType = iota
 	FileVcf
+	FilePng
+	FileHtml
+	FileD4
 	FileBam
 	FileSnvVcf
 	FileSvVcf
@@ -31,6 +34,9 @@ const (
 
 var validAnalysisFileTypes = map[string]AnalysisFileType{
 	"vcf":     FileVcf,
+	"png":     FilePng,
+	"html":    FileHtml,
+	"d4":      FileD4,
 	"bam":     FileBam,
 	"vcf_snv": FileSnvVcf,
 	"vcf_sv":  FileSvVcf,
@@ -43,6 +49,12 @@ func (t AnalysisFileType) String() string {
 	switch t {
 	case FileVcf:
 		return "vcf"
+	case FilePng:
+		return "png"
+	case FileHtml:
+		return "html"
+	case FileD4:
+		return "d4"
 	case FileBam:
 		return "bam"
 	case FileSnvVcf:
