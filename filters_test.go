@@ -78,6 +78,31 @@ func TestAnalysisFileFilter(t *testing.T) {
 			},
 			isValid: false,
 		},
+		{
+			name: "invalid analysis file type",
+			filter: AnalysisFileFilter{
+				Level:    LevelSample,
+				FileType: AnalysisFileTypeFromString("blabla"),
+			},
+			isValid: false,
+		},
+		{
+			name: "valid filter with zero analysis file type",
+			filter: AnalysisFileFilter{
+				Level:    LevelSample,
+				ParentId: "sample1",
+			},
+			isValid: true,
+		},
+		{
+			name: "invalid file type",
+			filter: AnalysisFileFilter{
+				Level:    LevelSample,
+				FileType: AnalysisFileTypeFromString("blabla"),
+				ParentId: "sample1",
+			},
+			isValid: false,
+		},
 	}
 
 	for _, c := range testcases {
