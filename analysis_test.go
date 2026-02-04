@@ -724,6 +724,48 @@ func TestGetFiles(t *testing.T) {
 				"/path/to/analysis/1/data/stats3.txt",
 			},
 		},
+		{
+			name: "2 sample level html files",
+			analysis: Analysis{
+				Path: "/path/to/analysis/1",
+				OutputFiles: []AnalysisFile{
+					{
+						partOfAnalysis: true,
+						Path:           "data/reports/DragenGermline/report_files/samples/sample1/sample1.html",
+						FileType:       FileHtml,
+						Level:          LevelSample,
+						ParentId:       "run1",
+					},
+					{
+						partOfAnalysis: true,
+						Path:           "data/reports/DragenGermline/report_files/samples/sample2/sample2.html",
+						FileType:       FileHtml,
+						Level:          LevelSample,
+						ParentId:       "run1",
+					},
+					{
+						partOfAnalysis: true,
+						Path:           "data/stats1.csv",
+						FileType:       FileText,
+						Level:          LevelRun,
+						ParentId:       "run1",
+					},
+					{
+						partOfAnalysis: true,
+						Path:           "data/stats2.txt",
+						FileType:       FileText,
+						Level:          LevelRun,
+						ParentId:       "run1",
+					},
+				},
+			},
+			filetype: FileHtml,
+			level:    LevelSample,
+			files: []string{
+				"/path/to/analysis/1/data/reports/DragenGermline/report_files/samples/sample1/sample1.html",
+				"/path/to/analysis/1/data/reports/DragenGermline/report_files/samples/sample2/sample2.html",
+			},
+		},
 	}
 
 	for _, c := range testcases {
