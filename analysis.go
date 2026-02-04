@@ -19,7 +19,8 @@ import (
 type AnalysisFileType int
 
 const (
-	_ AnalysisFileType = iota
+	_           AnalysisFileType = iota // Zero value
+	FileInvalid                         // Invalid value
 	FileVcf
 	FileBam
 	FileSnvVcf
@@ -61,13 +62,20 @@ func (t AnalysisFileType) String() string {
 }
 
 func (t AnalysisFileType) IsValid() bool {
-	return t > 0 && t <= FileInterop
+	return t > FileInvalid && t <= FileInterop
+}
+
+func (t AnalysisFileType) IsZero() bool {
+	return t == 0
 }
 
 func AnalysisFileTypeFromString(stringType string) AnalysisFileType {
+	if stringType == "" {
+		return 0
+	}
 	t, ok := validAnalysisFileTypes[stringType]
 	if !ok {
-		return 0
+		return FileInvalid
 	}
 	return t
 }

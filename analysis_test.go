@@ -850,3 +850,49 @@ func TestBSONLevel(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalysisFileType(t *testing.T) {
+	testcases := []struct {
+		name       string
+		typeString string
+		isValid    bool
+		isZero     bool
+	}{
+		{
+			name:       "fastq",
+			typeString: "fastq",
+			isValid:    true,
+			isZero:     false,
+		},
+		{
+			name:       "interop",
+			typeString: "interop",
+			isValid:    true,
+			isZero:     false,
+		},
+		{
+			name:       "empty",
+			typeString: "",
+			isValid:    false,
+			isZero:     true,
+		},
+		{
+			name:       "exe",
+			typeString: "exe",
+			isValid:    false,
+			isZero:     false,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			ft := AnalysisFileTypeFromString(c.typeString)
+			if ft.IsValid() != c.isValid {
+				t.Errorf("expected IsValid = %t, got %t", c.isValid, ft.IsValid())
+			}
+			if ft.IsZero() != c.isZero {
+				t.Errorf("expected IsZero = %t, got %t", c.isZero, ft.IsZero())
+			}
+		})
+	}
+}
