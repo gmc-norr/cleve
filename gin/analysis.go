@@ -298,12 +298,14 @@ func UpdateAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 
 		if len(updateRequest.Files) > 0 {
-			for _, f := range updateRequest.Files {
-				if err := f.Validate(); err != nil {
+			for i := range updateRequest.Files {
+				// Files should be part of the analysis, and thus the paths should be relative.
+				updateRequest.Files[i].IsPartOfAnalysis()
+				if err := updateRequest.Files[i].Validate(); err != nil {
 					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 						"error":   "invalid file entry",
 						"details": err.Error(),
-						"file":    f,
+						"file":    updateRequest.Files[i],
 					})
 					return
 				}
