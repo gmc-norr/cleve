@@ -2,8 +2,8 @@ package key
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
+	"os"
 
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
@@ -22,16 +22,19 @@ var createCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		db, err := mongo.Connect()
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("failed to connect to database", "error", err)
+			os.Exit(1)
 		}
 
 		plainKey := cleve.NewPlainKey()
 		key, err := cleve.NewAPIKey(plainKey, args[0])
 		if err != nil {
-			log.Fatalf("error: %s", err)
+			slog.Error("failed to create API key", "error", err)
+			os.Exit(1)
 		}
 		if err := db.CreateKey(key); err != nil {
-			log.Fatalf("error: %s", err)
+			slog.Error("failed to save API key", "error", err)
+			os.Exit(1)
 		}
 
 		slog.Warn("API key only shown this time, make sure to save it")
