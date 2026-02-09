@@ -114,7 +114,7 @@ func TestUpdateAnalysis(t *testing.T) {
 			},
 			exists:       true,
 			filesUpdated: true,
-			data:         []byte(`{"files": [{"path": "output/sample1.data", "level": "sample", "parent_id": "analysis1"}]}`),
+			data:         []byte(`{"files": [{"path": "output/sample1.tsv", "level": "sample", "parent_id": "analysis1", "type": "text"}]}`),
 			code:         http.StatusOK,
 		},
 	}
