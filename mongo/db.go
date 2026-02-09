@@ -110,6 +110,12 @@ func (db *DB) SetIndexes() error {
 	}
 	log.Printf("Set index %s on runs", name)
 
+	name, err = db.SetKeyIndex()
+	if err != nil {
+		return fmt.Errorf("failed to set index on keys, does the collection exist? %w", err)
+	}
+	slog.Info("set index", "collection", "keys", "name", name)
+
 	name, err = db.SetAnalysesIndex()
 	if err != nil {
 		return fmt.Errorf("failed to set index on analyses, does the collection exist? %w", err)
@@ -168,6 +174,9 @@ func (db *DB) Init(ctx context.Context) error {
 	if err := createCollection("keys"); err != nil {
 		return err
 	}
+	if _, err := db.SetKeyIndex(); err != nil {
+		return err
+	}
 	if err := createCollection("run_qc"); err != nil {
 		return err
 	}
@@ -198,6 +207,11 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 		return nil, err
 	}
 
+	keyIndex, err := db.KeyIndex()
+	if err != nil {
+		return nil, err
+	}
+
 	analysesIndex, err := db.AnalysesIndex()
 	if err != nil {
 		return nil, err
@@ -220,6 +234,7 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 
 	indexes := make(map[string][]map[string]string)
 	indexes["runs"] = runIndex
+	indexes["keys"] = keyIndex
 	indexes["analyses"] = analysesIndex
 	indexes["run_qc"] = runQcIndex
 	indexes["samplesheets"] = sampleSheetIndex

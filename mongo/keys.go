@@ -3,10 +3,12 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (db DB) CreateKey(k *cleve.APIKey) error {
@@ -55,4 +57,49 @@ func (db DB) KeyFromId(id []byte) (*cleve.APIKey, error) {
 	var key cleve.APIKey
 	err := db.KeyCollection().FindOne(context.TODO(), bson.D{{Key: "id", Value: id}}).Decode(&key)
 	return &key, err
+}
+
+func (db DB) KeyIndex() ([]map[string]string, error) {
+	cursor, err := db.KeyCollection().Indexes().List(context.TODO())
+	if err != nil {
+		return []map[string]string{}, err
+	}
+	defer closeCursor(cursor, context.TODO())
+
+	var indexes []map[string]string
+
+	var result []bson.M
+	if err = cursor.All(context.TODO(), &result); err != nil {
+		return []map[string]string{}, err
+	}
+
+	for _, v := range result {
+		i := map[string]string{}
+		for k, val := range v {
+			i[k] = fmt.Sprintf("%v", val)
+		}
+		indexes = append(indexes, i)
+	}
+
+	return indexes, nil
+}
+
+func (db DB) SetKeyIndex() (string, error) {
+	indexModel := mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "id", Value: 1},
+		},
+		Options: options.Index().SetUnique(true),
+	}
+
+	// TODO: do this as a transaction and roll back if anything fails
+	res, err := db.KeyCollection().Indexes().DropAll(context.TODO())
+	if err != nil {
+		return "", err
+	}
+
+	slog.Info("dropped indexes", "collection", "keys", "count", res.Lookup("nIndexesWas").Int32())
+
+	name, err := db.KeyCollection().Indexes().CreateOne(context.TODO(), indexModel)
+	return name, err
 }
