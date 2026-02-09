@@ -32,7 +32,7 @@ func TestAddAnalysis(t *testing.T) {
 		{
 			name:   "analysis with output files",
 			exists: false,
-			data:   []byte(`{"analysis_id": "analysis1", "path": "/path/to/analysis1", "run_id": "run1", "state": "ready", "software": "software1", "software_version": "1.0.0", "output_files": [{"path": "fastq/sample1_1.fastq.gz", "type": "fastq"}, {"path": "fastq/sample1_2.fastq.gz", "type": "fastq"}]}`),
+			data:   []byte(`{"analysis_id": "analysis1", "path": "/path/to/analysis1", "run_id": "run1", "state": "ready", "software": "software1", "software_version": "1.0.0", "output_files": [{"path": "fastq/sample1_1.fastq.gz", "type": "fastq", "level": "sample", "parent_id": "sample1"}, {"path": "fastq/sample1_2.fastq.gz", "type": "fastq", "level": "sample", "parent_id": "sample1"}]}`),
 			code:   http.StatusOK,
 			error:  false,
 		},
@@ -62,7 +62,7 @@ func TestAddAnalysis(t *testing.T) {
 			AddAnalysisHandler(&gs)(ctx)
 
 			if w.Code != c.code {
-				t.Errorf("expected status code %d, got %d", c.code, w.Code)
+				t.Errorf("expected status code %d, got %d: %s", c.code, w.Code, w.Body)
 			}
 		})
 	}
