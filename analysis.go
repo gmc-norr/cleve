@@ -135,6 +135,10 @@ type AnalysisFile struct {
 	ParentId string           `bson:"parent_id" json:"parent_id"`
 }
 
+func (f *AnalysisFile) IsPartOfAnalysis() {
+	f.partOfAnalysis = true
+}
+
 func (f *AnalysisFile) Validate() error {
 	var errs []error
 	if f.partOfAnalysis && filepath.IsAbs(f.Path) {

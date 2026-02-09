@@ -159,6 +159,12 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		a.StateHistory.Add(params.State)
 		if a.OutputFiles == nil {
 			a.OutputFiles = make([]cleve.AnalysisFile, 0)
+		} else {
+			for i := range a.OutputFiles {
+				// Since we're adding the files together with the analysis,
+				// the paths should be relative to the analysis directory.
+				a.OutputFiles[i].IsPartOfAnalysis()
+			}
 		}
 
 		// Check that the analysis doesn't already exist
