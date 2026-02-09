@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"time"
 
@@ -51,7 +50,7 @@ func Connect() (*DB, error) {
 	mongo_user := viper.GetString("database.user")
 	mongo_password := viper.GetString("database.password")
 
-	log.Printf("Connecting to database %s at %s:%d\n", mongo_db, mongo_host, mongo_port)
+	slog.Info("connecting to database", "name", mongo_db, "host", mongo_host, "port", mongo_port)
 	mongoURI := fmt.Sprintf("%s:%d", mongo_host, mongo_port)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -67,7 +66,7 @@ func Connect() (*DB, error) {
 	}
 
 	if err := client.Ping(ctx, nil); err != nil {
-		log.Fatalf("error reaching database: %s\n", err)
+		return nil, fmt.Errorf("error reaching database: %w", err)
 	}
 
 	return &DB{
@@ -108,7 +107,7 @@ func (db *DB) SetIndexes() error {
 	if err != nil {
 		return fmt.Errorf("failed to set index on runs, does the collection exist? %w", err)
 	}
-	log.Printf("Set index %s on runs", name)
+	slog.Info("set index", "collection", "runs", "name", name)
 
 	name, err = db.SetKeyIndex()
 	if err != nil {
@@ -120,25 +119,25 @@ func (db *DB) SetIndexes() error {
 	if err != nil {
 		return fmt.Errorf("failed to set index on analyses, does the collection exist? %w", err)
 	}
-	log.Printf("Set index %s on analyses", name)
+	slog.Info("set index", "collection", "analyses", "name", name)
 
 	name, err = db.SetRunQCIndex()
 	if err != nil {
 		return fmt.Errorf("failed to set index on run qc, does the collection exist? %w", err)
 	}
-	log.Printf("Set index %s on run qc", name)
+	slog.Info("set index", "collection", "run_qc", "name", name)
 
 	name, err = db.SetSampleSheetIndex()
 	if err != nil {
 		return fmt.Errorf("failed to set index on samplesheets, does the collection exist? %w", err)
 	}
-	log.Printf("Set index %s on samplesheets", name)
+	slog.Info("set index", "collection", "samplesheets", "name", name)
 
 	name, err = db.SetPanelIndex()
 	if err != nil {
 		return fmt.Errorf("failed to set index on panels, does the collection exist? %w", err)
 	}
-	log.Printf("Set index %s on panels", name)
+	slog.Info("set index", "collection", "panels", "name", name)
 
 	return nil
 }
@@ -151,12 +150,12 @@ func (db *DB) Init(ctx context.Context) error {
 		err := db.CreateCollection(ctx, name)
 		if err != nil {
 			if errors.As(err, &mongo.CommandError{}) {
-				log.Printf("collection %s already exists", name)
+				slog.Warn("collection already exists", "name", name)
 				return nil
 			}
 			return err
 		}
-		log.Printf("created collection %s", name)
+		slog.Info("created collection", "name", name)
 		return nil
 	}
 	if err := createCollection("runs"); err != nil {
