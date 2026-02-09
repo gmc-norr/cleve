@@ -1,6 +1,7 @@
 package key
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 
@@ -21,7 +22,7 @@ var listCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		for _, key := range keys {
-			fmt.Printf("%s: %s\n", key.User, key.Key)
+			fmt.Printf("%s: %s %s\n", key.User, key.Created.Format("2006-01-02T15:04"), base64.URLEncoding.EncodeToString(key.Id))
 		}
 	},
 }

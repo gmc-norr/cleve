@@ -10,7 +10,7 @@ import (
 )
 
 func (db DB) CreateKey(k *cleve.APIKey) error {
-	_, err := db.UserKey(k.User)
+	_, err := db.KeyFromId(k.Id)
 	if err == nil {
 		return fmt.Errorf("key already exists for user %s", k.User)
 	}
@@ -23,9 +23,9 @@ func (db DB) CreateKey(k *cleve.APIKey) error {
 	return nil
 }
 
-func (db DB) DeleteKey(k string) error {
+func (db DB) DeleteKey(id []byte) error {
 	res, err := db.KeyCollection().DeleteOne(context.TODO(), bson.D{
-		{Key: "key", Value: k},
+		{Key: "id", Value: id},
 	})
 	if res.DeletedCount == 0 {
 		return mongo.ErrNoDocuments
@@ -51,8 +51,8 @@ func (db DB) Keys() ([]*cleve.APIKey, error) {
 	return keys, nil
 }
 
-func (db DB) UserKey(user string) (*cleve.APIKey, error) {
+func (db DB) KeyFromId(id []byte) (*cleve.APIKey, error) {
 	var key cleve.APIKey
-	err := db.KeyCollection().FindOne(context.TODO(), bson.D{{Key: "user", Value: user}}).Decode(&key)
+	err := db.KeyCollection().FindOne(context.TODO(), bson.D{{Key: "id", Value: id}}).Decode(&key)
 	return &key, err
 }

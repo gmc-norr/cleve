@@ -3,6 +3,7 @@ package key
 import (
 	"fmt"
 	"log"
+	"log/slog"
 
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
@@ -10,7 +11,7 @@ import (
 )
 
 var createCmd = &cobra.Command{
-	Use:   "create [flags] user",
+	Use:   "create USER [flags]",
 	Short: "Create API key for a user/service",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
@@ -24,11 +25,16 @@ var createCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		key := cleve.NewAPIKey(args[0])
+		plainKey := cleve.NewPlainKey()
+		key, err := cleve.NewAPIKey(plainKey, args[0])
+		if err != nil {
+			log.Fatalf("error: %s", err)
+		}
 		if err := db.CreateKey(key); err != nil {
 			log.Fatalf("error: %s", err)
 		}
 
-		fmt.Printf("Created API key for %s: %s\n", key.User, key.Key)
+		slog.Warn("API key only shown this time, make sure to save it")
+		fmt.Printf("Created API key for %s: %s\n", key.User, plainKey)
 	},
 }

@@ -1,6 +1,7 @@
 package key
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 
@@ -9,11 +10,11 @@ import (
 )
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete",
+	Use:   "delete ID [flags]",
 	Short: "Delete API key",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
-			return fmt.Errorf("key is required")
+			return fmt.Errorf("id is required")
 		}
 		return nil
 	},
@@ -22,7 +23,11 @@ var deleteCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := db.DeleteKey(args[0]); err != nil {
+		id, err := base64.URLEncoding.DecodeString(args[0])
+		if err != nil {
+			log.Fatalf("error: failed to decode ID: %s", err)
+		}
+		if err := db.DeleteKey(id); err != nil {
 			if err == mongo.ErrNoDocuments {
 				log.Fatal("error: key not found")
 			}

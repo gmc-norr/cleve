@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"io"
@@ -32,8 +33,25 @@ func authMiddleware(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		_, err := db.Key(requestKey)
+		b, err := base64.URLEncoding.DecodeString(requestKey)
 		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error":   "unauthorized",
+				"message": "invalid API key",
+			})
+			return
+		}
+		plainKey := cleve.PlainKey(b)
+		apiKey, err := db.KeyFromId(plainKey.Id())
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error":   "unauthorized",
+				"message": "invalid API key",
+			})
+			return
+		}
+
+		if err := apiKey.Compare(plainKey); err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "unauthorized",
 				"message": "invalid API key",
