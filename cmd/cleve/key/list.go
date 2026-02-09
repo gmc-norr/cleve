@@ -25,7 +25,7 @@ var listCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		for _, key := range keys {
-			fmt.Printf("%s: %s %s\n", key.User, key.Created.Format("2006-01-02T15:04"), base64.URLEncoding.EncodeToString(key.Id))
+			fmt.Printf("%s: %s %s\n", key.User, key.Created.Local().Format("2006-01-02T15:04"), base64.URLEncoding.EncodeToString(key.Id))
 		}
 	},
 }
