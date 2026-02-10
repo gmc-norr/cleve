@@ -50,7 +50,7 @@ func createMockAnalysisDir(t *testing.T, options ...analysisDirOption) string {
 }
 
 func withCopyComplete() analysisDirOption {
-	return func(d *analysisDir) { 
+	return func(d *analysisDir) {
 		d.copyComplete = true
 	}
 }
