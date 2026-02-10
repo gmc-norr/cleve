@@ -50,7 +50,7 @@ func createMockAnalysisDir(t *testing.T, options ...analysisDirOption) string {
 }
 
 func withCopyComplete() analysisDirOption {
-	return func(d *analysisDir) {
+	return func(d *analysisDir) { 
 		d.copyComplete = true
 	}
 }
@@ -734,14 +734,14 @@ func TestGetFiles(t *testing.T) {
 						Path:           "data/reports/DragenGermline/report_files/samples/sample1/sample1.html",
 						FileType:       FileHtml,
 						Level:          LevelSample,
-						ParentId:       "run1",
+						ParentId:       "sample1",
 					},
 					{
 						partOfAnalysis: true,
 						Path:           "data/reports/DragenGermline/report_files/samples/sample2/sample2.html",
 						FileType:       FileHtml,
 						Level:          LevelSample,
-						ParentId:       "run1",
+						ParentId:       "sample2",
 					},
 					{
 						partOfAnalysis: true,
