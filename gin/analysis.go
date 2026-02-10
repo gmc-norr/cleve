@@ -157,15 +157,6 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			OutputFiles:     params.OutputFiles,
 		}
 		a.StateHistory.Add(params.State)
-		if a.OutputFiles == nil {
-			a.OutputFiles = make([]cleve.AnalysisFile, 0)
-		} else {
-			for i := range a.OutputFiles {
-				// Since we're adding the files together with the analysis,
-				// the paths should be relative to the analysis directory.
-				a.OutputFiles[i].IsPartOfAnalysis()
-			}
-		}
 
 		// Check that the analysis doesn't already exist
 		_, err := db.Analysis(a.AnalysisId)
@@ -209,12 +200,14 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 
 		// Check the output files
-		for _, f := range a.OutputFiles {
-			if err := f.Validate(); err != nil {
+		for i := range a.OutputFiles {
+			// Files should be part of the analysis, and thus the paths should be relative.
+			a.OutputFiles[i].IsPartOfAnalysis()
+			if err := a.OutputFiles[i].Validate(); err != nil {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 					"error":   "invalid output file entry",
 					"details": err.Error(),
-					"file":    f,
+					"file":    a.OutputFiles[i],
 				})
 				return
 			}
