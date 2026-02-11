@@ -147,6 +147,10 @@ type AnalysisFile struct {
 	ParentId string           `bson:"parent_id" json:"parent_id"`
 }
 
+func (f *AnalysisFile) IsPartOfAnalysis() {
+	f.partOfAnalysis = true
+}
+
 func (f *AnalysisFile) Validate() error {
 	var errs []error
 	if f.partOfAnalysis && filepath.IsAbs(f.Path) {
@@ -155,7 +159,9 @@ func (f *AnalysisFile) Validate() error {
 	if !f.partOfAnalysis && !filepath.IsAbs(f.Path) {
 		errs = append(errs, fmt.Errorf("path must be absolute for standalone files"))
 	}
-	if !f.FileType.IsValid() {
+	if f.FileType.IsZero() {
+		errs = append(errs, fmt.Errorf("missing file type"))
+	} else if !f.FileType.IsValid() {
 		errs = append(errs, fmt.Errorf("invalid file type"))
 	}
 	if !f.Level.IsValid() {

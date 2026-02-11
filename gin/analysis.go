@@ -157,9 +157,6 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 			OutputFiles:     params.OutputFiles,
 		}
 		a.StateHistory.Add(params.State)
-		if a.OutputFiles == nil {
-			a.OutputFiles = make([]cleve.AnalysisFile, 0)
-		}
 
 		// Check that the analysis doesn't already exist
 		_, err := db.Analysis(a.AnalysisId)
@@ -184,7 +181,7 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 
 		// Check the input files
-		for _, f := range params.InputFiles {
+		for _, f := range a.InputFiles {
 			if err := f.Validate(); err != nil {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 					"error":   "invalid input file entry",
@@ -203,12 +200,14 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 
 		// Check the output files
-		for _, f := range params.OutputFiles {
-			if err := f.Validate(); err != nil {
+		for i := range a.OutputFiles {
+			// Files should be part of the analysis, and thus the paths should be relative.
+			a.OutputFiles[i].IsPartOfAnalysis()
+			if err := a.OutputFiles[i].Validate(); err != nil {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 					"error":   "invalid output file entry",
 					"details": err.Error(),
-					"file":    f,
+					"file":    a.OutputFiles[i],
 				})
 				return
 			}
@@ -292,12 +291,14 @@ func UpdateAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 
 		if len(updateRequest.Files) > 0 {
-			for _, f := range updateRequest.Files {
-				if err := f.Validate(); err != nil {
+			for i := range updateRequest.Files {
+				// Files should be part of the analysis, and thus the paths should be relative.
+				updateRequest.Files[i].IsPartOfAnalysis()
+				if err := updateRequest.Files[i].Validate(); err != nil {
 					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 						"error":   "invalid file entry",
 						"details": err.Error(),
-						"file":    f,
+						"file":    updateRequest.Files[i],
 					})
 					return
 				}
