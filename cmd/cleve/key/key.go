@@ -8,6 +8,7 @@ func init() {
 	KeyCmd.AddCommand(listCmd)
 	KeyCmd.AddCommand(createCmd)
 	KeyCmd.AddCommand(deleteCmd)
+	KeyCmd.AddCommand(testCmd)
 }
 
 var KeyCmd = &cobra.Command{

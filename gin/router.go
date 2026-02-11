@@ -1,11 +1,11 @@
 package gin
 
 import (
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
-	"log"
 	"log/slog"
 	"math"
 	"net/http"
@@ -32,8 +32,25 @@ func authMiddleware(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 
-		_, err := db.Key(requestKey)
+		b, err := base64.URLEncoding.DecodeString(requestKey)
 		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error":   "unauthorized",
+				"message": "invalid API key",
+			})
+			return
+		}
+		plainKey := cleve.PlainKey(b)
+		apiKey, err := db.KeyFromId(plainKey.Id())
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error":   "unauthorized",
+				"message": "invalid API key",
+			})
+			return
+		}
+
+		if err := apiKey.Compare(plainKey); err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "unauthorized",
 				"message": "invalid API key",
@@ -61,12 +78,12 @@ func webhookMiddleware(webhook *cleve.Webhook) gin.HandlerFunc {
 		case *cleve.Run:
 			slog.Debug("got a run from upstream handler", "run", e.RunID)
 			if err := webhook.Send(cleve.NewRunMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
-				log.Printf("failed to send run webhook message error=%v", err)
+				slog.Error("failed to send run webhook message", "error", err)
 			}
 		case *cleve.Analysis:
 			slog.Debug("got an analysis from upstream handler", "analysis", e.AnalysisId)
 			if err := webhook.Send(cleve.NewAnalysisMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
-				log.Printf("failed to send analysis webhook message error=%v", err)
+				slog.Error("failed to send analysis webhook message", "error", err)
 			}
 		}
 
@@ -160,7 +177,8 @@ func NewRouter(db *mongo.DB, debug bool, webhook *cleve.Webhook) http.Handler {
 	if viper.GetString("logfile") != "" {
 		f, err := os.OpenFile(viper.GetString("logfile"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("failed to open config file", "error", err)
+			os.Exit(1)
 		}
 		gin.DefaultWriter = io.MultiWriter(f, os.Stdout)
 	}
@@ -188,13 +206,15 @@ func NewRouter(db *mongo.DB, debug bool, webhook *cleve.Webhook) http.Handler {
 	})
 	templateFS, err := cleve.GetTemplateFS()
 	if err != nil {
-		log.Fatalf("failed to get template fs: %s", err.Error())
+		slog.Error("failed to get template fs", "error", err)
+		os.Exit(1)
 	}
 	LoadHTMLFS(r, templateFS, "*.tmpl")
 
 	assetFS, err := cleve.GetAssetFS()
 	if err != nil {
-		log.Fatalf("failed to get asset fs: %s", err.Error())
+		slog.Error("failed to get asset fs", "error", err)
+		os.Exit(1)
 	}
 	r.StaticFS("/static", http.FS(assetFS))
 
