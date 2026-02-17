@@ -309,17 +309,26 @@ func (a *Analysis) GetFiles(filter AnalysisFileFilter) []AnalysisFile {
 }
 
 func (a *Analysis) ResolveOutputFiles() error {
-	return a.OutputFiles.ResolvePaths()
+	return a.OutputFiles.ResolvePaths(a.Path)
 }
 
 // ResolveOutputFiles checks that all output files defined for the analysis exist, and if the
-// path contains wildcards, these paths are reolved to their actual file representation. Directories
-// matching the pattern will be ignored. If a path doesn't exist, a non-nil error is returned.
-// If a path with wildcards cannot be resolved, a non-nil error is returned.
-func (a *AnalysisFiles) ResolvePaths() error {
+// path contains wildcards, these paths are resolved to their actual file representation. If the
+// files are part of an analysis, then the paths are resolved relative to parentDir. If they are
+// not already part of analysis, this argument is ignored. Directories matching the pattern will
+// be ignored. If a path doesn't exist, a non-nil error is returned. If a path with wildcards
+// cannot be resolved, a non-nil error is returned.
+func (a *AnalysisFiles) ResolvePaths(parentDir string) error {
 	var resolvedFiles []AnalysisFile
 	for _, f := range *a {
-		paths, err := filepath.Glob(f.Path)
+		filePath := f.Path
+		if f.partOfAnalysis {
+			if parentDir == "" {
+				return fmt.Errorf("parentDir cannot be an empty string")
+			}
+			filePath = filepath.Join(parentDir, f.Path)
+		}
+		paths, err := filepath.Glob(filePath)
 		if err != nil {
 			return fmt.Errorf("failed to glob files: %w", err)
 		}
@@ -334,6 +343,12 @@ func (a *AnalysisFiles) ResolvePaths() error {
 			}
 			if info.IsDir() {
 				continue
+			}
+			if f.partOfAnalysis {
+				p, err = filepath.Rel(parentDir, p)
+				if err != nil {
+					return fmt.Errorf("path not relative to parentDir, should not be possible in this context")
+				}
 			}
 			resolvedFiles = append(resolvedFiles, AnalysisFile{
 				partOfAnalysis: f.partOfAnalysis,

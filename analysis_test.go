@@ -963,6 +963,7 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					Path:     filepath.Join(tmpdir, "path/to/file*"),
 					Level:    LevelRun,
 					FileType: FilePng,
+					ParentId: "run1",
 				},
 			},
 		},
@@ -981,6 +982,7 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					Path:     filepath.Join(tmpdir, "path/*"),
 					Level:    LevelRun,
 					FileType: FilePng,
+					ParentId: "run1",
 				},
 			},
 		},
@@ -995,6 +997,7 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					Path:     filepath.Join(tmpdir, "path/*"),
 					Level:    LevelRun,
 					FileType: FilePng,
+					ParentId: "run1",
 				},
 			},
 			shouldError: true,
@@ -1012,6 +1015,7 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					Path:     filepath.Join(tmpdir, "path/*/file*.png"),
 					Level:    LevelRun,
 					FileType: FilePng,
+					ParentId: "run1",
 				},
 			},
 		},
@@ -1025,6 +1029,7 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					Path:     filepath.Join(tmpdir, "path/*/file1.png"),
 					Level:    LevelRun,
 					FileType: FilePng,
+					ParentId: "run1",
 				},
 			},
 		},
@@ -1038,6 +1043,7 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					Path:     filepath.Join(tmpdir, "path/to/file1.png"),
 					Level:    LevelRun,
 					FileType: FilePng,
+					ParentId: "run1",
 				},
 			},
 		},
@@ -1048,11 +1054,32 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					Path:     filepath.Join(tmpdir, "path/to/file1.png"),
 					Level:    LevelRun,
 					FileType: FilePng,
+					ParentId: "run1",
 				},
 			},
 			shouldError: true,
 		},
+		{
+			name: "resolve relative paths",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					partOfAnalysis: true,
+					Path:           "path/to/file*.png",
+					Level:          LevelRun,
+					FileType:       FilePng,
+					ParentId:       "run1",
+				},
+			},
+			shouldError: false,
+		},
 	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
 
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
@@ -1069,9 +1096,12 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					_ = os.Remove(path)
 				}()
 			}
-			err := c.files.ResolvePaths()
+			err := c.files.ResolvePaths(tmpdir)
 			if (err == nil) && c.shouldError {
 				t.Fatal("expected error to be non-nil, got nil")
+			}
+			if err := c.files.Validate(); err != nil {
+				t.Errorf("invalid file after resolving wildcards: %v", err)
 			}
 			if err != nil {
 				if !c.shouldError {
