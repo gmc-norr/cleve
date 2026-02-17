@@ -945,7 +945,7 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 		name          string
 		expectedPaths []string
 		extraPaths    []string
-		files         []AnalysisFile
+		files         AnalysisFiles
 		shouldError   bool
 	}{
 		{
@@ -1056,24 +1056,20 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					_ = os.Remove(path)
 				}()
 			}
-			a := Analysis{
-				OutputFiles: c.files,
-			}
-			err := a.ResolveOutputFiles()
+			err := c.files.ResolvePaths()
 			if (err == nil) && c.shouldError {
 				t.Fatal("expected error to be non-nil, got nil")
 			}
 			if err != nil {
 				if !c.shouldError {
-					t.Fatalf("expected error to be nil, got %s", err)
+					t.Fatalf("expected error to be nil, got %q", err)
 				}
 				// We got an error as expected, nothing more to check
 				return
 			}
-			if len(a.OutputFiles) != len(c.expectedPaths) {
-				t.Errorf("expected %d files, got %d files", len(c.expectedPaths), len(a.OutputFiles))
+			if len(c.files) != len(c.expectedPaths) {
+				t.Errorf("expected %d files, got %d files", len(c.expectedPaths), len(c.files))
 			}
-			t.Log(a)
 		})
 	}
 }
