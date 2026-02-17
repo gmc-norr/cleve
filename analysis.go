@@ -302,8 +302,7 @@ func (a *Analysis) ResolveOutputFiles() error {
 // ResolveOutputFiles checks that all output files defined for the analysis exist, and if the
 // path contains wildcards, these paths are reolved to their actual file representation. Directories
 // matching the pattern will be ignored. If a path doesn't exist, a non-nil error is returned.
-// If a path with wildcards cannot be resolved, a non-nil error is returned. If the resolved files
-// don't all have the same parent directory, a non-nil error is returned.
+// If a path with wildcards cannot be resolved, a non-nil error is returned.
 func (a *AnalysisFiles) ResolvePaths() error {
 	var resolvedFiles []AnalysisFile
 	for _, f := range *a {
