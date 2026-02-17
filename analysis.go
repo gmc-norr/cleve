@@ -147,6 +147,8 @@ type AnalysisFile struct {
 	ParentId string           `bson:"parent_id" json:"parent_id"`
 }
 
+type AnalysisFiles []AnalysisFile
+
 func (f *AnalysisFile) IsPartOfAnalysis() {
 	f.partOfAnalysis = true
 }
@@ -275,7 +277,7 @@ type Analysis struct {
 	SoftwareVersion string               `bson:"software_version" json:"software_version"`
 	StateHistory    StateHistory         `bson:"state_history" json:"state_history"`
 	InputFiles      []AnalysisFileFilter `bson:"input_files" json:"input_files"`
-	OutputFiles     []AnalysisFile       `bson:"output_files" json:"output_files"`
+	OutputFiles     AnalysisFiles        `bson:"output_files" json:"output_files"`
 }
 
 // GetFiles returns all output files of the analysis for which the supplied filter is true.
@@ -293,13 +295,18 @@ func (a *Analysis) GetFiles(filter AnalysisFileFilter) []AnalysisFile {
 	return files
 }
 
+func (a *Analysis) ResolveOutputFiles() error {
+	return a.OutputFiles.ResolvePaths()
+}
+
 // ResolveOutputFiles checks that all output files defined for the analysis exist, and if the
 // path contains wildcards, these paths are reolved to their actual file representation. Directories
 // matching the pattern will be ignored. If a path doesn't exist, a non-nil error is returned.
-// If a path with wildcards cannot be resolved, a non-nil error is returned.
-func (a *Analysis) ResolveOutputFiles() error {
+// If a path with wildcards cannot be resolved, a non-nil error is returned. If the resolved files
+// don't all have the same parent directory, a non-nil error is returned.
+func (a *AnalysisFiles) ResolvePaths() error {
 	var resolvedFiles []AnalysisFile
-	for _, f := range a.OutputFiles {
+	for _, f := range *a {
 		paths, err := filepath.Glob(f.Path)
 		if err != nil {
 			return fmt.Errorf("failed to glob files: %w", err)
@@ -329,7 +336,7 @@ func (a *Analysis) ResolveOutputFiles() error {
 			return fmt.Errorf("no file matches found: %s", f.Path)
 		}
 	}
-	a.OutputFiles = resolvedFiles
+	*a = AnalysisFiles(resolvedFiles)
 	return nil
 }
 
