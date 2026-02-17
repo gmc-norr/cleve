@@ -241,6 +241,9 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 }
 
 func UpdateAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
+	// TODO: this should be more like the update handler for runs where
+	// the updates happen directly on the analysis struct and the whole
+	// entry is updated in the database.
 	return func(c *gin.Context) {
 		analysisId := c.Param("analysisId")
 		stateUpdated := false
