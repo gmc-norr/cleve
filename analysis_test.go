@@ -1052,6 +1052,9 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 					t.Fatal(err)
 				}
 				_ = f.Close()
+				defer func() {
+					_ = os.Remove(path)
+				}()
 			}
 			a := Analysis{
 				OutputFiles: c.files,
@@ -1071,12 +1074,6 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 				t.Errorf("expected %d files, got %d files", len(c.expectedPaths), len(a.OutputFiles))
 			}
 			t.Log(a)
-
-			for _, path := range append(c.expectedPaths, c.extraPaths...) {
-				if err := os.Remove(path); err != nil {
-					t.Fatal(err)
-				}
-			}
 		})
 	}
 }
