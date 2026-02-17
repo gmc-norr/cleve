@@ -157,11 +157,11 @@ func TestUpdateAnalysis(t *testing.T) {
 			}
 
 			if c.pathUpdated != gs.SetAnalysisPathInvoked {
-				t.Errorf("state updated: %t, expected it: %t", gs.SetAnalysisPathInvoked, c.pathUpdated)
+				t.Errorf("path updated: %t, expected it: %t", gs.SetAnalysisPathInvoked, c.pathUpdated)
 			}
 
 			if c.filesUpdated != gs.SetAnalysisFilesInvoked {
-				t.Errorf("state updated: %t, expected it: %t", gs.SetAnalysisFilesInvoked, c.filesUpdated)
+				t.Errorf("files updated: %t, expected it: %t", gs.SetAnalysisFilesInvoked, c.filesUpdated)
 			}
 		})
 	}
