@@ -938,3 +938,145 @@ func TestAnalysisFileType(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalysisOutputFilesGlobbing(t *testing.T) {
+	tmpdir := t.TempDir()
+	testcases := []struct {
+		name          string
+		expectedPaths []string
+		extraPaths    []string
+		files         []AnalysisFile
+		shouldError   bool
+	}{
+		{
+			name: "two files in the same directory",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			extraPaths: []string{
+				filepath.Join(tmpdir, "path/file1.png"),
+				filepath.Join(tmpdir, "path/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/to/file*"),
+					Level:    LevelRun,
+					FileType: FilePng,
+				},
+			},
+		},
+		{
+			name: "directories shouldn't be matched",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/file1.png"),
+				filepath.Join(tmpdir, "path/file2.png"),
+			},
+			extraPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/*"),
+					Level:    LevelRun,
+					FileType: FilePng,
+				},
+			},
+		},
+		{
+			name: "no matches",
+			extraPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/*"),
+					Level:    LevelRun,
+					FileType: FilePng,
+				},
+			},
+			shouldError: true,
+		},
+		{
+			name: "multidir match",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+				filepath.Join(tmpdir, "path/of/file1.png"),
+				filepath.Join(tmpdir, "path/of/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/*/file*.png"),
+					Level:    LevelRun,
+					FileType: FilePng,
+				},
+			},
+		},
+		{
+			name: "no wildcards with match",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/to/file1.png"),
+					Level:    LevelRun,
+					FileType: FilePng,
+				},
+			},
+		},
+		{
+			name: "no wildcards without match",
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/to/file1.png"),
+					Level:    LevelRun,
+					FileType: FilePng,
+				},
+			},
+			shouldError: true,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			for _, path := range append(c.expectedPaths, c.extraPaths...) {
+				if err := os.MkdirAll(filepath.Dir(path), 0o777); err != nil {
+					t.Fatal(err)
+				}
+				f, err := os.Create(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_ = f.Close()
+			}
+			a := Analysis{
+				OutputFiles: c.files,
+			}
+			err := a.ResolveOutputFiles()
+			if (err == nil) && c.shouldError {
+				t.Fatal("expected error to be non-nil, got nil")
+			}
+			if err != nil {
+				if !c.shouldError {
+					t.Fatalf("expected error to be nil, got %s", err)
+				}
+				// We got an error as expected, nothing more to check
+				return
+			}
+			if len(a.OutputFiles) != len(c.expectedPaths) {
+				t.Errorf("expected %d files, got %d files", len(c.expectedPaths), len(a.OutputFiles))
+			}
+			t.Log(a)
+
+			for _, path := range append(c.expectedPaths, c.extraPaths...) {
+				if err := os.Remove(path); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+}

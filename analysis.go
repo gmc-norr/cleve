@@ -293,6 +293,46 @@ func (a *Analysis) GetFiles(filter AnalysisFileFilter) []AnalysisFile {
 	return files
 }
 
+// ResolveOutputFiles checks that all output files defined for the analysis exist, and if the
+// path contains wildcards, these paths are reolved to their actual file representation. Directories
+// matching the pattern will be ignored. If a path doesn't exist, a non-nil error is returned.
+// If a path with wildcards cannot be resolved, a non-nil error is returned.
+func (a *Analysis) ResolveOutputFiles() error {
+	var resolvedFiles []AnalysisFile
+	for _, f := range a.OutputFiles {
+		paths, err := filepath.Glob(f.Path)
+		if err != nil {
+			return fmt.Errorf("failed to glob files: %w", err)
+		}
+		if paths == nil {
+			return fmt.Errorf("no matches found: %s", f.Path)
+		}
+		fileCount := 0
+		for _, p := range paths {
+			info, err := os.Stat(p)
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				continue
+			}
+			resolvedFiles = append(resolvedFiles, AnalysisFile{
+				partOfAnalysis: f.partOfAnalysis,
+				Path:           p,
+				FileType:       f.FileType,
+				Level:          f.Level,
+				ParentId:       f.ParentId,
+			})
+			fileCount++
+		}
+		if fileCount == 0 {
+			return fmt.Errorf("no file matches found: %s", f.Path)
+		}
+	}
+	a.OutputFiles = resolvedFiles
+	return nil
+}
+
 type DragenAnalysisSummary struct {
 	RunID           string `bson:"run_id" json:"run_id"`
 	Result          string `bson:"result" json:"result"`
