@@ -1016,6 +1016,19 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 			},
 		},
 		{
+			name: "match only on dir",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/*/file1.png"),
+					Level:    LevelRun,
+					FileType: FilePng,
+				},
+			},
+		},
+		{
 			name: "no wildcards with match",
 			expectedPaths: []string{
 				filepath.Join(tmpdir, "path/to/file1.png"),
