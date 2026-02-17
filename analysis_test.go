@@ -1086,3 +1086,48 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalysisFileValidation(t *testing.T) {
+	testcases := []struct {
+		name  string
+		file  AnalysisFile
+		valid bool
+	}{
+		{
+			name: "ascending above the analysis directory",
+			file: AnalysisFile{
+				partOfAnalysis: true,
+				Path:           "../test.txt",
+				FileType:       FileText,
+				Level:          LevelRun,
+			},
+			valid: false,
+		},
+		{
+			name: "ascending above the analysis directory",
+			file: AnalysisFile{
+				partOfAnalysis: true,
+				Path:           "./../test.txt",
+				FileType:       FileText,
+				Level:          LevelRun,
+			},
+			valid: false,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			err := c.file.Validate()
+			if err != nil {
+				t.Log(err)
+				if c.valid {
+					t.Errorf("expected file to be valid, got error: %q", err)
+				}
+			} else {
+				if !c.valid {
+					t.Error("expected file to be invalid, got no error")
+				}
+			}
+		})
+	}
+}

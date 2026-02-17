@@ -158,6 +158,11 @@ func (f *AnalysisFile) Validate() error {
 	if f.partOfAnalysis && filepath.IsAbs(f.Path) {
 		errs = append(errs, fmt.Errorf("path must be relative for files associated with analyses"))
 	}
+	if f.partOfAnalysis {
+		if strings.HasPrefix(filepath.Clean(f.Path), "..") {
+			errs = append(errs, fmt.Errorf("relative paths cannot ascend beyond the analysis directory"))
+		}
+	}
 	if !f.partOfAnalysis && !filepath.IsAbs(f.Path) {
 		errs = append(errs, fmt.Errorf("path must be absolute for standalone files"))
 	}
