@@ -153,6 +153,14 @@ func (f *AnalysisFile) IsPartOfAnalysis() {
 	f.partOfAnalysis = true
 }
 
+func (f AnalysisFiles) Validate() error {
+	var errs []error
+	for _, af := range f {
+		errs = append(errs, af.Validate())
+	}
+	return errors.Join(errs...)
+}
+
 func (f *AnalysisFile) Validate() error {
 	var errs []error
 	if f.partOfAnalysis && filepath.IsAbs(f.Path) {
