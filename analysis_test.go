@@ -938,3 +938,248 @@ func TestAnalysisFileType(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalysisOutputFilesGlobbing(t *testing.T) {
+	tmpdir := t.TempDir()
+	testcases := []struct {
+		name          string
+		expectedPaths []string
+		extraPaths    []string
+		files         AnalysisFiles
+		shouldError   bool
+	}{
+		{
+			name: "two files in the same directory",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			extraPaths: []string{
+				filepath.Join(tmpdir, "path/file1.png"),
+				filepath.Join(tmpdir, "path/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/to/file*"),
+					Level:    LevelRun,
+					FileType: FilePng,
+					ParentId: "run1",
+				},
+			},
+		},
+		{
+			name: "directories shouldn't be matched",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/file1.png"),
+				filepath.Join(tmpdir, "path/file2.png"),
+			},
+			extraPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/*"),
+					Level:    LevelRun,
+					FileType: FilePng,
+					ParentId: "run1",
+				},
+			},
+		},
+		{
+			name: "no matches",
+			extraPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/*"),
+					Level:    LevelRun,
+					FileType: FilePng,
+					ParentId: "run1",
+				},
+			},
+			shouldError: true,
+		},
+		{
+			name: "multidir match",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+				filepath.Join(tmpdir, "path/of/file1.png"),
+				filepath.Join(tmpdir, "path/of/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/*/file*.png"),
+					Level:    LevelRun,
+					FileType: FilePng,
+					ParentId: "run1",
+				},
+			},
+		},
+		{
+			name: "match only on dir",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/*/file1.png"),
+					Level:    LevelRun,
+					FileType: FilePng,
+					ParentId: "run1",
+				},
+			},
+		},
+		{
+			name: "no wildcards with match",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+			},
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/to/file1.png"),
+					Level:    LevelRun,
+					FileType: FilePng,
+					ParentId: "run1",
+				},
+			},
+		},
+		{
+			name: "no wildcards without match",
+			files: []AnalysisFile{
+				{
+					Path:     filepath.Join(tmpdir, "path/to/file1.png"),
+					Level:    LevelRun,
+					FileType: FilePng,
+					ParentId: "run1",
+				},
+			},
+			shouldError: true,
+		},
+		{
+			name: "resolve relative paths",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			files: []AnalysisFile{
+				{
+					partOfAnalysis: true,
+					Path:           "path/to/file*.png",
+					Level:          LevelRun,
+					FileType:       FilePng,
+					ParentId:       "run1",
+				},
+			},
+			shouldError: false,
+		},
+		{
+			name: "matching multiple extensions should error",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			extraPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.log"),
+				filepath.Join(tmpdir, "path/to/file2.log"),
+			},
+			files: []AnalysisFile{
+				{
+					partOfAnalysis: true,
+					Path:           "path/to/file*",
+					Level:          LevelRun,
+					FileType:       FilePng,
+					ParentId:       "run1",
+				},
+			},
+			shouldError: true,
+		},
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			for _, path := range append(c.expectedPaths, c.extraPaths...) {
+				if err := os.MkdirAll(filepath.Dir(path), 0o777); err != nil {
+					t.Fatal(err)
+				}
+				f, err := os.Create(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_ = f.Close()
+				defer func() {
+					_ = os.Remove(path)
+				}()
+			}
+			err := c.files.ResolvePaths(tmpdir)
+			if (err == nil) && c.shouldError {
+				t.Fatal("expected error to be non-nil, got nil")
+			}
+			if err != nil {
+				if !c.shouldError {
+					t.Fatalf("expected error to be nil, got %q", err)
+				}
+				// We got an error as expected, nothing more to check
+				return
+			}
+			// All files should pass validation if there was no error from the resolving
+			if err := c.files.Validate(); err != nil {
+				t.Errorf("invalid file after resolving wildcards: %v", err)
+			}
+			if len(c.files) != len(c.expectedPaths) {
+				t.Errorf("expected %d files, got %d files", len(c.expectedPaths), len(c.files))
+			}
+		})
+	}
+}
+
+func TestAnalysisFileValidation(t *testing.T) {
+	testcases := []struct {
+		name  string
+		file  AnalysisFile
+		valid bool
+	}{
+		{
+			name: "ascending above the analysis directory",
+			file: AnalysisFile{
+				partOfAnalysis: true,
+				Path:           "../test.txt",
+				FileType:       FileText,
+				Level:          LevelRun,
+			},
+			valid: false,
+		},
+		{
+			name: "ascending above the analysis directory",
+			file: AnalysisFile{
+				partOfAnalysis: true,
+				Path:           "./../test.txt",
+				FileType:       FileText,
+				Level:          LevelRun,
+			},
+			valid: false,
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			err := c.file.Validate()
+			if err != nil {
+				t.Log(err)
+				if c.valid {
+					t.Errorf("expected file to be valid, got error: %q", err)
+				}
+			} else {
+				if !c.valid {
+					t.Error("expected file to be invalid, got no error")
+				}
+			}
+		})
+	}
+}

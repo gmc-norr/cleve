@@ -147,14 +147,29 @@ type AnalysisFile struct {
 	ParentId string           `bson:"parent_id" json:"parent_id"`
 }
 
+type AnalysisFiles []AnalysisFile
+
 func (f *AnalysisFile) IsPartOfAnalysis() {
 	f.partOfAnalysis = true
+}
+
+func (f AnalysisFiles) Validate() error {
+	var errs []error
+	for _, af := range f {
+		errs = append(errs, af.Validate())
+	}
+	return errors.Join(errs...)
 }
 
 func (f *AnalysisFile) Validate() error {
 	var errs []error
 	if f.partOfAnalysis && filepath.IsAbs(f.Path) {
 		errs = append(errs, fmt.Errorf("path must be relative for files associated with analyses"))
+	}
+	if f.partOfAnalysis {
+		if strings.HasPrefix(filepath.Clean(f.Path), "..") {
+			errs = append(errs, fmt.Errorf("relative paths cannot ascend beyond the analysis directory"))
+		}
 	}
 	if !f.partOfAnalysis && !filepath.IsAbs(f.Path) {
 		errs = append(errs, fmt.Errorf("path must be absolute for standalone files"))
@@ -275,7 +290,7 @@ type Analysis struct {
 	SoftwareVersion string               `bson:"software_version" json:"software_version"`
 	StateHistory    StateHistory         `bson:"state_history" json:"state_history"`
 	InputFiles      []AnalysisFileFilter `bson:"input_files" json:"input_files"`
-	OutputFiles     []AnalysisFile       `bson:"output_files" json:"output_files"`
+	OutputFiles     AnalysisFiles        `bson:"output_files" json:"output_files"`
 }
 
 // GetFiles returns all output files of the analysis for which the supplied filter is true.
@@ -291,6 +306,75 @@ func (a *Analysis) GetFiles(filter AnalysisFileFilter) []AnalysisFile {
 		}
 	}
 	return files
+}
+
+func (a *Analysis) ResolveOutputFiles() error {
+	return a.OutputFiles.ResolvePaths(a.Path)
+}
+
+// ResolveOutputFiles checks that all output files defined for the analysis exist, and if the
+// path contains wildcards, these paths are resolved to their actual file representation. If the
+// files are part of an analysis, then the paths are resolved relative to parentDir. If they are
+// not already part of analysis, this argument is ignored. Directories matching the pattern will
+// be ignored. If a path doesn't exist, a non-nil error is returned. If a path with wildcards
+// cannot be resolved, a non-nil error is returned.
+func (a *AnalysisFiles) ResolvePaths(parentDir string) error {
+	var resolvedFiles []AnalysisFile
+	for _, f := range *a {
+		filePath := f.Path
+		if f.partOfAnalysis {
+			if parentDir == "" {
+				return fmt.Errorf("parentDir cannot be an empty string")
+			}
+			filePath = filepath.Join(parentDir, f.Path)
+		}
+		paths, err := filepath.Glob(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to glob files: %w", err)
+		}
+		if paths == nil {
+			return fmt.Errorf("no matches found: %s", f.Path)
+		}
+		fileCount := 0
+		var ext string
+		for _, p := range paths {
+			// Check that it isn't a directory
+			info, err := os.Stat(p)
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				continue
+			}
+			// Check that the path is a child of the parent directory
+			if f.partOfAnalysis {
+				p, err = filepath.Rel(parentDir, p)
+				if err != nil {
+					return fmt.Errorf("path not relative to parentDir, should not be possible in this context")
+				}
+			}
+			// Check that all files have the same extension
+			if ext == "" {
+				ext = filepath.Ext(p)
+			}
+			if ext != filepath.Ext(p) {
+				return fmt.Errorf("all resolved paths must have the same extension, found at least %s and %s", ext, filepath.Ext(p))
+			}
+			resolvedFiles = append(resolvedFiles, AnalysisFile{
+				partOfAnalysis: f.partOfAnalysis,
+				Path:           p,
+				FileType:       f.FileType,
+				Level:          f.Level,
+				ParentId:       f.ParentId,
+			})
+			fileCount++
+		}
+		if fileCount == 0 {
+			return fmt.Errorf("no file matches found: %s", f.Path)
+		}
+	}
+	*a = AnalysisFiles(resolvedFiles)
+	return nil
 }
 
 type DragenAnalysisSummary struct {

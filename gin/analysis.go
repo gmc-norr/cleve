@@ -2,7 +2,6 @@ package gin
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -212,6 +211,13 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 				return
 			}
 		}
+		if err := a.ResolveOutputFiles(); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid output file entry",
+				"details": err.Error(),
+			})
+			return
+		}
 
 		if err := db.CreateAnalysis(&a); err != nil {
 			c.AbortWithStatusJSON(
@@ -235,6 +241,9 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 }
 
 func UpdateAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
+	// TODO: this should be more like the update handler for runs where
+	// the updates happen directly on the analysis struct and the whole
+	// entry is updated in the database.
 	return func(c *gin.Context) {
 		analysisId := c.Param("analysisId")
 		stateUpdated := false
@@ -242,13 +251,29 @@ func UpdateAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		filesUpdated := false
 
 		var updateRequest struct {
-			State cleve.State          `json:"state"`
-			Path  string               `json:"path"`
-			Files []cleve.AnalysisFile `json:"files"`
+			State cleve.State         `json:"state"`
+			Path  string              `json:"path"`
+			Files cleve.AnalysisFiles `json:"files"`
 		}
 
 		if err := c.BindJSON(&updateRequest); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		a, err := db.Analysis(analysisId)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+					"error":       "analysis not found",
+					"analysis_id": analysisId,
+				})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error":   "failed to fetch analysis",
+				"details": err,
+			})
 			return
 		}
 
@@ -303,6 +328,13 @@ func UpdateAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 					return
 				}
 			}
+			if err := updateRequest.Files.ResolvePaths(a.Path); err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+					"error":   "invalid file entry",
+					"details": err.Error(),
+				})
+				return
+			}
 			err := db.SetAnalysisFiles(analysisId, updateRequest.Files)
 			if err != nil {
 				if errors.Is(err, mongo.ErrNoDocuments) {
@@ -327,16 +359,11 @@ func UpdateAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 
 		if stateUpdated {
-			a, err := db.Analysis(analysisId)
-			if err != nil {
-				_ = c.Error(fmt.Errorf("failed to fetch analysis when requesting web hook message"))
-			} else {
-				c.Set("webhook_message", cleve.WebhookMessageRequest{
-					Entity:      a,
-					Message:     "analysis state updated",
-					MessageType: cleve.MessageStateUpdate,
-				})
-			}
+			c.Set("webhook_message", cleve.WebhookMessageRequest{
+				Entity:      a,
+				Message:     "analysis state updated",
+				MessageType: cleve.MessageStateUpdate,
+			})
 		}
 
 		c.JSON(http.StatusOK, gin.H{

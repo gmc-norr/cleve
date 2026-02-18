@@ -22,7 +22,7 @@ jobs:
           fetch-tags: true
       - uses: actions/setup-go@v5
         with:
-          go-version: stable
+          go-version: "1.24"
       - name: generate
         run: go generate ./...
       - name: golangci-lint
