@@ -1076,6 +1076,27 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 			},
 			shouldError: false,
 		},
+		{
+			name: "matching multiple extensions should error",
+			expectedPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.png"),
+				filepath.Join(tmpdir, "path/to/file2.png"),
+			},
+			extraPaths: []string{
+				filepath.Join(tmpdir, "path/to/file1.log"),
+				filepath.Join(tmpdir, "path/to/file2.log"),
+			},
+			files: []AnalysisFile{
+				{
+					partOfAnalysis: true,
+					Path:           "path/to/file*",
+					Level:          LevelRun,
+					FileType:       FilePng,
+					ParentId:       "run1",
+				},
+			},
+			shouldError: true,
+		},
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
