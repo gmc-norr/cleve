@@ -410,7 +410,9 @@ endpoints:
           `level` (string), and `parent_id` (string) which represent the path to the file
           relative to the analysis directory path, the file type, the analysis level that the
           file represents (run, case, or sample), and the ID of the run/case/sample that the
-          file is associated with, respectively.
+          file is associated with, respectively. The path can contain wildcards in order to match
+          muliple files. If wildcards are used, all files that it expands to must have the same
+          file extension.
         required: false
 
   - path: /analyses/{analysis_id}
@@ -442,7 +444,9 @@ endpoints:
           `level` (string), and `parent_id` (string) which represent the path to the file
           relative to the analysis directory path, the file type, the analysis level that the
           file represents (run, case, or sample), and the ID of the run/case/sample that the
-          file is associated with, respectively.
+          file is associated with, respectively. The path can contain wildcards in order to match
+          muliple files. If wildcards are used, all files that it expands to must have the same
+          file extension.
         required: false
 
   - path: /samples
