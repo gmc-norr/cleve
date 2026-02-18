@@ -336,7 +336,9 @@ func (a *AnalysisFiles) ResolvePaths(parentDir string) error {
 			return fmt.Errorf("no matches found: %s", f.Path)
 		}
 		fileCount := 0
+		var ext string
 		for _, p := range paths {
+			// Check that it isn't a directory
 			info, err := os.Stat(p)
 			if err != nil {
 				return err
@@ -344,11 +346,19 @@ func (a *AnalysisFiles) ResolvePaths(parentDir string) error {
 			if info.IsDir() {
 				continue
 			}
+			// Check that the path is a child of the parent directory
 			if f.partOfAnalysis {
 				p, err = filepath.Rel(parentDir, p)
 				if err != nil {
 					return fmt.Errorf("path not relative to parentDir, should not be possible in this context")
 				}
+			}
+			// Check that all files have the same extension
+			if ext == "" {
+				ext = filepath.Ext(p)
+			}
+			if ext != filepath.Ext(p) {
+				return fmt.Errorf("all resolved paths must have the same extension, found at least %s and %s", ext, filepath.Ext(p))
 			}
 			resolvedFiles = append(resolvedFiles, AnalysisFile{
 				partOfAnalysis: f.partOfAnalysis,
