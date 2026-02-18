@@ -1121,15 +1121,16 @@ func TestAnalysisOutputFilesGlobbing(t *testing.T) {
 			if (err == nil) && c.shouldError {
 				t.Fatal("expected error to be non-nil, got nil")
 			}
-			if err := c.files.Validate(); err != nil {
-				t.Errorf("invalid file after resolving wildcards: %v", err)
-			}
 			if err != nil {
 				if !c.shouldError {
 					t.Fatalf("expected error to be nil, got %q", err)
 				}
 				// We got an error as expected, nothing more to check
 				return
+			}
+			// All files should pass validation if there was no error from the resolving
+			if err := c.files.Validate(); err != nil {
+				t.Errorf("invalid file after resolving wildcards: %v", err)
 			}
 			if len(c.files) != len(c.expectedPaths) {
 				t.Errorf("expected %d files, got %d files", len(c.expectedPaths), len(c.files))
