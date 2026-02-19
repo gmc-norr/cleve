@@ -375,11 +375,20 @@ func (db DB) AnalysesIndex() ([]map[string]string, error) {
 }
 
 func (db DB) SetAnalysesIndex() (string, error) {
-	indexModel := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "analysis_id", Value: 1},
+	indexModel := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "analysis_id", Value: 1},
+			},
+			Options: options.Index().SetUnique(true),
 		},
-		Options: options.Index().SetUnique(true),
+		{
+			Keys: bson.D{
+				{Key: "path", Value: 1},
+				{Key: "software", Value: 1},
+			},
+			Options: options.Index().SetUnique(true),
+		},
 	}
 
 	// TODO: do this as a transaction and roll back if anything fails
@@ -390,6 +399,6 @@ func (db DB) SetAnalysesIndex() (string, error) {
 
 	slog.Info("dropped indexes", "count", res.Lookup("nIndexesWas").Int32())
 
-	name, err := db.AnalysesCollection().Indexes().CreateOne(context.TODO(), indexModel)
-	return name, err
+	names, err := db.AnalysesCollection().Indexes().CreateMany(context.TODO(), indexModel)
+	return fmt.Sprintf("%v", names), err
 }
