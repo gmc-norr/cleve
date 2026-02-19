@@ -125,6 +125,29 @@ func AnalysisFileHandler(db AnalysisGetter) gin.HandlerFunc {
 	}
 }
 
+func AnalysisFilePrefixHandler(db AnalysisGetter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		filter, err := getAnalysisFileFilter(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		files, err := db.AnalysesFiles(filter)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"file_count": len(files),
+			"prefix":     cleve.AnalysisFiles(files).CommonPrefix(),
+		})
+	}
+}
+
 func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var params struct {
