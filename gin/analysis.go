@@ -138,7 +138,6 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		var params struct {
 			Path            string                     `json:"path" binding:"required"`
 			RunId           string                     `json:"run_id" binding:"required"`
-			AnalysisId      string                     `json:"analysis_id" binding:"required"`
 			State           cleve.State                `json:"state" binding:"required"`
 			Software        string                     `json:"software" binding:"required"`
 			SoftwareVersion string                     `json:"software_version" binding:"required"`
@@ -155,7 +154,6 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 
 		a := cleve.Analysis{
-			// AnalysisId:      params.AnalysisId,
 			Runs:            []string{params.RunId},
 			Path:            params.Path,
 			Software:        params.Software,

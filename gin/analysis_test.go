@@ -30,14 +30,14 @@ func TestAddAnalysis(t *testing.T) {
 		{
 			name:   "analysis without files",
 			exists: false,
-			data:   fmt.Appendf([]byte{}, `{"analysis_id": "analysis1", "path": "%s/analysis1", "run_id": "run1", "state": "ready", "software": "software1", "software_version": "1.0.0"}`, tmpdir),
+			data:   fmt.Appendf([]byte{}, `{"path": "%s/analysis1", "run_id": "run1", "state": "ready", "software": "software1", "software_version": "1.0.0"}`, tmpdir),
 			code:   http.StatusOK,
 			error:  false,
 		},
 		{
 			name:   "analysis with output files",
 			exists: false,
-			data:   fmt.Appendf([]byte{}, `{"analysis_id": "analysis1", "path": "%s/analysis1", "run_id": "run1", "state": "ready", "software": "software1", "software_version": "1.0.0", "output_files": [{"path": "fastq/sample1_1.fastq.gz", "type": "fastq", "level": "sample", "parent_id": "sample1"}, {"path": "fastq/sample1_2.fastq.gz", "type": "fastq", "level": "sample", "parent_id": "sample1"}]}`, tmpdir),
+			data:   fmt.Appendf([]byte{}, `{"path": "%s/analysis1", "run_id": "run1", "state": "ready", "software": "software1", "software_version": "1.0.0", "output_files": [{"path": "fastq/sample1_1.fastq.gz", "type": "fastq", "level": "sample", "parent_id": "sample1"}, {"path": "fastq/sample1_2.fastq.gz", "type": "fastq", "level": "sample", "parent_id": "sample1"}]}`, tmpdir),
 			code:   http.StatusOK,
 			error:  false,
 		},
