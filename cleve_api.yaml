@@ -136,6 +136,36 @@ endpoints:
         description: file name to filter on, will only match against the name of the file, not the full path
         required: false
 
+  - path: /runs/{run_id}/analyses/files/prefix
+    method: GET
+    section: runs
+    description: >
+      Get the longest common prefix for the set of files returned by the filter.
+      Although none of the query parameters are explicitly required, at least one
+      of type, parent_id or name must be supplied.
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+    query_params:
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the ID of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path
+        required: false
+
 
   - path: /runs/{run_id}/analyses/{analysis_id}
     method: GET
@@ -157,6 +187,40 @@ endpoints:
     description: >
       Get output files from a specific analysis associated with the run. Although none of the query
       parameters are explicitly required, at least one of type, parent_id or name must be supplied.
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+      - key: analysis_id
+        type: string
+        description: ID of the analysis
+        required: true
+    query_params:
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the ID of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path
+        required: false
+
+  - path: /runs/{run_id}/analyses/{analysis_id}/files/prefix
+    method: GET
+    section: runs
+    description: >
+      Get the longest common prefix for the set of files returned by the filter.
+      Although none of the query parameters are explicitly required, at least one
+      of type, parent_id or name must be supplied.
     params:
       - key: run_id
         type: string
@@ -316,6 +380,35 @@ endpoints:
         description: file name to filter on, will only match against the name of the file, not the full path
         required: false
 
+  - path: /analyses/files/prefix
+    method: GET
+    section: analysis
+    description: >
+      Get the longest common prefix for the set of files returned by the filter.
+      Although none of the query parameters are explicitly required, at least one
+      of type, parent_id or name must be supplied.
+    query_params:
+      - key: analysis_id
+        type: string
+        description: analysis ID to filter on
+        required: false
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the id of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path
+        required: false
+
   - path: /analyses/{analysis_id}
     method: GET
     section: analysis
@@ -337,6 +430,36 @@ endpoints:
     description: >
       Get output files from analyses. Although none of the query parameters are explicitly required,
       at least one of type, parent_id or name must be supplied.
+    params:
+      - key: analysis_id
+        type: string
+        description: analysis ID to filter on
+        required: true
+    query_params:
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the id of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path
+        required: false
+
+  - path: /analyses/{analysis_id}/files/prefix
+    method: GET
+    section: analysis
+    description: >
+      Get the longest common prefix for the set of files returned by the filter.
+      Although none of the query parameters are explicitly required, at least one
+      of type, parent_id or name must be supplied.
     params:
       - key: analysis_id
         type: string
