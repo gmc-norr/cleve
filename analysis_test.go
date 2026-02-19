@@ -1230,6 +1230,14 @@ func TestAnalysisFilesPrefix(t *testing.T) {
 			files:  AnalysisFiles{},
 			prefix: "",
 		},
+		{
+			name: "unicode characters",
+			files: AnalysisFiles{
+				{Path: "/foo/bar/file_à.txt"},
+				{Path: "/foo/bar/file_á.txt"},
+			},
+			prefix: "/foo/bar/file_",
+		},
 	}
 
 	for _, c := range testcases {
@@ -1237,6 +1245,7 @@ func TestAnalysisFilesPrefix(t *testing.T) {
 			p := c.files.CommonPrefix()
 			if p != c.prefix {
 				t.Errorf("expected prefix %s, got %s", c.prefix, p)
+				t.Errorf("expected runes %v, got %v", []rune(c.prefix), []rune(p))
 			}
 		})
 	}
