@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
+	"github.com/google/uuid"
 )
 
 func getRunFilter(c *gin.Context) (cleve.RunFilter, error) {
@@ -33,7 +34,11 @@ func getAnalysisFileFilter(c *gin.Context) (cleve.AnalysisFileFilter, error) {
 		filter.RunId = p
 	}
 	if p, ok := c.Params.Get("analysisId"); ok {
-		filter.AnalysisId = p
+		id, err := uuid.Parse(p)
+		if err != nil {
+			return filter, err
+		}
+		filter.AnalysisId = id
 	}
 	return filter, filter.Validate()
 }

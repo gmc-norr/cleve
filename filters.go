@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Pagination filtering.
@@ -123,11 +125,11 @@ func (f QcFilter) UrlParams() string {
 
 // Analysis filtering
 type AnalysisFilter struct {
-	AnalysisId       string `form:"analysis_id"`
-	RunId            string `form:"run_id"`
-	Software         string `form:"software"`
-	SoftwarePattern  string `form:"software_pattern"`
-	State            State  `form:"state"`
+	AnalysisId       uuid.UUID `form:"analysis_id"`
+	RunId            string    `form:"run_id"`
+	Software         string    `form:"software"`
+	SoftwarePattern  string    `form:"software_pattern"`
+	State            State     `form:"state"`
 	PaginationFilter `form:",inline"`
 }
 
@@ -147,7 +149,7 @@ func (f *AnalysisFilter) Validate() error {
 
 // Analysis file filtering
 type AnalysisFileFilter struct {
-	AnalysisId string           `form:"analysis_id" bson:"analysis_id,omitempty" json:"analysis_id,omitzero"`
+	AnalysisId uuid.UUID        `form:"analysis_id" bson:"analysis_id" json:"analysis_id"`
 	RunId      string           `form:"run_id" bson:"run_id,omitempty" json:"run_id,omitzero"`
 	FileType   AnalysisFileType `form:"type" bson:"type,omitempty" json:"type,omitzero"`
 	Level      AnalysisLevel    `form:"level" bson:"level,omitempty" json:"level,omitzero"`

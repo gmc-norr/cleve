@@ -3,6 +3,8 @@ package cleve
 import (
 	"regexp"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestAnalysisFileFilter(t *testing.T) {
@@ -14,7 +16,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 		{
 			name: "complete filter filetype",
 			filter: AnalysisFileFilter{
-				AnalysisId: "run1_1_bclconvert",
+				AnalysisId: uuid.New(),
 				Level:      LevelSample,
 				FileType:   FileFastq,
 			},
@@ -23,7 +25,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 		{
 			name: "complete filter name",
 			filter: AnalysisFileFilter{
-				AnalysisId: "run1_1_bclconvert",
+				AnalysisId: uuid.New(),
 				Level:      LevelSample,
 				Name:       "sample1.fastq.gz",
 			},
@@ -32,7 +34,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 		{
 			name: "complete filter pattern",
 			filter: AnalysisFileFilter{
-				AnalysisId: "run1_1_bclconvert",
+				AnalysisId: uuid.New(),
 				Level:      LevelSample,
 				Pattern:    regexp.MustCompile(`\.fastq\.gz$`),
 			},
@@ -41,7 +43,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 		{
 			name: "complete filter parent id",
 			filter: AnalysisFileFilter{
-				AnalysisId: "run1_1_bclconvert",
+				AnalysisId: uuid.New(),
 				Level:      LevelSample,
 				ParentId:   "sample1",
 			},
@@ -50,7 +52,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 		{
 			name: "complete filter parent id filetype",
 			filter: AnalysisFileFilter{
-				AnalysisId: "run1_1_bclconvert",
+				AnalysisId: uuid.New(),
 				Level:      LevelSample,
 				ParentId:   "sample1",
 				FileType:   FileFastq,
@@ -69,7 +71,7 @@ func TestAnalysisFileFilter(t *testing.T) {
 		{
 			name: "conflicting filter",
 			filter: AnalysisFileFilter{
-				AnalysisId: "run1_1_bclconvert",
+				AnalysisId: uuid.New(),
 				FileType:   FileFastq,
 				Level:      LevelSample,
 				ParentId:   "sample1",

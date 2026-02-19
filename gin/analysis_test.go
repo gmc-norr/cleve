@@ -14,6 +14,7 @@ import (
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mock"
 	"github.com/gmc-norr/cleve/mongo"
+	"github.com/google/uuid"
 )
 
 func TestAddAnalysis(t *testing.T) {
@@ -68,7 +69,7 @@ func TestAddAnalysis(t *testing.T) {
 				}
 				return nil
 			}
-			gs.AnalysisFn = func(s1 string, s2 ...string) (*cleve.Analysis, error) {
+			gs.AnalysisFn = func(s1 uuid.UUID, s2 ...string) (*cleve.Analysis, error) {
 				if c.exists {
 					return &cleve.Analysis{}, nil
 				}
@@ -106,7 +107,7 @@ func TestUpdateAnalysis(t *testing.T) {
 		{
 			name: "update analysis state",
 			existingAnalysis: &cleve.Analysis{
-				AnalysisId:   "analysis1",
+				AnalysisId:   uuid.New(),
 				Path:         "/path/to/analysis1",
 				StateHistory: cleve.StateHistory{cleve.TimedRunState{State: cleve.StatePending, Time: time.Now()}},
 			},
@@ -118,7 +119,7 @@ func TestUpdateAnalysis(t *testing.T) {
 		{
 			name: "update analysis path",
 			existingAnalysis: &cleve.Analysis{
-				AnalysisId:   "analysis1",
+				AnalysisId:   uuid.New(),
 				Path:         "/path/to/analysis1",
 				StateHistory: cleve.StateHistory{cleve.TimedRunState{State: cleve.StatePending, Time: time.Now()}},
 			},
@@ -130,7 +131,7 @@ func TestUpdateAnalysis(t *testing.T) {
 		{
 			name: "update analysis files (relative paths)",
 			existingAnalysis: &cleve.Analysis{
-				AnalysisId:   "analysis1",
+				AnalysisId:   uuid.New(),
 				Path:         filepath.Join(tmpdir, "analysis1"),
 				StateHistory: cleve.StateHistory{cleve.TimedRunState{State: cleve.StatePending, Time: time.Now()}},
 			},
@@ -145,7 +146,7 @@ func TestUpdateAnalysis(t *testing.T) {
 		{
 			name: "update analysis files (invalid path)",
 			existingAnalysis: &cleve.Analysis{
-				AnalysisId:   "analysis1",
+				AnalysisId:   uuid.New(),
 				Path:         filepath.Join(tmpdir, "analysis1"),
 				StateHistory: cleve.StateHistory{cleve.TimedRunState{State: cleve.StatePending, Time: time.Now()}},
 			},
@@ -173,19 +174,19 @@ func TestUpdateAnalysis(t *testing.T) {
 				}()
 			}
 			gs := mock.AnalysisGetterSetter{}
-			gs.AnalysisFn = func(s1 string, s2 ...string) (*cleve.Analysis, error) {
+			gs.AnalysisFn = func(s1 uuid.UUID, s2 ...string) (*cleve.Analysis, error) {
 				if !c.exists {
 					return nil, mongo.ErrNoDocuments
 				}
 				return c.existingAnalysis, nil
 			}
-			gs.SetAnalysisPathFn = func(string, string) error {
+			gs.SetAnalysisPathFn = func(uuid.UUID, string) error {
 				return nil
 			}
-			gs.SetAnalysisStateFn = func(string, cleve.State) error {
+			gs.SetAnalysisStateFn = func(uuid.UUID, cleve.State) error {
 				return nil
 			}
-			gs.SetAnalysisFilesFn = func(string, []cleve.AnalysisFile) error {
+			gs.SetAnalysisFilesFn = func(uuid.UUID, []cleve.AnalysisFile) error {
 				return nil
 			}
 			gs.CreateAnalysisFn = func(a *cleve.Analysis) error {
@@ -195,7 +196,7 @@ func TestUpdateAnalysis(t *testing.T) {
 			ctx, _ := gin.CreateTestContext(w)
 
 			ctx.Request = httptest.NewRequest(http.MethodPatch, "/analyses/analysis1", bytes.NewBuffer(c.data))
-			ctx.Params = append(ctx.Params, gin.Param{Key: "analysisId", Value: c.existingAnalysis.AnalysisId})
+			ctx.Params = append(ctx.Params, gin.Param{Key: "analysisId", Value: c.existingAnalysis.AnalysisId.String()})
 			ctx.Request.Header.Set("Content-Type", "application/json")
 
 			UpdateAnalysisHandler(&gs)(ctx)
