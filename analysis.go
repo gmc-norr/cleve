@@ -204,14 +204,15 @@ func (f AnalysisFiles) CommonPrefix() string {
 		return filepath.FromSlash(strings.Join(parts, "/"))
 	}
 
-	// Compare file names character by character
+	// Compare file names rune by rune
 	commonPrefix := func(a string, b string) string {
-		maxLen := min(len(a), len(b))
+		ra, rb := []rune(a), []rune(b)
+		maxLen := min(len(ra), len(rb))
 		i := 0
-		for i < maxLen && a[i] == b[i] {
+		for i < maxLen && ra[i] == rb[i] {
 			i++
 		}
-		return a[:i]
+		return string(a[:i])
 	}
 
 	commonFilePrefix := fileNames[0]
