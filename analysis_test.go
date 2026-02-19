@@ -1183,3 +1183,61 @@ func TestAnalysisFileValidation(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalysisFilesPrefix(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+	testcases := []struct {
+		name   string
+		files  AnalysisFiles
+		prefix string
+	}{
+		{
+			name: "common prefix in the same directory",
+			files: AnalysisFiles{
+				{Path: "/path/to/file1.txt"},
+				{Path: "/path/to/file2.txt"},
+				{Path: "/path/to/file3.txt"},
+				{Path: "/path/to/file4.txt"},
+			},
+			prefix: "/path/to/file",
+		},
+		{
+			name: "common prefix for different directories",
+			files: AnalysisFiles{
+				{Path: "/path/to/file1.txt"},
+				{Path: "/path/of/file2.txt"},
+			},
+			prefix: "/path",
+		},
+		{
+			name: "mixed relative and absolute paths",
+			files: AnalysisFiles{
+				{Path: "/path/to/file1.txt"},
+				{Path: "path/to/file2.txt"},
+			},
+			prefix: "",
+		},
+		{
+			name: "single path",
+			files: AnalysisFiles{
+				{Path: "/path/to/file1.txt"},
+			},
+			prefix: "/path/to/file1.txt",
+		},
+		{
+			name:   "no paths",
+			files:  AnalysisFiles{},
+			prefix: "",
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(c.name, func(t *testing.T) {
+			p := c.files.CommonPrefix()
+			if p != c.prefix {
+				t.Errorf("expected prefix %s, got %s", c.prefix, p)
+			}
+		})
+	}
+}
