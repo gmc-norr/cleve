@@ -34,6 +34,14 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		})
 	}
 
+	if filter.Path != "" {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "path", Value: filter.Path},
+			}},
+		})
+	}
+
 	if filter.RunId != "" {
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{

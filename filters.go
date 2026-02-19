@@ -126,6 +126,7 @@ func (f QcFilter) UrlParams() string {
 // Analysis filtering
 type AnalysisFilter struct {
 	AnalysisId       uuid.UUID `form:"-"`
+	Path             string    `form:"-"`
 	RunId            string    `form:"run_id"`
 	Software         string    `form:"software"`
 	SoftwarePattern  string    `form:"software_pattern"`
@@ -143,6 +144,9 @@ func (f *AnalysisFilter) Validate() error {
 	errs := []error{f.PaginationFilter.Validate()}
 	if f.Software != "" && f.SoftwarePattern != "" {
 		errs = append(errs, fmt.Errorf("only one of software and software pattern can be used"))
+	}
+	if f.Path != "" && !filepath.IsAbs(f.Path) {
+		errs = append(errs, fmt.Errorf("path must be absolute"))
 	}
 	return errors.Join(errs...)
 }

@@ -154,6 +154,7 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 
 		a := cleve.Analysis{
+			AnalysisId:      uuid.New(),
 			Runs:            []string{params.RunId},
 			Path:            params.Path,
 			Software:        params.Software,
@@ -163,25 +164,27 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 		a.StateHistory.Add(params.State)
 
-		// Check that the analysis doesn't already exist
-		// TODO: this will need a new check for new analyses since the analysis
-		// being added doesn't have an ID yet.
-		_, err := db.Analysis(a.AnalysisId)
-		if err == nil {
-			c.AbortWithStatusJSON(
-				http.StatusConflict,
-				gin.H{
-					"error":       "analysis already exists",
-					"analysis_id": a.AnalysisId,
-				},
-			)
-			return
-		} else if err != mongo.ErrNoDocuments {
+		// Check that the analysis doesn't already exist.
+		// Base this on the path and software.
+		filter := cleve.NewAnalysisFilter()
+		filter.Path = a.Path
+		filter.Software = a.Software
+		res, err := db.Analyses(filter)
+		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
 				gin.H{
 					"error": err.Error(),
 					"when":  "checking if analysis already exists",
+				},
+			)
+			return
+		}
+		if res.Count != 0 {
+			c.AbortWithStatusJSON(
+				http.StatusConflict,
+				gin.H{
+					"error": "an analysis already exists at this location with the same software",
 				},
 			)
 			return

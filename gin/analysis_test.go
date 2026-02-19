@@ -75,6 +75,12 @@ func TestAddAnalysis(t *testing.T) {
 				}
 				return nil, mongo.ErrNoDocuments
 			}
+			gs.AnalysesFn = func(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error) {
+				if c.exists {
+					return cleve.AnalysisResult{PaginationMetadata: cleve.PaginationMetadata{Page: 1, Count: 1}}, nil
+				}
+				return cleve.AnalysisResult{PaginationMetadata: cleve.PaginationMetadata{Page: 1, Count: 0}}, nil
+			}
 			w := httptest.NewRecorder()
 			ctx, _ := gin.CreateTestContext(w)
 
