@@ -370,10 +370,6 @@ endpoints:
         description: API key
         required: true
     params:
-      - key: analysis_id
-        type: string
-        description: analysis ID
-        required: true
       - key: run_id
         type: string
         description: ID of the sequencing run that this analysis is primarily associated with

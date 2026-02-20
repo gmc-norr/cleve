@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
@@ -283,7 +284,7 @@ type AnalysisResult struct {
 }
 
 type Analysis struct {
-	AnalysisId      string               `bson:"analysis_id" json:"analysis_id"`
+	AnalysisId      uuid.UUID            `bson:"analysis_id" json:"analysis_id"`
 	Runs            []string             `bson:"runs" json:"runs"`
 	Path            string               `bson:"path" json:"path"`
 	Software        string               `bson:"software" json:"software"`
@@ -416,9 +417,8 @@ func ParseDragenAnalysisSummary(r io.Reader) (DragenAnalysisSummary, error) {
 // NewDragenAnalysis creates an Analysis representing a Dragen analysis,
 // specifically the results from BCLConvert.
 func NewDragenAnalysis(path string, run *Run) (Analysis, error) {
-	id := run.RunID + "_" + filepath.Base(path) + "_bclconvert"
 	analysis := Analysis{
-		AnalysisId: id,
+		AnalysisId: uuid.New(),
 		Runs:       []string{run.RunID},
 		Software:   "Dragen BCLConvert",
 		Path:       path,

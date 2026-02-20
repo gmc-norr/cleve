@@ -12,6 +12,7 @@ import (
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mock"
+	"github.com/google/uuid"
 )
 
 // tryConsumeChannel will try to consume a single value from a channel.
@@ -241,7 +242,7 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 			},
 			dbAnalyses: []*cleve.Analysis{
 				{
-					AnalysisId:   "run1_1_bclconvert",
+					AnalysisId:   uuid.New(),
 					Runs:         []string{"run1"},
 					Path:         "Analysis/1",
 					Software:     "Dragen BCLConvert",
@@ -275,7 +276,7 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 			},
 			dbAnalyses: []*cleve.Analysis{
 				{
-					AnalysisId:   "run2_1_bclconvert",
+					AnalysisId:   uuid.New(),
 					Runs:         []string{"run2", "run1"},
 					Path:         "Analysis/1",
 					Software:     "Dragen BCLConvert",
@@ -309,7 +310,7 @@ func TestDragenAnalysisWatcher(t *testing.T) {
 			},
 			dbAnalyses: []*cleve.Analysis{
 				{
-					AnalysisId:   "run2_1_bclconvert",
+					AnalysisId:   uuid.New(),
 					Runs:         []string{"run2", "run1"},
 					Path:         "Analysis/1",
 					Software:     "Dragen BCLConvert",

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,10 +26,18 @@ func (db DB) Analyses(filter cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 		PageSize: filter.PageSize,
 	}
 
-	if filter.AnalysisId != "" {
+	if filter.AnalysisId != uuid.Nil {
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "analysis_id", Value: filter.AnalysisId},
+			}},
+		})
+	}
+
+	if filter.Path != "" {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "path", Value: filter.Path},
 			}},
 		})
 	}
@@ -162,7 +171,7 @@ func (db DB) AnalysesFiles(filter cleve.AnalysisFileFilter) ([]cleve.AnalysisFil
 	// Get a filtered set of analyses where at least one of the output files
 	// matches the filter, and then extract these files from the analysis using
 	// said filter.
-	if filter.AnalysisId != "" {
+	if filter.AnalysisId != uuid.Nil {
 		pipeline = append(pipeline, bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "analysis_id", Value: filter.AnalysisId},
@@ -232,7 +241,7 @@ func (db DB) AnalysesFiles(filter cleve.AnalysisFileFilter) ([]cleve.AnalysisFil
 // as the second argument in order to constrain the anlyses to a particular run. If more than one
 // run ID is given, a non-nil error will be returned. If no documents are found given the
 // analysis ID and any run ID constraint, a `mongo.ErrNoDocuments` error will be returned.
-func (db DB) Analysis(analysisId string, runId ...string) (*cleve.Analysis, error) {
+func (db DB) Analysis(analysisId uuid.UUID, runId ...string) (*cleve.Analysis, error) {
 	if len(runId) > 1 {
 		return nil, fmt.Errorf("only a single run ID can be given")
 	}
@@ -290,7 +299,7 @@ func (db DB) UpdateAnalysis(analysis *cleve.Analysis) error {
 	return nil
 }
 
-func (db DB) SetAnalysisState(analysisId string, state cleve.State) error {
+func (db DB) SetAnalysisState(analysisId uuid.UUID, state cleve.State) error {
 	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$push", Value: bson.D{
@@ -310,7 +319,7 @@ func (db DB) SetAnalysisState(analysisId string, state cleve.State) error {
 	return err
 }
 
-func (db DB) SetAnalysisPath(analysisId string, path string) error {
+func (db DB) SetAnalysisPath(analysisId uuid.UUID, path string) error {
 	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
@@ -325,7 +334,7 @@ func (db DB) SetAnalysisPath(analysisId string, path string) error {
 	return err
 }
 
-func (db DB) SetAnalysisFiles(analysisId string, files []cleve.AnalysisFile) error {
+func (db DB) SetAnalysisFiles(analysisId uuid.UUID, files []cleve.AnalysisFile) error {
 	filter := bson.D{{Key: "analysis_id", Value: analysisId}}
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
@@ -366,11 +375,20 @@ func (db DB) AnalysesIndex() ([]map[string]string, error) {
 }
 
 func (db DB) SetAnalysesIndex() (string, error) {
-	indexModel := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "analysis_id", Value: 1},
+	indexModel := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "analysis_id", Value: 1},
+			},
+			Options: options.Index().SetUnique(true),
 		},
-		Options: options.Index().SetUnique(true),
+		{
+			Keys: bson.D{
+				{Key: "path", Value: 1},
+				{Key: "software", Value: 1},
+			},
+			Options: options.Index().SetUnique(true),
+		},
 	}
 
 	// TODO: do this as a transaction and roll back if anything fails
@@ -381,6 +399,6 @@ func (db DB) SetAnalysesIndex() (string, error) {
 
 	slog.Info("dropped indexes", "count", res.Lookup("nIndexesWas").Int32())
 
-	name, err := db.AnalysesCollection().Indexes().CreateOne(context.TODO(), indexModel)
-	return name, err
+	names, err := db.AnalysesCollection().Indexes().CreateMany(context.TODO(), indexModel)
+	return fmt.Sprintf("%v", names), err
 }

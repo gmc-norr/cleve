@@ -131,7 +131,7 @@ func NewRunMessage(run *Run, message string, messageType MessageType) WebhookMes
 func NewAnalysisMessage(analysis *Analysis, message string, messageType MessageType) WebhookMessage {
 	return WebhookMessage{
 		Unit:        UnitAnalysis,
-		Id:          analysis.AnalysisId,
+		Id:          analysis.AnalysisId.String(),
 		Platform:    analysis.Software,
 		Message:     message,
 		MessageType: messageType,

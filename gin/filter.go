@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
+	"github.com/google/uuid"
 )
 
 func getRunFilter(c *gin.Context) (cleve.RunFilter, error) {
@@ -21,6 +22,13 @@ func getAnalysisFilter(c *gin.Context) (cleve.AnalysisFilter, error) {
 	if err := c.BindQuery(&filter); err != nil && !errors.Is(err, io.EOF) {
 		return filter, err
 	}
+	if p := c.Query("analysis_id"); p != "" {
+		id, err := uuid.Parse(p)
+		if err != nil {
+			return filter, err
+		}
+		filter.AnalysisId = id
+	}
 	return filter, filter.Validate()
 }
 
@@ -29,11 +37,22 @@ func getAnalysisFileFilter(c *gin.Context) (cleve.AnalysisFileFilter, error) {
 	if err := c.BindQuery(&filter); err != nil && !errors.Is(err, io.EOF) {
 		return filter, err
 	}
+	if p := c.Query("analysis_id"); p != "" {
+		id, err := uuid.Parse(p)
+		if err != nil {
+			return filter, err
+		}
+		filter.AnalysisId = id
+	}
 	if p, ok := c.Params.Get("runId"); ok {
 		filter.RunId = p
 	}
 	if p, ok := c.Params.Get("analysisId"); ok {
-		filter.AnalysisId = p
+		id, err := uuid.Parse(p)
+		if err != nil {
+			return filter, err
+		}
+		filter.AnalysisId = id
 	}
 	return filter, filter.Validate()
 }

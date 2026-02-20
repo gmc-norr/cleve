@@ -2,6 +2,7 @@ package mock
 
 import (
 	"github.com/gmc-norr/cleve"
+	"github.com/google/uuid"
 )
 
 // Mock implementing the gin.AnalysisGetterSetter interface.
@@ -14,15 +15,15 @@ type AnalysisGetterSetter struct {
 	AnalysesInvoked         bool
 	AnalysesFilesFn         func(cleve.AnalysisFileFilter) ([]cleve.AnalysisFile, error)
 	AnalysesFilesInvoked    bool
-	AnalysisFn              func(string, ...string) (*cleve.Analysis, error)
+	AnalysisFn              func(uuid.UUID, ...string) (*cleve.Analysis, error)
 	AnalysisInvoked         bool
 	CreateAnalysisFn        func(*cleve.Analysis) error
 	CreateAnalysisInvoked   bool
-	SetAnalysisStateFn      func(string, cleve.State) error
+	SetAnalysisStateFn      func(uuid.UUID, cleve.State) error
 	SetAnalysisStateInvoked bool
-	SetAnalysisPathFn       func(string, string) error
+	SetAnalysisPathFn       func(uuid.UUID, string) error
 	SetAnalysisPathInvoked  bool
-	SetAnalysisFilesFn      func(string, []cleve.AnalysisFile) error
+	SetAnalysisFilesFn      func(uuid.UUID, []cleve.AnalysisFile) error
 	SetAnalysisFilesInvoked bool
 }
 
@@ -36,7 +37,7 @@ func (gs *AnalysisGetterSetter) AnalysesFiles(filter cleve.AnalysisFileFilter) (
 	return gs.AnalysesFilesFn(filter)
 }
 
-func (gs *AnalysisGetterSetter) Analysis(analysisId string, runId ...string) (*cleve.Analysis, error) {
+func (gs *AnalysisGetterSetter) Analysis(analysisId uuid.UUID, runId ...string) (*cleve.Analysis, error) {
 	gs.AnalysisInvoked = true
 	return gs.AnalysisFn(analysisId, runId...)
 }
@@ -46,17 +47,17 @@ func (gs *AnalysisGetterSetter) CreateAnalysis(analysis *cleve.Analysis) error {
 	return gs.CreateAnalysisFn(analysis)
 }
 
-func (gs *AnalysisGetterSetter) SetAnalysisState(analysisId string, state cleve.State) error {
+func (gs *AnalysisGetterSetter) SetAnalysisState(analysisId uuid.UUID, state cleve.State) error {
 	gs.SetAnalysisStateInvoked = true
 	return gs.SetAnalysisStateFn(analysisId, state)
 }
 
-func (gs *AnalysisGetterSetter) SetAnalysisPath(analysisId string, path string) error {
+func (gs *AnalysisGetterSetter) SetAnalysisPath(analysisId uuid.UUID, path string) error {
 	gs.SetAnalysisPathInvoked = true
 	return gs.SetAnalysisPathFn(analysisId, path)
 }
 
-func (gs *AnalysisGetterSetter) SetAnalysisFiles(analysisId string, files []cleve.AnalysisFile) error {
+func (gs *AnalysisGetterSetter) SetAnalysisFiles(analysisId uuid.UUID, files []cleve.AnalysisFile) error {
 	gs.SetAnalysisFilesInvoked = true
 	return gs.SetAnalysisFilesFn(analysisId, files)
 }
