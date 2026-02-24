@@ -25,6 +25,7 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		fileType      string
 		analysisLevel string
 		fileName      string
+		pattern       string
 		// for validation
 		isValid bool
 	}{
@@ -70,6 +71,22 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 			analysisLevel: "no_such_level",
 			isValid:       false,
 		},
+		// Invalid filter, both name and pattern supplied
+		{
+			name:        "invalid filter (both name and pattern)",
+			qAnalysisId: "run2_1_other",
+			fileName:    "sample1.txt",
+			pattern:     ".+.txt",
+			isValid:     false,
+		},
+		// Invalid filter, invalid regex
+		{
+			name:        "invalid filter (invalid regex)",
+			qAnalysisId: "run2_1_other",
+			fileName:    "sample1.txt",
+			pattern:     "(.+)).txt",
+			isValid:     false,
+		},
 	}
 
 	for _, c := range testcases {
@@ -83,7 +100,7 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 				ctx.Params = append(ctx.Params, gin.Param{Key: "runId", Value: c.runId})
 			}
 			buf := io.NopCloser(bytes.NewBuffer([]byte{}))
-			ctx.Request = httptest.NewRequest("GET", fmt.Sprintf("/?parent_id=%s&level=%s&type=%s&name=%s&analysis_id=%s&run_id=%s", c.parentId, c.analysisLevel, c.fileType, c.fileName, c.qAnalysisId, c.qRunId), buf)
+			ctx.Request = httptest.NewRequest("GET", fmt.Sprintf("/?parent_id=%s&level=%s&type=%s&name=%s&analysis_id=%s&run_id=%s&pattern=%s", c.parentId, c.analysisLevel, c.fileType, c.fileName, c.qAnalysisId, c.qRunId, c.pattern), buf)
 
 			filter, validationErr := getAnalysisFileFilter(ctx)
 			t.Logf("validation error: %v, should be valid: %t", validationErr, c.isValid)
