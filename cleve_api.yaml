@@ -133,7 +133,11 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /runs/{run_id}/analyses/files/prefix
@@ -163,7 +167,11 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
 
@@ -211,7 +219,11 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /runs/{run_id}/analyses/{analysis_id}/files/prefix
@@ -245,7 +257,11 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /runs/{run_id}/state
@@ -377,7 +393,11 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /analyses/files/prefix
@@ -406,7 +426,11 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /analyses/{analysis_id}
@@ -450,7 +474,11 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /analyses/{analysis_id}/files/prefix
@@ -480,7 +508,11 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /analyses
