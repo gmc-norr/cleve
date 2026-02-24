@@ -76,7 +76,7 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		// Invalid filter, both name and pattern supplied
 		{
 			name:        "invalid filter (both name and pattern)",
-			qAnalysisId: "run2_1_other",
+			qAnalysisId: "8ff19e60-bab1-464f-9d03-de76bbd215aa",
 			fileName:    "sample1.txt",
 			pattern:     ".+.txt",
 			isValid:     false,
@@ -84,13 +84,13 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		// Invalid filter, invalid regex
 		{
 			name:        "invalid filter (invalid regex)",
-			qAnalysisId: "run2_1_other",
+			qAnalysisId: "8ff19e60-bab1-464f-9d03-de76bbd215aa",
 			pattern:     "(.+)).txt",
 			isValid:     false,
 		},
 		{
 			name:        "url-encoded pattern",
-			qAnalysisId: "run2_1_other",
+			qAnalysisId: "8ff19e60-bab1-464f-9d03-de76bbd215aa",
 			pattern:     ".%2B%5C.bin%24", // ".+\.bin$"
 			isValid:     true,
 		},
