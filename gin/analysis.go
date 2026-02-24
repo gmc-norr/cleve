@@ -7,21 +7,22 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
+	"github.com/google/uuid"
 )
 
 // Interface for reading analyses from the database.
 type AnalysisGetter interface {
 	Analyses(cleve.AnalysisFilter) (cleve.AnalysisResult, error)
 	AnalysesFiles(cleve.AnalysisFileFilter) ([]cleve.AnalysisFile, error)
-	Analysis(analysisId string, runId ...string) (*cleve.Analysis, error)
+	Analysis(analysisId uuid.UUID, runId ...string) (*cleve.Analysis, error)
 }
 
 // Interface for storing/updating analyses in the database.
 type AnalysisSetter interface {
 	CreateAnalysis(*cleve.Analysis) error
-	SetAnalysisState(analysisId string, state cleve.State) error
-	SetAnalysisPath(analysisId string, path string) error
-	SetAnalysisFiles(analysisId string, files []cleve.AnalysisFile) error
+	SetAnalysisState(analysisId uuid.UUID, state cleve.State) error
+	SetAnalysisPath(analysisId uuid.UUID, path string) error
+	SetAnalysisFiles(analysisId uuid.UUID, files []cleve.AnalysisFile) error
 }
 
 // Interface for both getting and storing/updating analyses.
@@ -80,7 +81,14 @@ func AnalysesFileHandler(db AnalysisGetter) gin.HandlerFunc {
 
 func AnalysisHandler(db AnalysisGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		analysisId := c.Param("analysisId")
+		analysisId, err := uuid.Parse(c.Param("analysisId"))
+		if err != nil {
+			c.AbortWithStatusJSON(
+				http.StatusNotFound,
+				gin.H{"error": "invalid analysis ID", "details": err},
+			)
+			return
+		}
 		runId := c.Param("runId")
 		analysis, err := db.Analysis(analysisId, runId)
 		if err != nil {
@@ -153,7 +161,6 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		var params struct {
 			Path            string                     `json:"path" binding:"required"`
 			RunId           string                     `json:"run_id" binding:"required"`
-			AnalysisId      string                     `json:"analysis_id" binding:"required"`
 			State           cleve.State                `json:"state" binding:"required"`
 			Software        string                     `json:"software" binding:"required"`
 			SoftwareVersion string                     `json:"software_version" binding:"required"`
@@ -170,7 +177,7 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 
 		a := cleve.Analysis{
-			AnalysisId:      params.AnalysisId,
+			AnalysisId:      uuid.New(),
 			Runs:            []string{params.RunId},
 			Path:            params.Path,
 			Software:        params.Software,
@@ -180,23 +187,27 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 		}
 		a.StateHistory.Add(params.State)
 
-		// Check that the analysis doesn't already exist
-		_, err := db.Analysis(a.AnalysisId)
-		if err == nil {
-			c.AbortWithStatusJSON(
-				http.StatusConflict,
-				gin.H{
-					"error":       "analysis already exists",
-					"analysis_id": a.AnalysisId,
-				},
-			)
-			return
-		} else if err != mongo.ErrNoDocuments {
+		// Check that the analysis doesn't already exist.
+		// Base this on the path and software.
+		filter := cleve.NewAnalysisFilter()
+		filter.Path = a.Path
+		filter.Software = a.Software
+		res, err := db.Analyses(filter)
+		if err != nil {
 			c.AbortWithStatusJSON(
 				http.StatusInternalServerError,
 				gin.H{
 					"error": err.Error(),
 					"when":  "checking if analysis already exists",
+				},
+			)
+			return
+		}
+		if res.Count != 0 {
+			c.AbortWithStatusJSON(
+				http.StatusConflict,
+				gin.H{
+					"error": "an analysis already exists at this location with the same software",
 				},
 			)
 			return
@@ -211,7 +222,7 @@ func AddAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 					"file":    f,
 				})
 				return
-			} else if f.AnalysisId == "" {
+			} else if f.AnalysisId == uuid.Nil {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 					"error":   "analysis id cannot be empty",
 					"details": "the analysis id must be defined for input files",
@@ -268,7 +279,11 @@ func UpdateAnalysisHandler(db AnalysisGetterSetter) gin.HandlerFunc {
 	// the updates happen directly on the analysis struct and the whole
 	// entry is updated in the database.
 	return func(c *gin.Context) {
-		analysisId := c.Param("analysisId")
+		analysisId, err := uuid.Parse(c.Param("analysisId"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid analysis ID", "details": err.Error()})
+			return
+		}
 		stateUpdated := false
 		pathUpdated := false
 		filesUpdated := false

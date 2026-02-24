@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -33,9 +35,9 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		// parameters should be prioritised
 		{
 			name:        "prioritise ids from params",
-			analysisId:  "run1_1_bclconvert",
+			analysisId:  "8ff19e60-bab1-464f-9d03-de76bbd215aa",
 			runId:       "run1",
-			qAnalysisId: "run2_1_other",
+			qAnalysisId: "892224d9-4865-47c5-83a7-0ef20fba77b4",
 			qRunId:      "run2",
 			fileName:    "test.txt",
 			isValid:     true,
@@ -43,7 +45,7 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		// IDs only from query parameters
 		{
 			name:        "ids only from query params",
-			qAnalysisId: "run2_1_other",
+			qAnalysisId: "8ff19e60-bab1-464f-9d03-de76bbd215aa",
 			qRunId:      "run2",
 			fileType:    "text",
 			isValid:     true,
@@ -51,14 +53,14 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		// Invalid filter, missing properties
 		{
 			name:        "invalid filter (missing parameters)",
-			qAnalysisId: "run2_1_other",
+			qAnalysisId: "8ff19e60-bab1-464f-9d03-de76bbd215aa",
 			qRunId:      "run2",
 			isValid:     false,
 		},
 		// Invalid filter, invalid file type
 		{
 			name:        "invalid filter (invalid file type)",
-			qAnalysisId: "run2_1_other",
+			qAnalysisId: "8ff19e60-bab1-464f-9d03-de76bbd215aa",
 			qRunId:      "run2",
 			fileType:    "no_such_filetype",
 			isValid:     false,
@@ -66,7 +68,7 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		// Invalid filter, invalid level
 		{
 			name:          "invalid filter (invalid level)",
-			qAnalysisId:   "run2_1_other",
+			qAnalysisId:   "8ff19e60-bab1-464f-9d03-de76bbd215aa",
 			qRunId:        "run2",
 			analysisLevel: "no_such_level",
 			isValid:       false,
@@ -94,6 +96,9 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		},
 	}
 
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
 	for _, c := range testcases {
 		t.Run(c.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
@@ -119,9 +124,9 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 			if validationErr != nil {
 				return
 			}
-			if c.analysisId != "" && filter.AnalysisId != c.analysisId {
+			if c.analysisId != "" && filter.AnalysisId.String() != c.analysisId {
 				t.Error("analysis id in parameters not priorised over query parameter")
-			} else if c.analysisId == "" && filter.AnalysisId != c.qAnalysisId {
+			} else if c.analysisId == "" && filter.AnalysisId.String() != c.qAnalysisId {
 				t.Errorf("analysis id mismatch, expected %q, found %q", c.qAnalysisId, filter.AnalysisId)
 			}
 			if c.runId != "" && filter.RunId != c.runId {
