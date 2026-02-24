@@ -133,7 +133,45 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
+        required: false
+
+  - path: /runs/{run_id}/analyses/files/prefix
+    method: GET
+    section: runs
+    description: >
+      Get the longest common prefix for the set of files returned by the filter.
+      Although none of the query parameters are explicitly required, at least one
+      of type, parent_id or name must be supplied.
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+    query_params:
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the ID of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
 
@@ -181,7 +219,49 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
+        required: false
+
+  - path: /runs/{run_id}/analyses/{analysis_id}/files/prefix
+    method: GET
+    section: runs
+    description: >
+      Get the longest common prefix for the set of files returned by the filter.
+      Although none of the query parameters are explicitly required, at least one
+      of type, parent_id or name must be supplied.
+    params:
+      - key: run_id
+        type: string
+        description: ID of the run
+        required: true
+      - key: analysis_id
+        type: string
+        description: ID of the analysis
+        required: true
+    query_params:
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the ID of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /runs/{run_id}/state
@@ -313,7 +393,44 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
+        required: false
+
+  - path: /analyses/files/prefix
+    method: GET
+    section: analysis
+    description: >
+      Get the longest common prefix for the set of files returned by the filter.
+      Although none of the query parameters are explicitly required, at least one
+      of type, parent_id or name must be supplied.
+    query_params:
+      - key: analysis_id
+        type: string
+        description: analysis ID to filter on
+        required: false
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the id of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /analyses/{analysis_id}
@@ -357,7 +474,45 @@ endpoints:
         required: false
       - key: name
         type: string
-        description: file name to filter on, will only match against the name of the file, not the full path
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
+        required: false
+
+  - path: /analyses/{analysis_id}/files/prefix
+    method: GET
+    section: analysis
+    description: >
+      Get the longest common prefix for the set of files returned by the filter.
+      Although none of the query parameters are explicitly required, at least one
+      of type, parent_id or name must be supplied.
+    params:
+      - key: analysis_id
+        type: string
+        description: analysis ID to filter on
+        required: true
+    query_params:
+      - key: type
+        type: string
+        description: file type to filter on
+        required: false
+      - key: level
+        type: string
+        description: analysis level to filter on
+        required: false
+      - key: parent_id
+        type: string
+        description: parent ID to filter on, i.e. the id of the entity associated with level
+        required: false
+      - key: name
+        type: string
+        description: file name to filter on, will only match against the name of the file, not the full path. Cannot be used together with `pattern`.
+        required: false
+      - key: pattern
+        type: string
+        description: regex that will be matched against the full name of the file, cannot be used together with `name`. The pattern should be URL-encoded to ensure that it is interpreted correctly.
         required: false
 
   - path: /analyses

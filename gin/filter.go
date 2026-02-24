@@ -3,6 +3,7 @@ package gin
 import (
 	"errors"
 	"io"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
@@ -36,6 +37,13 @@ func getAnalysisFileFilter(c *gin.Context) (cleve.AnalysisFileFilter, error) {
 	filter := cleve.NewAnalysisFileFilter()
 	if err := c.BindQuery(&filter); err != nil && !errors.Is(err, io.EOF) {
 		return filter, err
+	}
+	if pattern := c.Query("pattern"); pattern != "" {
+		r, err := regexp.Compile(pattern)
+		if err != nil {
+			return filter, err
+		}
+		filter.Pattern = r
 	}
 	if p := c.Query("analysis_id"); p != "" {
 		id, err := uuid.Parse(p)
