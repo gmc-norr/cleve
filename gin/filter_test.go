@@ -83,9 +83,14 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		{
 			name:        "invalid filter (invalid regex)",
 			qAnalysisId: "run2_1_other",
-			fileName:    "sample1.txt",
 			pattern:     "(.+)).txt",
 			isValid:     false,
+		},
+		{
+			name:        "url-encoded pattern",
+			qAnalysisId: "run2_1_other",
+			pattern:     ".%2B%5C.bin%24", // ".+\.bin$"
+			isValid:     true,
 		},
 	}
 
@@ -132,6 +137,12 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 			}
 			if filter.Level.String() != c.analysisLevel {
 				t.Errorf("level mismatch, expected %q found %q", c.analysisLevel, filter.Level.String())
+			}
+			if filter.Pattern == nil && c.pattern != "" {
+				t.Error("pattern is nil, but shouldn't be")
+			}
+			if filter.Pattern != nil {
+				t.Log(filter.Pattern)
 			}
 		})
 	}
