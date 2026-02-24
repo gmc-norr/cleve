@@ -44,7 +44,7 @@ func getAnalysisFileFilter(c *gin.Context) (cleve.AnalysisFileFilter, error) {
 			return filter, err
 		}
 		filter.Pattern = r
-  }
+	}
 	if p := c.Query("analysis_id"); p != "" {
 		id, err := uuid.Parse(p)
 		if err != nil {
