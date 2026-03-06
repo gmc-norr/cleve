@@ -162,6 +162,68 @@ func (f AnalysisFiles) Validate() error {
 	return errors.Join(errs...)
 }
 
+// CommonPrefix returns the longest common prefix of the file paths.
+// Directories are fully matched, not character by character. If all
+// paths are located in the same directory, then the prefix of the files
+// is matched character by character. If AnalysisFiles is empty, or if
+// there is no common prefix, an empty string will be returned.
+//
+// For example, the paths `/foo/bar/baz.txt` and `/foo/baz/bar.txt` have
+// the common prefix `/foo`. The paths `/foo/bar/baz.txt` and `/foo/bar/bar.txt`
+// have the common prefix `/foo/bar/ba`.
+func (f AnalysisFiles) CommonPrefix() string {
+	if len(f) == 0 {
+		return ""
+	}
+
+	dirSplit := func(path string) []string {
+		return strings.Split(filepath.ToSlash(filepath.Clean(path)), "/")
+	}
+
+	dirs := make([]string, len(f))
+	fileNames := make([]string, len(f))
+	for i, file := range f {
+		dirs[i] = filepath.Dir(file.Path)
+		fileNames[i] = filepath.Base(file.Path)
+	}
+
+	parts := dirSplit(dirs[0])
+	dirlen := len(parts)
+
+	for _, d := range dirs[1:] {
+		s := dirSplit(d)
+		maxLen := min(len(parts), len(s))
+		i := 0
+		for i < maxLen && s[i] == parts[i] {
+			i++
+		}
+		parts = s[:i]
+	}
+
+	// Files are not all in the same directory, only return the common directories
+	if len(parts) != dirlen {
+		return filepath.FromSlash(strings.Join(parts, "/"))
+	}
+
+	// Compare file names rune by rune
+	commonPrefix := func(a string, b string) string {
+		ra, rb := []rune(a), []rune(b)
+		maxLen := min(len(ra), len(rb))
+		i := 0
+		for i < maxLen && ra[i] == rb[i] {
+			i++
+		}
+		return string(a[:i])
+	}
+
+	commonFilePrefix := fileNames[0]
+	for _, name := range fileNames[1:] {
+		commonFilePrefix = commonPrefix(commonFilePrefix, name)
+	}
+
+	return filepath.FromSlash(strings.Join(append(parts, commonFilePrefix), "/"))
+}
+
 func (f *AnalysisFile) Validate() error {
 	var errs []error
 	if f.partOfAnalysis && filepath.IsAbs(f.Path) {

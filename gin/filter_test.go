@@ -27,6 +27,7 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 		fileType      string
 		analysisLevel string
 		fileName      string
+		pattern       string
 		// for validation
 		isValid bool
 	}{
@@ -72,6 +73,27 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 			analysisLevel: "no_such_level",
 			isValid:       false,
 		},
+		// Invalid filter, both name and pattern supplied
+		{
+			name:        "invalid filter (both name and pattern)",
+			qAnalysisId: "8ff19e60-bab1-464f-9d03-de76bbd215aa",
+			fileName:    "sample1.txt",
+			pattern:     ".+.txt",
+			isValid:     false,
+		},
+		// Invalid filter, invalid regex
+		{
+			name:        "invalid filter (invalid regex)",
+			qAnalysisId: "8ff19e60-bab1-464f-9d03-de76bbd215aa",
+			pattern:     "(.+)).txt",
+			isValid:     false,
+		},
+		{
+			name:        "url-encoded pattern",
+			qAnalysisId: "8ff19e60-bab1-464f-9d03-de76bbd215aa",
+			pattern:     ".%2B%5C.bin%24", // ".+\.bin$"
+			isValid:     true,
+		},
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -88,7 +110,7 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 				ctx.Params = append(ctx.Params, gin.Param{Key: "runId", Value: c.runId})
 			}
 			buf := io.NopCloser(bytes.NewBuffer([]byte{}))
-			ctx.Request = httptest.NewRequest("GET", fmt.Sprintf("/?parent_id=%s&level=%s&type=%s&name=%s&analysis_id=%s&run_id=%s", c.parentId, c.analysisLevel, c.fileType, c.fileName, c.qAnalysisId, c.qRunId), buf)
+			ctx.Request = httptest.NewRequest("GET", fmt.Sprintf("/?parent_id=%s&level=%s&type=%s&name=%s&analysis_id=%s&run_id=%s&pattern=%s", c.parentId, c.analysisLevel, c.fileType, c.fileName, c.qAnalysisId, c.qRunId, c.pattern), buf)
 
 			filter, validationErr := getAnalysisFileFilter(ctx)
 			t.Logf("validation error: %v, should be valid: %t", validationErr, c.isValid)
@@ -120,6 +142,12 @@ func TestGetAnalysisFileFilter(t *testing.T) {
 			}
 			if filter.Level.String() != c.analysisLevel {
 				t.Errorf("level mismatch, expected %q found %q", c.analysisLevel, filter.Level.String())
+			}
+			if filter.Pattern == nil && c.pattern != "" {
+				t.Error("pattern is nil, but shouldn't be")
+			}
+			if filter.Pattern != nil {
+				t.Log(filter.Pattern)
 			}
 		})
 	}
