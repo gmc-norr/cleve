@@ -96,8 +96,10 @@ var addCmd = &cobra.Command{
 			}
 		}
 
-		if err := webhook.Send(cleve.NewRunMessage(&run, "new run added", cleve.MessageStateUpdate)); err != nil {
-			slog.Error("failed to send webhook message", "error", err)
+		if webhook != nil {
+			if err := webhook.Send(cleve.NewRunMessage(&run, "new run added", cleve.MessageStateUpdate)); err != nil {
+				slog.Error("failed to send webhook message", "error", err)
+			}
 		}
 
 		slog.Info("successfully added", "run", run.RunID)
