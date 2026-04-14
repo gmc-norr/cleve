@@ -1,13 +1,21 @@
-binary_name = cleve
 main_path = ./cmd/cleve
 
-.PHONY: cleve
-cleve:
-	tailwindcss -i ./assets/css/_input.css -o ./assets/css/style.css
-	go generate ./...
-	mkdir -p bin
-	go build -o bin/${binary_name} ${main_path}
+.PHONY: all tidy linux test tailwind generate
 
-.PHONY: test
+all: linux
+
+tidy:
+	go mod tidy
+
+tailwind:
+	tailwindcss -i ./assets/css/_input.css -o ./assets/css/style.css
+
+generate:
+	go generate ./...
+
+linux: tidy tailwind generate
+	mkdir -p bin
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/cleve-linux-amd64 ${main_path}
+
 test:
 	go test -v ./...
