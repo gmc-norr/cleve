@@ -64,6 +64,10 @@ func authMiddleware(db *mongo.DB) gin.HandlerFunc {
 
 func webhookMiddleware(webhook *cleve.Webhook) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if webhook == nil {
+			c.Next()
+			return
+		}
 		rawSendMessage, ok := c.Keys["webhook_message"]
 		if !ok {
 			c.Next()

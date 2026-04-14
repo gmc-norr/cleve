@@ -1,6 +1,6 @@
 module github.com/gmc-norr/cleve
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/gin-gonic/gin v1.10.1
@@ -10,8 +10,8 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	go.mongodb.org/mongo-driver v1.14.0
-	golang.org/x/crypto v0.36.0
-	golang.org/x/text v0.23.0
+	golang.org/x/crypto v0.45.0
+	golang.org/x/text v0.31.0
 )
 
 require (
@@ -58,9 +58,9 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/exp v0.0.0-20240314144324-c7f7c6466f7f // indirect
-	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
