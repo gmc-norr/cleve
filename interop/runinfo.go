@@ -22,12 +22,14 @@ var readyMarkers = map[string]string{
 	"NovaSeq X Plus": "CopyComplete.txt",
 	"NextSeq 5x0":    "CopyComplete.txt",
 	"MiSeq":          "CopyComplete.txt",
+	"MiSeq i100":     "CopyComplete.txt",
 }
 
 var completionStatus = map[string]string{
 	"NovaSeq X Plus": "RunCompletionStatus.xml",
 	"NextSeq 5x0":    "RunCompletionStatus.xml",
 	"MiSeq":          "AnalysisJobInfo.xml",
+	"MiSeq i100":     "RunCompletionStatus.xml",
 }
 
 // Current sequencers that we use and support
@@ -35,6 +37,7 @@ var instrumentIds = []idMatcher{
 	{idPattern: regexp.MustCompile(`^LH\d{5}$`), name: "NovaSeq X Plus"},
 	{idPattern: regexp.MustCompile(`^NB\d{6}$`), name: "NextSeq 5x0"},
 	{idPattern: regexp.MustCompile(`^M\d{5}$`), name: "MiSeq"},
+	{idPattern: regexp.MustCompile(`^SL\d{5}$`), name: "MiSeq i100"},
 }
 
 // Current flowcells that we use and support
@@ -159,7 +162,7 @@ func ParseRunInfo(r io.Reader) (ri RunInfo, err error) {
 	ri.FlowcellName = IdentifyFlowcell(ri.FlowcellId)
 
 	switch ri.Version {
-	case 2, 4, 6:
+	case 2, 4, 6, 7:
 		return ri, nil
 	default:
 		return ri, fmt.Errorf("unsupported run info version: %d", ri.Version)
@@ -179,7 +182,7 @@ func ReadRunInfo(filename string) (ri RunInfo, err error) {
 // TileCount returns the number of tiles represented on the flow cell.
 func (i RunInfo) TileCount() int {
 	switch i.Version {
-	case 2, 6:
+	case 2, 6, 7:
 		return i.Flowcell.Lanes * i.Flowcell.Surfaces * i.Flowcell.Swaths * i.Flowcell.Tiles
 	case 4:
 		return i.Flowcell.Lanes * i.Flowcell.Surfaces * i.Flowcell.Swaths * i.Flowcell.SectionPerLane * i.Flowcell.Tiles

@@ -165,6 +165,23 @@ type runParametersMiSeq struct {
 	} `xml:"ReagentKitRFIDTag"`
 }
 
+type runParametersMiSeqi100 struct {
+	XMLName        xml.Name `xml:"RunParameters"`
+	ExperimentName string   `xml:"ExperimentName"`
+	CCSName        string   `xml:"Application"`
+	CCSVersion     string   `xml:"SystemSuiteVersion"`
+	DragenVersion  string   `xml:"SecondaryAnalysisInfo>SecondaryAnalysisInfo>SecondaryAnalysisPlatformVersion"`
+	Consumables    []struct {
+		Type           string      `xml:"Type"`
+		SerialNumber   string      `xml:"SerialNumber"`
+		PartNumber     string      `xml:"PartNumber"`
+		LotNumber      string      `xml:"LotNumber"`
+		ExpirationDate interopTime `xml:"ExpirationDate"`
+		Mode           string      `xml:"Mode"`
+		Version        string      `xml:"Version"`
+	} `xml:"ConsumableInfo>ConsumableInfo"`
+}
+
 // TODO: this should be used for the version in the final runparameters struct.
 // This means that I have to make sure to parse the NovaSeq runparameters into
 // this format too. I don't have a version for this.
@@ -243,8 +260,8 @@ func parseVersion(r io.Reader) (string, error) {
 				if err != nil {
 					return version, err
 				}
-				if instrumentType.Value == "NovaSeqXPlus" {
-					version = "NovaSeqXPlus"
+				if instrumentType.Value == "NovaSeqXPlus" || instrumentType.Value == "MiSeqi100" {
+					version = instrumentType.Value
 					return version, nil
 				}
 			}
@@ -405,6 +422,46 @@ func ParseRunParameters(r io.Reader) (RunParameters, error) {
 			PartNumber:     miseq.ReagentKit.PartNumber,
 			LotNumber:      miseq.ReagentKit.LotNumber,
 			ExpirationDate: miseq.ReagentKit.ExpirationDate.Time,
+		}
+	case "MiSeqi100":
+		var miseq runParametersMiSeqi100
+		err = decoder.Decode(&miseq)
+		if err != nil {
+			return rp, err
+		}
+		rp.ExperimentName = miseq.ExperimentName
+
+		rp.Software = append(rp.Software, Software{
+			Name:    miseq.CCSName,
+			Version: miseq.CCSVersion,
+		}, Software{
+			Name:    "Dragen",
+			Version: miseq.DragenVersion,
+		})
+
+		rp.Consumables = make([]Consumable, 0, len(miseq.Consumables))
+		for _, c := range miseq.Consumables {
+			if strings.HasPrefix(c.Type, "FlowCell") {
+				rp.Flowcell = Consumable{
+					Type:           c.Type,
+					Version:        c.Version,
+					Mode:           c.Mode,
+					SerialNumber:   c.SerialNumber,
+					LotNumber:      c.LotNumber,
+					PartNumber:     c.PartNumber,
+					ExpirationDate: c.ExpirationDate.Time,
+				}
+				continue
+			}
+			rp.Consumables = append(rp.Consumables, Consumable{
+				Type:           c.Type,
+				Version:        c.Version,
+				Mode:           c.Mode,
+				SerialNumber:   c.SerialNumber,
+				LotNumber:      c.LotNumber,
+				PartNumber:     c.PartNumber,
+				ExpirationDate: c.ExpirationDate.Time,
+			})
 		}
 	default:
 		return rp, fmt.Errorf("unsupported platform: %s", version)
