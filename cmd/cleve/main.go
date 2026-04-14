@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/cmd/cleve/db"
@@ -25,26 +27,6 @@ var (
 	}
 )
 
-func init() {
-	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	slog.SetDefault(logger)
-
-	cobra.OnInitialize(initConfig)
-
-	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file")
-	rootCmd.PersistentFlags().String("webhook-url", viper.GetString("webhook_url"), "URL to send webhook messages to")
-	rootCmd.PersistentFlags().String("webhook-api-key", viper.GetString("webhook-api-key"), "API key for the webhook service (\"<header-key>=<api-key>\")")
-
-	rootCmd.AddCommand(serveCmd)
-	rootCmd.AddCommand(run.RunCmd)
-	rootCmd.AddCommand(db.DbCmd)
-	rootCmd.AddCommand(key.KeyCmd)
-	rootCmd.AddCommand(panel.PanelCmd)
-	rootCmd.AddCommand(platform.PlatformCmd)
-	rootCmd.AddCommand(samplesheet.SampleSheetCmd)
-}
-
 func initConfig() {
 	if configFile != "" {
 		viper.SetConfigFile(configFile)
@@ -63,6 +45,17 @@ func initConfig() {
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatalf("error: %s", err)
+	}
+
+	viper.SetDefault("loglevel", "WARN")
+
+	viper.MustBindEnv("webhook_url", "CLEVE_WEBHOOK_URL")
+	viper.MustBindEnv("webhook_api_key", "CLEVE_WEBHOOK_API_KEY")
+	viper.MustBindEnv("loglevel", "CLEVE_LOGLEVEL")
+
+	if err := logger(); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
 
 	slog.Info("config", "path", viper.ConfigFileUsed())
@@ -88,12 +81,6 @@ func initConfig() {
 		log.Fatal("missing database name")
 	}
 
-	_ = viper.BindPFlag("webhook_url", rootCmd.PersistentFlags().Lookup("webhook-url"))
-	_ = viper.BindPFlag("webhook_api_key", rootCmd.PersistentFlags().Lookup("webhook-api-key"))
-
-	cobra.CheckErr(viper.BindEnv("webhook_url", "CLEVE_WEBHOOK_URL"))
-	cobra.CheckErr(viper.BindEnv("webhook_api_key", "CLEVE_WEBHOOK_API_KEY"))
-
 	webhookApiKey, err := cleve.WebhookApiKeyFromString(viper.GetString("webhook_api_key"))
 	cobra.CheckErr(err)
 	webhookUrl := viper.GetString("webhook_url")
@@ -108,6 +95,48 @@ func initConfig() {
 	} else {
 		slog.Info("no webhook url given, not setting up webhook")
 	}
+}
+
+func logger() error {
+	var logLevel slog.Level
+	switch strings.ToLower(viper.GetString("loglevel")) {
+	case "debug":
+		logLevel = slog.LevelDebug
+	case "info":
+		logLevel = slog.LevelInfo
+	case "warn":
+		logLevel = slog.LevelWarn
+	case "error":
+		logLevel = slog.LevelError
+	default:
+		return fmt.Errorf("invalid log level: %s", viper.GetString("loglevel"))
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: logLevel}))
+	slog.SetDefault(logger)
+	return nil
+}
+
+func init() {
+	cobra.OnInitialize(initConfig)
+
+	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(run.RunCmd)
+	rootCmd.AddCommand(db.DbCmd)
+	rootCmd.AddCommand(key.KeyCmd)
+	rootCmd.AddCommand(panel.PanelCmd)
+	rootCmd.AddCommand(platform.PlatformCmd)
+	rootCmd.AddCommand(samplesheet.SampleSheetCmd)
+
+	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file")
+	rootCmd.PersistentFlags().String("webhook-url", viper.GetString("webhook_url"), "URL to send webhook messages to")
+	rootCmd.PersistentFlags().String("webhook-api-key", viper.GetString("webhook_api_key"), "API key for the webhook service (\"<header-key>=<api-key>\")")
+	rootCmd.PersistentFlags().StringP("loglevel", "l", "WARN", "Logging verbosity (case-insensitive: DEBUG, INFO, WARN, ERROR)")
+
+	_ = viper.BindPFlag("webhook_url", rootCmd.PersistentFlags().Lookup("webhook-url"))
+	_ = viper.BindPFlag("webhook_api_key", rootCmd.PersistentFlags().Lookup("webhook-api-key"))
+	_ = viper.BindPFlag("loglevel", rootCmd.PersistentFlags().Lookup("loglevel"))
 }
 
 func main() {
