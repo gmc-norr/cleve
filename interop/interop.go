@@ -130,6 +130,15 @@ func InteropFromDir(rundir string) (Interop, error) {
 		return i, fmt.Errorf("error reading run parameters: %w", err)
 	}
 
+	// Special case for MiSeq i100 where it doesn't seem that we can get the flow cell name
+	// based on the flow cell ID. Instead, pick this out from the consumables.
+	if i.RunInfo.Platform == "MiSeq i100" {
+		dryCartridgeIndex := slices.IndexFunc(i.RunParameters.Consumables, func(c Consumable) bool {
+			return c.Type == "DryCartridge"
+		})
+		i.RunInfo.FlowcellName = i.RunParameters.Consumables[dryCartridgeIndex].Mode
+	}
+
 	if i.qmetricsFile != "" {
 		i.QMetrics, err = ReadQMetrics(i.qmetricsFile)
 		if err != nil {
