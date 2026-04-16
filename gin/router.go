@@ -148,6 +148,10 @@ func title(s string) string {
 	return cases.Title(language.English).String(s)
 }
 
+func trimSuffix(s string, suffix string) string {
+	return strings.TrimSuffix(s, suffix)
+}
+
 func N(start, end int) chan int {
 	stream := make(chan int)
 	go func() {
@@ -204,6 +208,7 @@ func NewRouter(db *mongo.DB, debug bool, webhook *cleve.Webhook) http.Handler {
 		"multiply":    multiply,
 		"multiplyInt": multiplyInt,
 		"title":       title,
+		"trimSuffix":  trimSuffix,
 		"toFloat":     toFloat,
 		"isNaN":       math.IsNaN,
 		"N":           N,
