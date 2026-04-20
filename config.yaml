@@ -1,6 +1,6 @@
 # Mongo database configuration
 database:
-  host: localhost
+  host: mongo
   port: 27017
   user: cleve
   password: secret

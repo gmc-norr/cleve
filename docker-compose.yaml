@@ -1,12 +1,38 @@
-version: '3.1'
-
 services:
 
   mongo:
     image: mongo:7
     restart: always
-    ports:
-      - 27017:27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: cleve
       MONGO_INITDB_ROOT_PASSWORD: secret
+    networks:
+      - cleve-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  cleve:
+    image: cleve
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - CLEVE_WEBHOOK_URL=${CLEVE_WEBHOOK_URL:-}
+      - CLEVE_WEBHOOK_API_KEY=${CLEVE_WEBHOOK_API_KEY:-}
+    networks:
+      - cleve-net
+    ports:
+      - 0.0.0.0:3333:8080
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - ./config.yaml:/etc/cleve/config.yaml
+
+networks:
+  cleve-net:
+    driver: bridge
