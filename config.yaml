@@ -24,7 +24,7 @@ analysis_poll_interval: 30
 apidoc: cleve_api.yaml
 
 # Host and port where cleve will be served
-host: 127.0.0.1
+host: 0.0.0.0
 port: 8080
 
 # Base URL where webhook requests should be sent. If not defined, no
