@@ -25,7 +25,7 @@ The simplest way to spin up a test environment of Cleve is to use docker compose
 docker compose up -d --build
 ```
 
-This will spin up two containers: one for Cleve and one for MongoDB.
+This will spin up two containers: one for Cleve and one for MongoDB. Cleve will by default be served on `127.0.0.1:8080`.
 
 ## Installation
 
