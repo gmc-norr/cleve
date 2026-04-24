@@ -17,6 +17,16 @@ These visualisations provide a quick way of visually evaluate the state of a seq
 
 - A mongodb instance
 
+## Docker compose
+
+The simplest way to spin up a test environment of Cleve is to use docker compose.
+
+```
+docker compose up -d --build
+```
+
+This will spin up two containers: one for Cleve and one for MongoDB. Cleve will by default be served on `127.0.0.1:8080`.
+
 ## Installation
 
 The easiest way to build Cleve is to use make:
