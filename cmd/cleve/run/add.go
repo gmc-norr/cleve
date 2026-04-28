@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/cmd/cleve/internal/cli"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
+	"github.com/maehler/webhook"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -23,6 +25,7 @@ var addCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
 		db, err := mongo.Connect()
 		if err != nil {
 			slog.Error("failed to connect to database", "error", err)
@@ -66,9 +69,9 @@ var addCmd = &cobra.Command{
 			}
 		}
 
-		var webhook *cleve.Webhook
-		if viperWebhook, ok := viper.Get("webhook").(*cleve.Webhook); ok {
-			webhook = viperWebhook
+		var webhookClient *webhook.Client
+		if viperWebhook, ok := viper.Get("webhook").(*webhook.Client); ok {
+			webhookClient = viperWebhook
 		}
 
 		run := cleve.Run{
@@ -96,11 +99,7 @@ var addCmd = &cobra.Command{
 			}
 		}
 
-		if webhook != nil {
-			if err := webhook.Send(cleve.NewRunMessage(&run, "new run added", cleve.MessageStateUpdate)); err != nil {
-				slog.Error("failed to send webhook message", "error", err)
-			}
-		}
+		_ = cli.SendWebhookMessage(ctx, webhookClient, cleve.NewRunMessage(&run, "new run added", cleve.MessageStateUpdate))
 
 		slog.Info("successfully added", "run", run.RunID)
 	},

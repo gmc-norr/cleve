@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/cmd/cleve/internal/cli"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
+	"github.com/maehler/webhook"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -41,6 +43,7 @@ var (
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := cmd.Context()
 			db, err := mongo.Connect()
 			if err != nil {
 				slog.Error("failed to connect to database", "error", err)
@@ -80,9 +83,9 @@ var (
 			updateMetadata = updateMetadata || reloadMetadata
 
 			stateUpdated := false
-			var webhook *cleve.Webhook
-			if viperWebhook, ok := viper.Get("webhook").(*cleve.Webhook); ok {
-				webhook = viperWebhook
+			var webhookClient *webhook.Client
+			if viperWebhook, ok := viper.Get("webhook").(*webhook.Client); ok {
+				webhookClient = viperWebhook
 			}
 
 			// Update the run state. If the state was supplied on the command line, then use this state.
@@ -143,9 +146,7 @@ var (
 					os.Exit(1)
 				}
 				if stateUpdated {
-					if err := webhook.Send(cleve.NewRunMessage(run, "run state updated", cleve.MessageStateUpdate)); err != nil {
-						slog.Error("failed to send webhook message", "error", err)
-					}
+					_ = cli.SendWebhookMessage(ctx, webhookClient, cleve.NewRunMessage(run, "run state updated", cleve.MessageStateUpdate))
 				}
 			} else {
 				slog.Info("no changes made", "run", args[0])

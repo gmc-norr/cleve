@@ -16,6 +16,7 @@ import (
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
+	"github.com/maehler/webhook"
 	"github.com/spf13/viper"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -62,7 +63,7 @@ func authMiddleware(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func webhookMiddleware(webhook *cleve.Webhook) gin.HandlerFunc {
+func webhookMiddleware(webhook *webhook.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if webhook == nil {
 			c.Next()
@@ -81,13 +82,13 @@ func webhookMiddleware(webhook *cleve.Webhook) gin.HandlerFunc {
 		switch e := sendMessage.Entity.(type) {
 		case *cleve.Run:
 			slog.Debug("got a run from upstream handler", "run", e.RunID)
-			if err := webhook.Send(cleve.NewRunMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
-				slog.Error("failed to send run webhook message", "error", err)
+			if res, err := webhook.SendContext(c.Request.Context(), cleve.NewRunMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
+				slog.Error("failed to send run webhook message", "attempts", res.Attempts, "error", err)
 			}
 		case *cleve.Analysis:
 			slog.Debug("got an analysis from upstream handler", "analysis", e.AnalysisId)
-			if err := webhook.Send(cleve.NewAnalysisMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
-				slog.Error("failed to send analysis webhook message", "error", err)
+			if res, err := webhook.SendContext(c.Request.Context(), cleve.NewAnalysisMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
+				slog.Error("failed to send analysis webhook message", "attempts", res, "error", err)
 			}
 		}
 
@@ -180,7 +181,7 @@ func LoadHTMLFS(e *gin.Engine, fs fs.FS, patterns ...string) {
 	e.SetHTMLTemplate(t)
 }
 
-func NewRouter(db *mongo.DB, debug bool, webhook *cleve.Webhook) http.Handler {
+func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	gin.DisableConsoleColor()
 	if viper.GetString("logfile") != "" {
 		f, err := os.OpenFile(viper.GetString("logfile"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
