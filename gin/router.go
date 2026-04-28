@@ -84,11 +84,15 @@ func webhookMiddleware(webhook *webhook.Client) gin.HandlerFunc {
 			slog.Debug("got a run from upstream handler", "run", e.RunID)
 			if res, err := webhook.SendContext(c.Request.Context(), cleve.NewRunMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
 				slog.Error("failed to send run webhook message", "attempts", res.Attempts, "error", err)
+			} else {
+				slog.Info("sent webhook message", "attempts", res.Attempts, "message_type", sendMessage.MessageType, "status", res.Response.Status)
 			}
 		case *cleve.Analysis:
 			slog.Debug("got an analysis from upstream handler", "analysis", e.AnalysisId)
 			if res, err := webhook.SendContext(c.Request.Context(), cleve.NewAnalysisMessage(e, sendMessage.Message, sendMessage.MessageType)); err != nil {
 				slog.Error("failed to send analysis webhook message", "attempts", res, "error", err)
+			} else {
+				slog.Info("sent webhook message", "attempts", res.Attempts, "message_type", sendMessage.MessageType, "status", res.Response.Status)
 			}
 		}
 
