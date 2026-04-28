@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 	"strings"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/gmc-norr/cleve/cmd/cleve/platform"
 	"github.com/gmc-norr/cleve/cmd/cleve/run"
 	"github.com/gmc-norr/cleve/cmd/cleve/samplesheet"
+	"github.com/maehler/webhook"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -108,13 +110,13 @@ func initConfig() {
 	cobra.CheckErr(err)
 	webhookUrl := viper.GetString("webhook_url")
 	if webhookUrl != "" {
-		webhook := cleve.NewAuthWebhook(webhookUrl, webhookApiKey)
-		if err := webhook.Check(); err != nil {
-			slog.Error("failed to set up webhook", "url", webhookUrl, "error", err)
-			os.Exit(1)
+		var headers http.Header
+		if webhookApiKey.Value != "" {
+			headers.Add(webhookApiKey.Key, webhookApiKey.Value)
 		}
+		client := webhook.NewClient(webhookUrl, webhook.ClientOpts.WithHeaders(headers))
 		slog.Info("set up webhook", "url", webhookUrl)
-		viper.Set("webhook", webhook)
+		viper.Set("webhook", client)
 	} else {
 		slog.Info("no webhook url given, not setting up webhook")
 	}
