@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"log/slog"
@@ -26,6 +27,28 @@ var (
 		Version: cleve.GetVersion(),
 	}
 )
+
+func init() {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
+
+	cobra.OnInitialize(initConfig)
+
+	rootCmd.SetContext(context.Background())
+
+	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file")
+	rootCmd.PersistentFlags().String("webhook-url", viper.GetString("webhook_url"), "URL to send webhook messages to")
+	rootCmd.PersistentFlags().String("webhook-api-key", viper.GetString("webhook-api-key"), "API key for the webhook service (\"<header-key>=<api-key>\")")
+
+	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(run.RunCmd)
+	rootCmd.AddCommand(db.DbCmd)
+	rootCmd.AddCommand(key.KeyCmd)
+	rootCmd.AddCommand(panel.PanelCmd)
+	rootCmd.AddCommand(platform.PlatformCmd)
+	rootCmd.AddCommand(samplesheet.SampleSheetCmd)
+}
 
 func initConfig() {
 	if configFile != "" {
