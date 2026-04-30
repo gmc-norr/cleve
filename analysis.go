@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -711,18 +712,30 @@ func ReadDragenManifest(r io.Reader) (DragenManifest, error) {
 
 // FindFiles returns a list of paths where the file name (not the full path) matches the
 // supplied regular expression. If the regular expression is nil, or no files are found,
-// an empty slice is returned.
+// an empty slice is returned. If multiple files with the same base name and identical hashes
+// are found, only the first match will be in the resulting slice.
 func (m *DragenManifest) FindFiles(r *regexp.Regexp) []string {
-	var matches []string
+	var matches []ManifestFile
 	if r == nil {
-		return matches
+		return []string{}
 	}
 	for _, f := range m.Files {
 		if r.MatchString(filepath.Base(f.Name)) {
-			matches = append(matches, f.Name)
+			found := slices.ContainsFunc(matches, func(x ManifestFile) bool {
+				return filepath.Base(f.Name) == filepath.Base(x.Name) && f.Hash == x.Hash
+			})
+			if found {
+				// Ignore duplicates with the same base name and identical hash
+				continue
+			}
+			matches = append(matches, f)
 		}
 	}
-	return matches
+	filenames := make([]string, len(matches))
+	for i, mf := range matches {
+		filenames[i] = mf.Name
+	}
+	return filenames
 }
 
 // FindFile finds a single file whose base name matches the input name. A non-nil error

@@ -344,6 +344,23 @@ func TestDragenManifestFindFiles(t *testing.T) {
 			},
 		},
 		{
+			name: "duplicate file",
+			manifest: DragenManifest{
+				Files: []ManifestFile{
+					{Name: "data/subdir1/file1.txt", Hash: "hash1"},
+					{Name: "data/subdir1/file1.fastq.gz", Hash: "hash2"},
+					{Name: "data/subdir2/file2.txt", Hash: "hash3"},
+					{Name: "data/subdir2/file2.fastq.gz", Hash: "hash6"},
+					{Name: "data/subdir2-1/file2.txt", Hash: "hash5"},
+					{Name: "data/subdir2-1/file2.fastq.gz", Hash: "hash6"},
+				},
+			},
+			regex: regexp.MustCompile(`^file2.fastq.gz$`),
+			matches: []string{
+				"data/subdir2/file2.fastq.gz",
+			},
+		},
+		{
 			name: "nil regex",
 			manifest: DragenManifest{
 				Files: []ManifestFile{
@@ -357,7 +374,7 @@ func TestDragenManifestFindFiles(t *testing.T) {
 			},
 		},
 		{
-			name: "no matcher",
+			name: "no matches",
 			manifest: DragenManifest{
 				Files: []ManifestFile{
 					{Name: "data/subdir1/file1.txt", Hash: "hash1"},
