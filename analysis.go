@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -667,7 +668,12 @@ func dragenAnalysisState(path string) State {
 }
 
 type DragenManifest struct {
-	Files []string
+	Files []ManifestFile
+}
+
+type ManifestFile struct {
+	Name string
+	Hash string
 }
 
 type DragenErrorSummary struct {
@@ -690,7 +696,7 @@ func ReadErrorSummary(r io.Reader) (DragenErrorSummary, error) {
 // ReadDragenManifest reads a Dragen analysis manifest file and returns a slice of
 // strings with all paths listed in the manifest.
 func ReadDragenManifest(r io.Reader) (DragenManifest, error) {
-	var files []string
+	var files []ManifestFile
 	csvReader := csv.NewReader(r)
 	csvReader.Comma = '\t'
 	csvReader.FieldsPerRecord = 2
@@ -699,41 +705,55 @@ func ReadDragenManifest(r io.Reader) (DragenManifest, error) {
 		return DragenManifest{}, err
 	}
 	for _, line := range lines {
-		files = append(files, line[0])
+		files = append(files, ManifestFile{Name: line[0], Hash: line[1]})
 	}
 	return DragenManifest{Files: files}, nil
 }
 
 // FindFiles returns a list of paths where the file name (not the full path) matches the
 // supplied regular expression. If the regular expression is nil, or no files are found,
-// an empty slice is returned.
+// an empty slice is returned. If multiple files with the same base name and identical hashes
+// are found, only the first match will be in the resulting slice.
 func (m *DragenManifest) FindFiles(r *regexp.Regexp) []string {
-	var matches []string
+	var matches []ManifestFile
 	if r == nil {
-		return matches
+		return []string{}
 	}
 	for _, f := range m.Files {
-		if r.MatchString(filepath.Base(f)) {
+		if r.MatchString(filepath.Base(f.Name)) {
+			found := slices.ContainsFunc(matches, func(x ManifestFile) bool {
+				return filepath.Base(f.Name) == filepath.Base(x.Name) && f.Hash == x.Hash
+			})
+			if found {
+				// Ignore duplicates with the same base name and identical hash
+				continue
+			}
 			matches = append(matches, f)
 		}
 	}
-	return matches
+	filenames := make([]string, len(matches))
+	for i, mf := range matches {
+		filenames[i] = mf.Name
+	}
+	return filenames
 }
 
 // FindFile finds a single file whose base name matches the input name. A non-nil error
-// is returned if more than one match is found, or if no matches are found.
+// is returned if more than one match is found and the hashes mismach, or if no
+// matches are found. If duplicates with the same hash are found, the last inspected
+// file will be returned.
 func (m *DragenManifest) FindFile(name string) (string, error) {
-	var foundFile string
+	var foundFile ManifestFile
 	for _, f := range m.Files {
-		if filepath.Base(f) == name {
-			if foundFile != "" {
-				return "", fmt.Errorf("more than one match found")
+		if filepath.Base(f.Name) == name {
+			if foundFile.Name != "" && foundFile.Hash != f.Hash {
+				return "", fmt.Errorf("more than one match found, and hashes are mismatching")
 			}
 			foundFile = f
 		}
 	}
-	if foundFile == "" {
+	if foundFile.Name == "" {
 		return "", fmt.Errorf("no matches found")
 	}
-	return foundFile, nil
+	return foundFile.Name, nil
 }
