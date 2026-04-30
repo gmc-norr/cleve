@@ -310,7 +310,7 @@ func TestDragenManifest(t *testing.T) {
 				t.Fatalf("expected %d files, got %d files", len(c.files), len(m.Files))
 			}
 			for i := range m.Files {
-				if m.Files[i] != c.files[i] {
+				if m.Files[i].Name != c.files[i] {
 					t.Errorf("expected file %d to be %s, got %s", i+1, c.files[i], m.Files[i])
 				}
 			}
@@ -328,13 +328,13 @@ func TestDragenManifestFindFiles(t *testing.T) {
 		{
 			name: "contains matches",
 			manifest: DragenManifest{
-				Files: []string{
-					"data/subdir1/file1.txt",
-					"data/subdir1/file1.fastq.gz",
-					"data/subdir2/file2.txt",
-					"data/subdir2/file2.fastq.gz",
-					"data/subdir2-1/file2.txt",
-					"data/subdir2-1/file2.fastq.gz",
+				Files: []ManifestFile{
+					{Name: "data/subdir1/file1.txt", Hash: "hash1"},
+					{Name: "data/subdir1/file1.fastq.gz", Hash: "hash2"},
+					{Name: "data/subdir2/file2.txt", Hash: "hash3"},
+					{Name: "data/subdir2/file2.fastq.gz", Hash: "hash4"},
+					{Name: "data/subdir2-1/file2.txt", Hash: "hash5"},
+					{Name: "data/subdir2-1/file2.fastq.gz", Hash: "hash6"},
 				},
 			},
 			regex: regexp.MustCompile(`^file2.fastq.gz$`),
@@ -346,26 +346,26 @@ func TestDragenManifestFindFiles(t *testing.T) {
 		{
 			name: "nil regex",
 			manifest: DragenManifest{
-				Files: []string{
-					"data/subdir1/file1.txt",
-					"data/subdir1/file1.fastq.gz",
-					"data/subdir2/file2.txt",
-					"data/subdir2/file2.fastq.gz",
-					"data/subdir2-1/file2.txt",
-					"data/subdir2-1/file2.fastq.gz",
+				Files: []ManifestFile{
+					{Name: "data/subdir1/file1.txt", Hash: "hash1"},
+					{Name: "data/subdir1/file1.fastq.gz", Hash: "hash2"},
+					{Name: "data/subdir2/file2.txt", Hash: "hash3"},
+					{Name: "data/subdir2/file2.fastq.gz", Hash: "hash4"},
+					{Name: "data/subdir2-1/file2.txt", Hash: "hash5"},
+					{Name: "data/subdir2-1/file2.fastq.gz", Hash: "hash6"},
 				},
 			},
 		},
 		{
 			name: "no matcher",
 			manifest: DragenManifest{
-				Files: []string{
-					"data/subdir1/file1.txt",
-					"data/subdir1/file1.fastq.gz",
-					"data/subdir2/file2.txt",
-					"data/subdir2/file2.fastq.gz",
-					"data/subdir2-1/file2.txt",
-					"data/subdir2-1/file2.fastq.gz",
+				Files: []ManifestFile{
+					{Name: "data/subdir1/file1.txt", Hash: "hash1"},
+					{Name: "data/subdir1/file1.fastq.gz", Hash: "hash2"},
+					{Name: "data/subdir2/file2.txt", Hash: "hash3"},
+					{Name: "data/subdir2/file2.fastq.gz", Hash: "hash4"},
+					{Name: "data/subdir2-1/file2.txt", Hash: "hash5"},
+					{Name: "data/subdir2-1/file2.fastq.gz", Hash: "hash6"},
 				},
 			},
 			regex: regexp.MustCompile(`^file3.fastq.gz$`),
@@ -396,30 +396,45 @@ func TestDragenManifestFindFile(t *testing.T) {
 		error     bool
 	}{
 		{
-			name: "multiple matches",
+			name: "multiple matches, mismatching hash",
 			manifest: DragenManifest{
-				Files: []string{
-					"data/subdir1/file1.txt",
-					"data/subdir1/file1.fastq.gz",
-					"data/subdir2/file2.txt",
-					"data/subdir2/file2.fastq.gz",
-					"data/subdir2-1/file2.txt",
-					"data/subdir2-1/file2.fastq.gz",
+				Files: []ManifestFile{
+					{Name: "data/subdir1/file1.txt", Hash: "hash1"},
+					{Name: "data/subdir1/file1.fastq.gz", Hash: "hash2"},
+					{Name: "data/subdir2/file2.txt", Hash: "hash3"},
+					{Name: "data/subdir2/file2.fastq.gz", Hash: "hash4"},
+					{Name: "data/subdir2-1/file2.txt", Hash: "hash5"},
+					{Name: "data/subdir2-1/file2.fastq.gz", Hash: "hash6"},
 				},
 			},
 			matchWith: "file2.txt",
 			error:     true,
 		},
 		{
+			name: "multiple matches, matching hash",
+			manifest: DragenManifest{
+				Files: []ManifestFile{
+					{Name: "data/subdir1/file1.txt", Hash: "hash1"},
+					{Name: "data/subdir1/file1.fastq.gz", Hash: "hash2"},
+					{Name: "data/subdir2/file2.txt", Hash: "hash3"},
+					{Name: "data/subdir2/file2.fastq.gz", Hash: "hash4"},
+					{Name: "data/subdir2-1/file2.txt", Hash: "hash3"},
+					{Name: "data/subdir2-1/file2.fastq.gz", Hash: "hash4"},
+				},
+			},
+			matchWith: "file2.txt",
+			match:     "data/subdir2-1/file2.txt",
+		},
+		{
 			name: "no matches",
 			manifest: DragenManifest{
-				Files: []string{
-					"data/subdir1/file1.txt",
-					"data/subdir1/file1.fastq.gz",
-					"data/subdir2/file2.txt",
-					"data/subdir2/file2.fastq.gz",
-					"data/subdir2-1/file2.txt",
-					"data/subdir2-1/file2.fastq.gz",
+				Files: []ManifestFile{
+					{Name: "data/subdir1/file1.txt", Hash: "hash1"},
+					{Name: "data/subdir1/file1.fastq.gz", Hash: "hash2"},
+					{Name: "data/subdir2/file2.txt", Hash: "hash3"},
+					{Name: "data/subdir2/file2.fastq.gz", Hash: "hash4"},
+					{Name: "data/subdir2-1/file2.txt", Hash: "hash5"},
+					{Name: "data/subdir2-1/file2.fastq.gz", Hash: "hash6"},
 				},
 			},
 			matchWith: "file3.txt",
@@ -428,13 +443,13 @@ func TestDragenManifestFindFile(t *testing.T) {
 		{
 			name: "single matches",
 			manifest: DragenManifest{
-				Files: []string{
-					"data/subdir1/file1.txt",
-					"data/subdir1/file1.fastq.gz",
-					"data/subdir2/file2.txt",
-					"data/subdir2/file2.fastq.gz",
-					"data/subdir2-1/file2.txt",
-					"data/subdir2-1/file2.fastq.gz",
+				Files: []ManifestFile{
+					{Name: "data/subdir1/file1.txt", Hash: "hash1"},
+					{Name: "data/subdir1/file1.fastq.gz", Hash: "hash2"},
+					{Name: "data/subdir2/file2.txt", Hash: "hash3"},
+					{Name: "data/subdir2/file2.fastq.gz", Hash: "hash4"},
+					{Name: "data/subdir2-1/file2.txt", Hash: "hash5"},
+					{Name: "data/subdir2-1/file2.fastq.gz", Hash: "hash6"},
 				},
 			},
 			matchWith: "file1.fastq.gz",
