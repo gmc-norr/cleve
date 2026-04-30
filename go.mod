@@ -1,6 +1,6 @@
 module github.com/gmc-norr/cleve
 
-go 1.24.0
+go 1.26.1
 
 require (
 	github.com/gin-gonic/gin v1.10.1
@@ -34,6 +34,7 @@ require (
 	github.com/klauspost/compress v1.17.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/maehler/webhook v0.2.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c // indirect

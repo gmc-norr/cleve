@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/cmd/cleve/internal/cli"
 	"github.com/gmc-norr/cleve/gin"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/gmc-norr/cleve/watcher"
+	"github.com/maehler/webhook"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -28,6 +30,7 @@ var (
 		Use:   "serve",
 		Short: "Serve the cleve api",
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := cmd.Context()
 			db, err := mongo.Connect()
 			if err != nil {
 				slog.Error("failed to connect to database", "error", err)
@@ -42,9 +45,9 @@ var (
 				loglevel = slog.LevelDebug
 			}
 
-			var webhook *cleve.Webhook
-			if viperWebhook, ok := viper.Get("webhook").(*cleve.Webhook); ok {
-				webhook = viperWebhook
+			var webhookClient *webhook.Client
+			if viperWebhook, ok := viper.Get("webhook").(*webhook.Client); ok {
+				webhookClient = viperWebhook
 			}
 
 			watcherLogPath := viper.GetString("watcher_logfile")
@@ -79,16 +82,12 @@ var (
 							if err := db.SetRunState(e.Id, e.State); err != nil {
 								slog.Error("failed to update run state", "run", e.Id, "error", err)
 							}
-							if webhook != nil {
-								run, err := db.Run(e.Id)
-								if err != nil {
-									slog.Error("failed to get a run that should definitely exist", "run", e.Id, "error", err)
-								} else {
-									msg := cleve.NewRunMessage(run, "run state updated", cleve.MessageStateUpdate)
-									if err := webhook.Send(msg); err != nil {
-										slog.Error("failed to send webhook message", "error", err)
-									}
-								}
+							run, err := db.Run(e.Id)
+							if err != nil {
+								slog.Error("failed to get a run that should definitely exist", "run", e.Id, "error", err)
+							} else {
+								msg := cleve.NewRunMessage(run, "run state updated", cleve.MessageStateUpdate)
+								_ = cli.SendWebhookMessage(ctx, webhookClient, msg)
 							}
 						}
 						if e.StateChanged && e.State == cleve.StateReady {
@@ -125,12 +124,8 @@ var (
 								logger.Error("failed to save analysis", "path", e.Analysis.Path, "analysis_id", e.Analysis.AnalysisId, "run_id", e.Analysis.AnalysisId, "error", err)
 								continue
 							}
-							if webhook != nil {
-								msg := cleve.NewAnalysisMessage(e.Analysis, "analysis state updated", cleve.MessageStateUpdate)
-								if err := webhook.Send(msg); err != nil {
-									slog.Error("failed to send webhook message", "error", err)
-								}
-							}
+							msg := cleve.NewAnalysisMessage(e.Analysis, "analysis state updated", cleve.MessageStateUpdate)
+							_ = cli.SendWebhookMessage(ctx, webhookClient, msg)
 							continue
 						}
 						if e.StateChanged {
@@ -147,11 +142,9 @@ var (
 								logger.Error("failed to update analysis", "analysis_id", e.Analysis.AnalysisId, "error", err)
 								continue
 							}
-							if webhook != nil {
+							if webhookClient != nil {
 								msg := cleve.NewAnalysisMessage(e.Analysis, "analysis state updated", cleve.MessageStateUpdate)
-								if err := webhook.Send(msg); err != nil {
-									slog.Error("failed to send webhook message", "error", err)
-								}
+								_ = cli.SendWebhookMessage(ctx, webhookClient, msg)
 							}
 						}
 					}
@@ -168,7 +161,7 @@ var (
 				os.Exit(1)
 			}()
 
-			router := gin.NewRouter(db, debug, webhook)
+			router := gin.NewRouter(db, debug, webhookClient)
 			logger.Info("serving cleve", "address", addr)
 			err = http.ListenAndServe(addr, router)
 			if err != nil {
