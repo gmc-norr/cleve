@@ -22,6 +22,11 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         with:
           fetch-depth: 0
+      - name: install tailwindcss
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          curl -Lo /bin/tailwindcss "https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.2/tailwindcss-linux-x64"
+          chmod 755 /bin/tailwindcss
       - name: build linux binary
         if: ${{ steps.release.outputs.release_created }}
         run: make linux
