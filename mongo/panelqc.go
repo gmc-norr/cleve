@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
@@ -135,6 +136,25 @@ func (db DB) PanelQc(runId string) (*cleve.PanelQc, error) {
 	
 	return panelqc.PanelQCs[0], nil
 
+}
+
+func (db DB) CreatePanelQc(p cleve.PanelQc) error {
+
+	p.Created = time.Now()
+
+	if _, err := db.PanelQcCollection().InsertOne(context.TODO(), p); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (db DB) DeletePanelQc(runId string) error {
+
+	res, err := db.PanelQcCollection().DeleteOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}})
+	if err == nil && res.DeletedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return err
 }
 
 func (db DB) PanelQcIndex() ([]map[string]string, error) {
