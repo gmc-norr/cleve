@@ -1,0 +1,59 @@
+{{ define "panelqc_table" }}
+
+{{ template "header" . }}
+<h2 class="text-3xl mx-6 my-4">Panel QC</h2>
+
+<section class="mx-6 mb-6 overflow-x-auto">
+
+    {{ template "pagination" . }}
+
+    <form id="table-form"
+        hx-get="/panelQC"
+        hx-select="table > tbody > tr"
+        hx-target="table > tbody"
+        hx-swap="innerHTML"
+        hx-select-oob="#table-counts,#table-nav">
+        <table class="tablepanel">
+            <thead class="text-left">
+                <tr class="border-b border-slate-500">
+                    <th>Run</th>
+                    <th>Created</th>
+                    <th>Panel Id</th>
+                    <th>Completness Threshold</th>
+                    <th>Samples</th>
+                    <th>Panel Id</th>
+                    <th>Completness Threshold</th>
+                    <th>Samples</th>
+                </tr>
+                <tr>
+                    <th><input class="w-full border border-slate-300" type="search" name="run_id" placeholder="Filter by run ID" value="{{ .filter.RunId }}" /></th>
+                    <th>
+                </tr>
+                
+            </thead>
+
+            <tbody class="border-y border-slate-500" id="runtable-body">
+                {{ if not .panelqc }}
+                <tr><td colspan="7" class="text-center">No results to show</td></tr>
+                {{ end }}
+                {{ range .panelqc }}
+                <tr class="hover:bg-accent-100">
+                    <td><a class="text-accent-900" href="/panelQC/{{ .RunId }}">{{ .RunId }}</a></td>
+                    <td>{{ .Created }}</td>
+                    {{ range .GenePanel }}
+                        <td>{{ .GenePanelId }}</td>
+                        <td>{{ .CompletnessThreshold }}</td>
+                        <td>{{ .NumberSamples }}</td>
+                    
+                    {{ end }}
+                </tr>
+                {{ end }}
+
+
+            </tbody>
+         
+        </table>
+    </form>
+</section>
+
+{{ end }}
