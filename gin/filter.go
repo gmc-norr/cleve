@@ -91,3 +91,11 @@ func getPanelFilter(c *gin.Context) (cleve.PanelFilter, error) {
 	}
 	return filter, nil
 }
+
+func getPanelQcFilter(c *gin.Context) (cleve.PanelQcFilter, error) {
+	filter := cleve.NewPanelQcFilter()
+	if err := c.BindQuery(&filter); err != nil {
+		return filter, err
+	}
+	return filter, nil
+}
