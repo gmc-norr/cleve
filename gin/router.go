@@ -285,6 +285,9 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	r.GET("/api/samples/:sampleId/analyses", AnalysesHandler(db))
 	r.GET("/api/samples/:sampleId/analyses/:analysisId", AnalysisHandler(db))
 	r.GET("/api/samplesheets/:uuid", SampleSheetHandler(db))
+	r.GET("/api/panelqc", PanelQCsHandler(db))
+	r.GET("/api/panelqc/:runId", PanelQCHandler(db))
+
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))
@@ -300,6 +303,7 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	authEndpoints.POST("/api/runs/:runId/qc", AddRunQcHandler(db))
 	authEndpoints.POST("/api/samples", AddSampleHandler(db))
 	authEndpoints.POST("/api/samplesheets", AddSampleSheetHandler(db))
+	authEndpoints.POST("/api/panelqc", AddPanelQcHandler(db))
 
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
