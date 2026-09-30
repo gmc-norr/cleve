@@ -246,6 +246,8 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	r.GET("/qc/charts/run/:runId/index", IndexChartHandler(db))
 	r.GET("/panelQC", DashboardPanelQCHandler(db))
 	r.GET("/panelQC/:runId", DashboardPanelQCRunHandler(db))
+	r.GET("/panelqc/charts/genes/:genepanalId", GeneQcChartHandler(db))
+	r.GET("/panelqc/charts/exons/:HGNC", ExonQcChartHandler(db))
 
 	hxEndpoints := r.Group("/")
 	hxEndpoints.Use(hxMiddleware())
