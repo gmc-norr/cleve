@@ -323,6 +323,12 @@
   .table {
     display: table;
   }
+  .tablehighlightbad {
+    background-color: #f74215;
+  }
+  .tablehighlightwarning {
+    background-color: #ec7412;
+  }
   .size-\[\.8em\] {
     width: .8em;
     height: .8em;
