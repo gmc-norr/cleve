@@ -291,8 +291,8 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	r.GET("/api/panelqc/:runId", PanelQCHandler(db))
 	r.GET("/api/panelqc/genes", GenesQCHandler(db))
 	r.GET("/api/panelqc/genes/:hgnc", GeneQCHandler(db))
-	r.GET("/api/panelqc/exons", ExonsQCHandler(db))
-	r.GET("/api/panelqc/exons/:exon_number", ExonQCHandler(db))
+	r.GET("/api/panelqc/genes/:hgnc/exons", ExonsQCHandler(db))
+	r.GET("/api/panelqc/genes/:hgnc/exons/:exon_number", ExonQCHandler(db))
 	
 
 	authEndpoints := r.Group("/")

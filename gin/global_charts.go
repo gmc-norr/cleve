@@ -123,12 +123,12 @@ func GeneQcChartHandler(db PanelQCGetter) gin.HandlerFunc {
 func ExonQcChartHandler(db PanelQCGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		gene := c.Param("HGNC")
-		exon := c.Query("exon"+gene)
+		hgnc := c.Param("HGNC")
+		exon := c.Query("exon"+hgnc)
 		exon_float, err := strconv.ParseFloat(exon, 64)
-		exon_qcdata := c.Query("exon_qcdata"+gene)
+		exon_qcdata := c.Query("exon_qcdata"+hgnc)
 
-		exonqc, err := db.ExonQc(exon_float)
+		exonqc, err := db.ExonQc(hgnc, exon_float)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}

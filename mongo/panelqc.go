@@ -253,13 +253,13 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 		bson.D{
 			{"$group", bson.D{
 				{"_id", bson.D{
-					{"hgnc", "$genepanel.genes.incomplete_exons.hgnc"},
+					{"hgnc", "$genepanel.genes.hgnc"},
 					{"exon_number", "$genepanel.genes.incomplete_exons.exon_number"},
 				}},
 				{"exons", bson.D{
 					{"$push", bson.D{
 						{"run_id", "$run_id"},
-						{"hgnc", "$genepanel.genes.incomplete_exons.hgnc"},
+						{"hgnc", "$genepanel.genes.hgnc"},
 						{"exon_number", "$genepanel.genes.incomplete_exons.exon_number"},
 						{"mean_coverage_exon", "$genepanel.genes.incomplete_exons.mean_coverage_exon"},
 						{"mean_completness_exon", "$genepanel.genes.incomplete_exons.mean_completness_exon"},
@@ -276,13 +276,14 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 		}},
 	})
 
-	if filter.Exon_number != 0 {
+	if (filter.Exon_number != 0) && (filter.HGNC != "") {
 		pipeline = append(pipeline,
 		bson.D{
 			{
 				Key: "$match",
 				Value: bson.D{ 
 					{Key: "exons.exon_number", Value: filter.Exon_number},
+					{Key: "exons.hgnc", Value: filter.HGNC},
 				},
 			},
 		},
@@ -314,10 +315,12 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 
 }
 
-func (db DB) ExonQc(exon_number float64) (*cleve.ExonQCs, error) {
+func (db DB) ExonQc(hgnc string, exon_number float64) (*cleve.ExonQCs, error) {
 	
 	filter := cleve.PanelQcFilter {
+		HGNC: hgnc,
 		Exon_number: exon_number,
+		
 	}
 
 	exonqc, err := db.ExonsQCs(filter)

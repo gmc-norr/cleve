@@ -17,7 +17,7 @@ type PanelQCGetter interface {
 	PanelQCs(cleve.PanelQcFilter) (cleve.PanelQcResult, error)
 	GeneQc(string) (*cleve.GeneQCs, error)
 	GenesQCs(cleve.PanelQcFilter) (cleve.GeneQcResult, error)
-	ExonQc(float64) (*cleve.ExonQCs, error)
+	ExonQc(string,float64) (*cleve.ExonQCs, error)
 	ExonsQCs(cleve.PanelQcFilter) (cleve.ExonQcResult, error)
 }
 
@@ -137,13 +137,15 @@ func ExonsQCHandler(db PanelQCGetter) gin.HandlerFunc {
 
 func ExonQCHandler(db PanelQCGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
+
+		hgnc := c.Param("hgnc")
 		exon_number := c.Param("exon_number")
 		exon_number_float, err := strconv.ParseFloat(exon_number, 64)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("Cannot convert %s to float", exon_number)})
 			return
 		}
-		exonqc, err := db.ExonQc(exon_number_float)
+		exonqc, err := db.ExonQc(hgnc, exon_number_float)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("ExonQC data for Exon number: %s not found", exon_number)})
