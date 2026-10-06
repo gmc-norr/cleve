@@ -3,6 +3,7 @@ package cleve
 import (
 	"time"
 	"errors"
+	"strings"
 )
 
 type PanelQcResult struct {
@@ -93,9 +94,12 @@ func (p PanelQc) Validate() error {
 	if len(p.GenePanel) == 0 {
 		return errors.New("panel must contain at least one GenePanel")
 	}
-	for _, g := range p.GenePanel {
+	for i, g := range p.GenePanel {
 		if len(g.Genes) == 0 {
 			return errors.New("Missing genes for at least one Gene Panel")
+		}
+		if strings.Contains(g.GenePanelId, ".") {
+			p.GenePanel[i].GenePanelId = strings.ReplaceAll(p.GenePanel[i].GenePanelId, ".", "_")
 		}
 	}
 	return nil
