@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/gmc-norr/cleve/compare/v1.0.0...v1.1.0) (2026-10-14)
+
+
+### Features
+
+* add bed as file type ([#199](https://github.com/gmc-norr/cleve/issues/199)) ([185cc66](https://github.com/gmc-norr/cleve/commit/185cc66353abfa2b808f6e3ccbf87021924e9430))
+
 ## [1.0.0](https://github.com/gmc-norr/cleve/compare/v0.7.0...v1.0.0) (2026-05-03)
 
 
