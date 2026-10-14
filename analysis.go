@@ -28,6 +28,7 @@ const (
 	FileHtml
 	FileD4
 	FileBam
+	FileBed
 	FileSnvVcf
 	FileSvVcf
 	FileFastq
@@ -41,6 +42,7 @@ var validAnalysisFileTypes = map[string]AnalysisFileType{
 	"html":    FileHtml,
 	"d4":      FileD4,
 	"bam":     FileBam,
+	"bed":     FileBed,
 	"vcf_snv": FileSnvVcf,
 	"vcf_sv":  FileSvVcf,
 	"fastq":   FileFastq,
@@ -60,6 +62,8 @@ func (t AnalysisFileType) String() string {
 		return "d4"
 	case FileBam:
 		return "bam"
+	case FileBed:
+		return "bed"
 	case FileSnvVcf:
 		return "vcf_snv"
 	case FileSvVcf:
