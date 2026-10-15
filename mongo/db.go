@@ -106,6 +106,10 @@ func (db DB) PanelQcCollection() *mongo.Collection {
 	return db.Collection("PanelQC")
 }
 
+func (db DB) GeneQcCollection() *mongo.Collection {
+	return db.Collection("GeneQC")
+}
+
 func (db *DB) SetIndexes() error {
 	name, err := db.SetRunIndex()
 	if err != nil {
@@ -148,6 +152,13 @@ func (db *DB) SetIndexes() error {
 		return fmt.Errorf("failed to set index on panelQC, does the collection exist? %w", err)
 	}
 	slog.Info("set index", "collection", "PanelQC", "name", name)
+	return nil
+
+	name, err = db.SetGeneQcIndex()
+	if err != nil {
+		return fmt.Errorf("failed to set index on GeneQC, does the collection exist? %w", err)
+	}
+	slog.Info("set index", "collection", "GeneQC", "name", name)
 	return nil
 }
 
@@ -212,6 +223,12 @@ func (db *DB) Init(ctx context.Context) error {
 	if _, err := db.SetPanelQcIndex(); err != nil {
 		return err
 	}
+	if err := createCollection("GeneQC"); err != nil {
+		return err
+	}
+	if _, err := db.SetGeneQcIndex(); err != nil {
+		return err
+	}
 		
 	return nil
 }
@@ -252,6 +269,11 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 		return nil, err
 	}
 
+	geneQcIndex, err := db.GeneQcIndex()
+	if err != nil {
+		return nil, err
+	}
+
 	indexes := make(map[string][]map[string]string)
 	indexes["runs"] = runIndex
 	indexes["keys"] = keyIndex
@@ -260,6 +282,7 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 	indexes["samplesheets"] = sampleSheetIndex
 	indexes["panels"] = panelIndex
 	indexes["PanelQC"] = panelQcIndex
+	indexes["GeneQC"] = geneQcIndex
 
 	return indexes, nil
 }

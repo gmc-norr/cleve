@@ -85,12 +85,46 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 }
 
 
-func GeneQcChartHandler(db PanelQCGetter) gin.HandlerFunc {
+func PanelGeneQcChartHandler(db PanelQCGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		genePanelId := c.Param("genepanalId")
 		gene := c.Query("gene"+genePanelId)
 		gene_qcdata := c.Query("gene_qcdata"+genePanelId)
+
+		geneqc, err := db.PanelGeneQc(gene)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		
+		data := "mean_coverage"
+
+		switch gene_qcdata {
+		case "mean_coverage":
+			data = "mean_coverage"
+		case "mean_completness":
+			data = "mean_completness"
+		case "mean_mapping_quality":
+			data = "mean_mapping_quality"
+		}
+
+		p, err := charts.PanelqcLinechart(geneqc, data)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	
+		s := p.RenderSnippet()
+		c.String(http.StatusOK, s.Element+s.Script)
+
+	}
+}
+
+func GeneQcChartHandler(db GeneQCGetter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		gene := c.Query("gene")
+		gene_qcdata := c.Query("gene_qcdata")
 
 		geneqc, err := db.GeneQc(gene)
 		if err != nil {
@@ -120,15 +154,15 @@ func GeneQcChartHandler(db PanelQCGetter) gin.HandlerFunc {
 	}
 }
 
-func ExonQcChartHandler(db PanelQCGetter) gin.HandlerFunc {
+func ExonQcChartHandler(db GeneQCGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		hgnc := c.Param("HGNC")
-		exon := c.Query("exon"+hgnc)
+		symbol := c.Param("Symbol")
+		exon := c.Query("exon"+symbol)
 		exon_float, err := strconv.ParseFloat(exon, 64)
-		exon_qcdata := c.Query("exon_qcdata"+hgnc)
+		exon_qcdata := c.Query("exon_qcdata"+symbol)
 
-		exonqc, err := db.ExonQc(hgnc, exon_float)
+		exonqc, err := db.ExonQc(symbol, exon_float)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}

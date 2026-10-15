@@ -264,9 +264,8 @@ func NewPanelFilter() PanelFilter {
 type PanelQcFilter struct {
 	RunId                 string    `form:"run_id"`
 	GenePanelId           string    `form:"genepanel_id"`
-	HGNC                  string    `form:"hgnc"`
+	Symbol                string    `form:"symbol"`
 	Exon_number          float64    `bson:"exon_number"`
-
 	PaginationFilter `form:",inline"`
 }
 

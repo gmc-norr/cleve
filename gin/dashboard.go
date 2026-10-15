@@ -311,3 +311,29 @@ func DashboardPanelQCRunHandler(db *mongo.DB) gin.HandlerFunc {
 	
 	}
 }
+
+func DashboardGeneQCHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		filter, err := getPanelQcFilter(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		geneqc, err := db.AllGeneQCs(filter)
+		var oobError mongo.PageOutOfBoundsError
+		if errors.As(err, &oobError) {
+			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError})
+			return
+		} 
+
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		
+		c.HTML(http.StatusOK, "geneqc", gin.H{"geneqc": geneqc.AllGenes, "cleve_version": cleve.GetVersion()})
+	}
+
+
+}
