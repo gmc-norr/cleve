@@ -164,6 +164,7 @@ func TestAnalysisFileFilterJSON(t *testing.T) {
 					t.Fatalf("failed to unmarshal json: %v", err)
 				}
 				t.Log(err)
+				return
 			}
 			if filter != c.filter {
 				t.Error("filters are mismatching")
