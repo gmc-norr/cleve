@@ -158,7 +158,7 @@ func unmarshalRunV1(data []byte) (r Run, err error) {
 		Version:      v1.RunInfo.Version,
 		RunId:        v1.RunInfo.Run.RunID,
 		RunNumber:    v1.RunInfo.Run.Number,
-		Date:         (time.Time)(v1.RunInfo.Run.Date),
+		Date:         time.Time(v1.RunInfo.Run.Date),
 		Platform:     platform,
 		FlowcellName: flowcell,
 		InstrumentId: v1.RunInfo.Run.Instrument,
