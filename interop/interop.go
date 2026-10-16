@@ -480,7 +480,7 @@ func (i Interop) ReadSummary() []ReadSummary {
 
 	for read := range nReads {
 		for lane := range nLanes {
-			i := (nLanes * (read)) + lane
+			i := (nLanes * read) + lane
 			e, ok := readError[read+1][lane+1]
 			if !ok {
 				e = math.NaN()
