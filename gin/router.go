@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/internal/auth"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/maehler/webhook"
@@ -185,7 +186,7 @@ func LoadHTMLFS(e *gin.Engine, fs fs.FS, patterns ...string) {
 	e.SetHTMLTemplate(t)
 }
 
-func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
+func NewRouter(db *mongo.DB, authType auth.AuthType, debug bool, webhook *webhook.Client) http.Handler {
 	gin.DisableConsoleColor()
 	if viper.GetString("logfile") != "" {
 		f, err := os.OpenFile(viper.GetString("logfile"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
@@ -200,6 +201,10 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
+	}
+
+	if authType == auth.AuthNone {
+		slog.Warn("no user authentication enabled, do not use in production")
 	}
 
 	r := gin.Default()
@@ -234,21 +239,26 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 
 	r.Use(versionMiddleware())
 
-	// Dashboard endpoints
-	r.GET("/", DashboardHandler(db))
-	r.GET("/runs", DashboardHandler(db))
-	r.GET("/runs/:runId", DashboardRunHandler(db))
-	r.GET("/panels", DashboardPanelHandler(db))
-	r.GET("/panels/:panelId", DashboardPanelHandler(db))
-	r.GET("/qc", DashboardQCHandler(db))
-	r.GET("/qc/charts/global", GlobalChartsHandler(db))
-	r.GET("/qc/charts/run/:runId", RunChartsHandler(db))
-	r.GET("/qc/charts/run/:runId/index", IndexChartHandler(db))
+	// Endpoints that don't require authentication
+	r.GET("/login", loginPageHandler(db, authType))
+	r.POST("/login", loginHandler(db, authType))
+	r.GET("/logincallback", loginCallbackHandler())
+	r.POST("/logout", logoutHandler(db))
 
-	hxEndpoints := r.Group("/")
-	hxEndpoints.Use(hxMiddleware())
-	hxEndpoints.GET("/runtable", DashboardRunTable(db))
-	hxEndpoints.GET("/panel-list", DashboardPanelListHandler(db))
+	// Dashboard endpoints that need authentication
+	userAuthEndpoints := r.Group("/")
+	userAuthEndpoints.Use(userAuth(db, authType))
+	userAuthEndpoints.GET("/", DashboardHandler(db))
+	userAuthEndpoints.GET("/runs", DashboardHandler(db))
+	userAuthEndpoints.GET("/runs/:runId", DashboardRunHandler(db))
+	userAuthEndpoints.GET("/panels", DashboardPanelHandler(db))
+	userAuthEndpoints.GET("/panels/:panelId", DashboardPanelHandler(db))
+	userAuthEndpoints.GET("/qc", DashboardQCHandler(db))
+	userAuthEndpoints.GET("/qc/charts/global", GlobalChartsHandler(db))
+	userAuthEndpoints.GET("/qc/charts/run/:runId", RunChartsHandler(db))
+	userAuthEndpoints.GET("/qc/charts/run/:runId/index", IndexChartHandler(db))
+	userAuthEndpoints.GET("/runtable", hxMiddleware(), DashboardRunTable(db))
+	userAuthEndpoints.GET("/panel-list", hxMiddleware(), DashboardPanelListHandler(db))
 
 	// API endpoints
 	r.GET("/api", func(c *gin.Context) {
