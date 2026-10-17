@@ -13,6 +13,7 @@ import (
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/cmd/cleve/internal/cli"
 	"github.com/gmc-norr/cleve/gin"
+	"github.com/gmc-norr/cleve/internal/auth"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/gmc-norr/cleve/watcher"
@@ -161,7 +162,9 @@ var (
 				os.Exit(1)
 			}()
 
-			router := gin.NewRouter(db, debug, webhookClient)
+			authType := auth.AuthType(viper.GetString("auth.provider"))
+
+			router := gin.NewRouter(db, authType, debug, webhookClient)
 			logger.Info("serving cleve", "address", addr)
 			err = http.ListenAndServe(addr, router)
 			if err != nil {
