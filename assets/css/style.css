@@ -538,6 +538,9 @@
   .bg-slate-500 {
     background-color: var(--color-slate-500);
   }
+  .bg-white {
+    background-color: var(--color-white);
+  }
   .p-2 {
     padding: calc(var(--spacing) * 2);
   }
