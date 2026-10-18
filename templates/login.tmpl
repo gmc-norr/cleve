@@ -7,11 +7,11 @@
         {{ end }}
         <div class="mb-4">
             <label class="block font-bold text-sm mb-2" for="email">Email</label>
-            <input class="w-full border rounded border-accent-200 py-2 px-3" id="email" name="email" type="email" placeholder="name@example.com"{{ if .email }}value="{{ .email }}"{{ end }}>
+            <input class="bg-white w-full border rounded border-accent-200 py-2 px-3" id="email" name="email" type="email" placeholder="name@example.com"{{ if .email }}value="{{ .email }}"{{ end }}>
         </div>
         <div class="mb-4">
             <label class="block font-bold text-sm mb-2" for="#password">Password</label>
-            <input class="w-full border rounded border-accent-200 py-2 px-3" id="password" name="password" type="password"{{ if .password }}value="{{ .password }}"{{ end }}>
+            <input class="bg-white w-full border rounded border-accent-200 py-2 px-3" id="password" name="password" type="password"{{ if .password }}value="{{ .password }}"{{ end }}>
         </div>
         <div>
             <input class="w-full cursor-pointer py-4 text-center inline-block bg-accent-900 text-white font-bold text-xl" type="submit" value="Sign in">
