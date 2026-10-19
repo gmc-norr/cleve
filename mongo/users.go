@@ -22,6 +22,20 @@ func (db DB) CreateUser(ctx context.Context, user cleve.User) error {
 	return err
 }
 
+func (db DB) UpdateUser(ctx context.Context, user cleve.User) (bool, error) {
+	user.UpdatedAt = time.Now()
+	res, err := db.UserCollection().ReplaceOne(ctx, bson.D{
+		{Key: "id", Value: user.ID},
+	}, user)
+	if err != nil {
+		return false, err
+	}
+	if res.MatchedCount != 1 || res.ModifiedCount != 1 {
+		return false, nil
+	}
+	return true, nil
+}
+
 func (db DB) Users(ctx context.Context) ([]cleve.User, error) {
 	cur, err := db.UserCollection().Find(ctx, bson.D{})
 	if err != nil {

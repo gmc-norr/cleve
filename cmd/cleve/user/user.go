@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"text/tabwriter"
 
@@ -22,6 +23,7 @@ func UserCmd() *cobra.Command {
 	cmd.AddCommand(userListCmd())
 	cmd.AddCommand(userCreateCmd())
 	cmd.AddCommand(userDeleteCmd())
+	cmd.AddCommand(userUpdateCmd())
 	return cmd
 }
 
@@ -171,6 +173,121 @@ func userDeleteCmd() *cobra.Command {
 
 	cmd.Flags().StringP("email", "m", "", "Email of user to delete")
 	cmd.Flags().String("id", "", "ID of user to delete")
+
+	return cmd
+}
+
+func userUpdateCmd() *cobra.Command {
+	var (
+		email  string
+		userID uuid.UUID
+		roles  []cleve.UserRole
+	)
+	cmd := &cobra.Command{
+		Use:   "update EMAIL|ID",
+		Short: "Update user details",
+		Args:  cobra.ExactArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			rawRoles, _ := cmd.Flags().GetStringArray("role")
+			roles = make([]cleve.UserRole, 0, len(rawRoles))
+			for _, r := range rawRoles {
+				role := cleve.UserRole(r)
+				if !cleve.ValidRole(role) {
+					return fmt.Errorf("invalid role: %s", r)
+				}
+				if !slices.Contains(roles, role) {
+					roles = append(roles, role)
+				}
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			userID, err = uuid.Parse(args[0])
+			if err != nil {
+				email = args[0]
+			}
+
+			db, err := mongo.Connect()
+			if err != nil {
+				return nil
+			}
+
+			var user cleve.User
+			if userID != uuid.Nil {
+				user, err = db.GetUserByID(cmd.Context(), userID)
+				if err != nil {
+					return err
+				}
+			} else {
+				var found bool
+				user, found, err = db.GetUserByEmail(cmd.Context(), email)
+				if err != nil {
+					return err
+				}
+				if !found {
+					return fmt.Errorf("no user with email %s found", email)
+				}
+			}
+
+			newPassword, _ := cmd.Flags().GetString("password")
+			newEmail, _ := cmd.Flags().GetString("email")
+			newName, _ := cmd.Flags().GetString("name")
+			appendRoles, _ := cmd.Flags().GetBool("append")
+
+			updatedFields := false
+
+			if newPassword != "" {
+				newPasswordHash, err := auth.HashPassword([]byte(newPassword))
+				if err != nil {
+					return err
+				}
+				user.PasswordHash = string(newPasswordHash)
+				updatedFields = true
+			}
+
+			if newEmail != "" {
+				user.Email = newEmail
+				updatedFields = true
+			}
+
+			if newName != "" {
+				user.DisplayName = newName
+				updatedFields = true
+			}
+
+			if len(roles) > 0 {
+				if appendRoles {
+					for _, r := range roles {
+						user.AddRole(r)
+					}
+				} else {
+					user.Roles = roles
+				}
+				updatedFields = true
+			}
+
+			if !updatedFields {
+				return fmt.Errorf("no fields are being updated")
+			}
+
+			updated, err := db.UpdateUser(cmd.Context(), user)
+			if err != nil {
+				return err
+			}
+			if !updated {
+				fmt.Println("user not updated")
+			} else {
+				fmt.Println("user updated")
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().StringP("password", "p", "", "User password")
+	cmd.Flags().StringP("email", "m", "", "User email")
+	cmd.Flags().StringP("name", "n", "", "User display name")
+	cmd.Flags().StringArrayP("role", "r", nil, "User role, existing roles will be replaced (multiple allowed)")
+	cmd.Flags().BoolP("append", "a", false, "Use to append role to user instead of replacing")
 
 	return cmd
 }
