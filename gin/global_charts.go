@@ -127,10 +127,11 @@ func GeneQcChartHandler(db GeneQCGetter) gin.HandlerFunc {
 		gene_qcdata := c.Query("gene_qcdata")
 
 		geneqc, err := db.GeneQc(gene)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			c.String(http.StatusOK, "No data to plot")
+			return
 		}
-		
+
 		data := "mean_coverage"
 
 		switch gene_qcdata {
@@ -163,8 +164,9 @@ func ExonQcChartHandler(db GeneQCGetter) gin.HandlerFunc {
 		exon_qcdata := c.Query("exon_qcdata"+symbol)
 
 		exonqc, err := db.ExonQc(symbol, exon_float)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			c.String(http.StatusOK, "No data to plot")
+			return
 		}
 		
 		data := "mean_coverage"
