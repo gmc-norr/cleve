@@ -14,10 +14,15 @@ import (
 func (db DB) AllGeneQCs(filter cleve.PanelQcFilter) (cleve.AllGenesQcResult, error) {
 	var (
 		pipeline             mongo.Pipeline
-		panelqc_result       cleve.AllGenesQcResult
+		geneqc_result       cleve.AllGenesQcResult
 	)
 
-	panelqc_result.AllGenes = make([]*cleve.GeneQc, 0)
+	geneqc_result.AllGenes = make([]*cleve.GeneQc, 0)
+
+	geneqc_result.PaginationMetadata = cleve.PaginationMetadata{
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}
 
 	pipeline = append(pipeline,
 		bson.D{
@@ -97,7 +102,7 @@ func (db DB) AllGeneQCs(filter cleve.PanelQcFilter) (cleve.AllGenesQcResult, err
 						{"suboptional_coverage_exon", bson.D{
 							{"$not", bson.A{
 								bson.D{
-									{"$gte", bson.A{"$mean_completness_exon", 20}},
+									{"$gte", bson.A{"$mean_completness_exon", 10}},
 								},
 						}}}},
 					}},
@@ -143,7 +148,7 @@ func (db DB) AllGeneQCs(filter cleve.PanelQcFilter) (cleve.AllGenesQcResult, err
 				{"suboptional_coverage", bson.D{
 					{"$not", bson.A{
 						bson.D{
-							{"$gte", bson.A{"$mean_completness", 20}},
+							{"$gte", bson.A{"$mean_completness", 10}},
 						},
 					}},
 				}},
@@ -169,10 +174,45 @@ func (db DB) AllGeneQCs(filter cleve.PanelQcFilter) (cleve.AllGenesQcResult, err
 	
 	)}
 
+	metaPipeline := append(pipeline,bson.D{
+		{Key: "$count", Value: "total_count"},
+	})
 
-	cursor, err := db.GeneQcCollection().Aggregate(context.TODO(), pipeline)
+	cursor, err := db.GeneQcCollection().Aggregate(context.TODO(), metaPipeline)
 	if err != nil {
-		return panelqc_result, err
+		return geneqc_result, err
+	}
+	if !cursor.Next(context.TODO()) {
+		geneqc_result.TotalCount = 0
+	}
+	if err := cursor.Decode(&geneqc_result.PaginationMetadata); geneqc_result.TotalCount > 0 && err != nil {
+		return geneqc_result, err
+	}
+	if geneqc_result.PageSize > 0 {
+		geneqc_result.TotalPages = geneqc_result.TotalCount / geneqc_result.PageSize
+		if geneqc_result.TotalCount%geneqc_result.PageSize > 0 {
+			geneqc_result.TotalPages += 1
+		}
+	} else {
+		geneqc_result.TotalPages = 1
+	}
+
+	if filter.Page > 0 {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$skip", Value: filter.PageSize * (filter.Page - 1)},
+		})
+	}
+
+	if filter.PageSize > 0 {
+		pipeline = append(pipeline, bson.D{
+			{Key: "$limit", Value: filter.PageSize},
+		})
+	}
+
+
+	cursor, err = db.GeneQcCollection().Aggregate(context.TODO(), pipeline)
+	if err != nil {
+		return geneqc_result, err
 	}
 
 	defer closeCursor(cursor, context.TODO())
@@ -182,17 +222,27 @@ func (db DB) AllGeneQCs(filter cleve.PanelQcFilter) (cleve.AllGenesQcResult, err
 		var run cleve.GeneQc
 		err = cursor.Decode(&run)
 		if err != nil {
-			return panelqc_result, err
+			return geneqc_result, err
 		}
-		panelqc_result.AllGenes = append(panelqc_result.AllGenes, &run)
+		geneqc_result.Count++
+		geneqc_result.AllGenes = append(geneqc_result.AllGenes, &run)
 	}
 
-	if len(panelqc_result.AllGenes) == 0 {
-		return panelqc_result, mongo.ErrNoDocuments
+	if geneqc_result.TotalCount == 0 {
+
+		geneqc_result.TotalPages = 1
+		geneqc_result.AllGenes = make([]*cleve.GeneQc, 0)
+	}
+	
+	if geneqc_result.Page > geneqc_result.TotalPages {
+		return geneqc_result, PageOutOfBoundsError{
+			page:       geneqc_result.Page,
+			totalPages: geneqc_result.TotalPages,
+		}
 	}
 	
 
-	return panelqc_result, nil
+	return geneqc_result, nil
 
 }
 
@@ -202,22 +252,22 @@ func (db DB) AllGeneQc(symbol string) (*cleve.GeneQc , error) {
 		Symbol: symbol,
 	}
 
-	panelqc, err := db.AllGeneQCs(filter)
+	geneqc, err := db.AllGeneQCs(filter)
 	if err != nil {
 		return nil, err
 	}
 	
-	return panelqc.AllGenes[0], nil
+	return geneqc.AllGenes[0], nil
 
 }
 
 func (db DB) GenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, error) {
 	var (
 		pipeline             mongo.Pipeline
-		panelqc_result       cleve.GenesQcResult
+		geneqc_result       cleve.GenesQcResult
 	)
 
-	panelqc_result.GenesQcs = make([]*cleve.GeneQCs, 0)
+	geneqc_result.GenesQcs = make([]*cleve.GeneQCs, 0)
 
 
 	pipeline = append(pipeline, 
@@ -257,7 +307,7 @@ func (db DB) GenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, error) {
 
 	cursor, err := db.GeneQcCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return panelqc_result, err
+		return geneqc_result, err
 	}
 
 	defer closeCursor(cursor, context.TODO())
@@ -267,17 +317,17 @@ func (db DB) GenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, error) {
 		var run cleve.GeneQCs
 		err = cursor.Decode(&run)
 		if err != nil {
-			return panelqc_result, err
+			return geneqc_result, err
 		}
-		panelqc_result.GenesQcs = append(panelqc_result.GenesQcs, &run)
+		geneqc_result.GenesQcs = append(geneqc_result.GenesQcs, &run)
 	}
 	
-	if len(panelqc_result.GenesQcs) == 0 {
-		return panelqc_result, mongo.ErrNoDocuments
+	if len(geneqc_result.GenesQcs) == 0 {
+		return geneqc_result, mongo.ErrNoDocuments
 	}
 
 
-	return panelqc_result, nil
+	return geneqc_result, nil
 
 }
 
@@ -299,10 +349,10 @@ func (db DB) GeneQc(symbol string) (*cleve.GeneQCs, error) {
 func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 	var (
 		pipeline             mongo.Pipeline
-		panelqc_result       cleve.ExonQcResult
+		geneqc_result       cleve.ExonQcResult
 	)
 
-	panelqc_result.ExonQcs  = make([]*cleve.ExonQCs, 0)
+	geneqc_result.ExonQcs  = make([]*cleve.ExonQCs, 0)
 
 	
 	pipeline = append(pipeline, 
@@ -354,7 +404,7 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 
 	cursor, err := db.GeneQcCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
-		return panelqc_result, err
+		return geneqc_result, err
 	}
 
 	defer closeCursor(cursor, context.TODO())
@@ -364,17 +414,17 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 		var run cleve.ExonQCs
 		err = cursor.Decode(&run)
 		if err != nil {
-			return panelqc_result, err
+			return geneqc_result, err
 		} 
 
-		panelqc_result.ExonQcs = append(panelqc_result.ExonQcs, &run)
+		geneqc_result.ExonQcs = append(geneqc_result.ExonQcs, &run)
 	}
 
-	if len(panelqc_result.ExonQcs) == 0 {
-		return panelqc_result, mongo.ErrNoDocuments
+	if len(geneqc_result.ExonQcs) == 0 {
+		return geneqc_result, mongo.ErrNoDocuments
 	}
 
-	return panelqc_result, nil
+	return geneqc_result, nil
 
 }
 

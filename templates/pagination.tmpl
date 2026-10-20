@@ -1,11 +1,13 @@
 {{ define "pagination" }}
     {{ $filter := .filter }}
     {{ $metadata := .metadata }}
+    {{ $data := .data}}
 
     <p id="table-counts">
-        Showing {{ .metadata.Count}} of {{ .metadata.TotalCount }} runs
+        Showing {{ .metadata.Count}} of {{ .metadata.TotalCount }} {{ .data.data_type }}
         Page {{ .metadata.Page }} / {{ .metadata.TotalPages }}
     </p>
+
 
     <nav class="my-2 grid grid-rows-1 grid-cols-4 gap-2 max-w-lg" id="table-nav">
         <button type="button"
@@ -14,7 +16,7 @@
             hx-include="#table-form,#chart-form"
             hx-select="table > tbody"
             hx-target="table > tbody"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart,#geneqc-chart"
             hx-swap="outerHTML"
             {{ if eq $metadata.Page 1 }}disabled{{ end }}>
             &laquo; First
@@ -25,7 +27,7 @@
             hx-include="#table-form,#chart-form"
             hx-select="table > tbody"
             hx-target="table > tbody"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart,#geneqc-chart"
             hx-swap="outerHTML"
             {{ if eq $metadata.Page 1 }}disabled{{ end }}>
             &lsaquo; Previous
@@ -36,7 +38,7 @@
             hx-include="#table-form,#chart-form"
             hx-select="table > tbody"
             hx-target="table > tbody"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart,#geneqc-chart"
             hx-swap="outerHTML"
             {{ if eq $metadata.Page $metadata.TotalPages }}disabled{{ end }}>
             Next &rsaquo;
@@ -47,7 +49,7 @@
             hx-include="#table-form,#chart-form"
             hx-select="table > tbody"
             hx-target="table > tbody"
-            hx-select-oob="#table-counts,#table-nav,#run-qc-chart"
+            hx-select-oob="#table-counts,#table-nav,#run-qc-chart,#geneqc-chart"
             hx-swap="outerHTML"
             {{ if eq $metadata.Page $metadata.TotalPages }}disabled{{ end }}>
             Last &raquo;

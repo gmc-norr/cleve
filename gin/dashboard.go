@@ -257,8 +257,12 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 		platformNames := platforms.Names()
 
+		data := map[string]any{
+			"data_type": "runs",
+		}
+
 		c.Header("Hx-Push-Url", filter.UrlParams())
-		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "chart_config": chartConfig, "cleve_version": cleve.GetVersion()})
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "data": data, "chart_config": chartConfig, "cleve_version": cleve.GetVersion()})
 	}
 }
 
@@ -282,9 +286,12 @@ func DashboardPanelQCHandler(db *mongo.DB) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		data := map[string]any{
+			"data_type": "runs",
+		}
 		
 		c.Header("Hx-Push-Url", filter.UrlParams())
-		c.HTML(http.StatusOK, "panelqc_table", gin.H{"panelqc": panelqc.PanelQCs, "metadata": panelqc.PaginationMetadata, "cleve_version": cleve.GetVersion()})
+		c.HTML(http.StatusOK, "panelqc_table", gin.H{"panelqc": panelqc.PanelQCs, "metadata": panelqc.PaginationMetadata, "filter": filter, "data": data, "cleve_version": cleve.GetVersion()})
 	}
 
 
@@ -331,8 +338,13 @@ func DashboardGeneQCHandler(db *mongo.DB) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		data := map[string]any{
+			"data_type": "genes",
+		}
+
 		
-		c.HTML(http.StatusOK, "geneqc", gin.H{"geneqc": geneqc.AllGenes, "cleve_version": cleve.GetVersion()})
+		c.Header("Hx-Push-Url", filter.UrlParams())
+		c.HTML(http.StatusOK, "geneqc", gin.H{"geneqc": geneqc.AllGenes, "metadata": geneqc.PaginationMetadata, "filter": filter, "data": data, "cleve_version": cleve.GetVersion()})
 	}
 
 

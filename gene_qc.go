@@ -9,6 +9,7 @@ type GenesQcResult struct {
 }
 
 type AllGenesQcResult struct {
+	PaginationMetadata                                `bson:"metadata" json:"metadata"`
 	AllGenes                                          []*GeneQc`bson:"geneqc" json:"geneqc"`
 }
 
