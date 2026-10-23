@@ -1,4 +1,4 @@
-FROM golang:1.26.1 AS build
+FROM golang:1.27 AS build
 
 WORKDIR /usr/src/cleve
 
@@ -12,7 +12,7 @@ COPY . ./
 RUN tailwindcss -i ./assets/css/_input.css -o ./assets/css/style.css
 RUN go generate ./...
 
-RUN GOOS=linux CGO_ENABLED=0 go build -v -a -installsuffix cgo -o /bin/cleve ./cmd/cleve 
+RUN GOOS=linux CGO_ENABLED=0 go build -v -a -installsuffix cgo -o /bin/cleve ./cmd/cleve
 
 FROM alpine:3.23 AS final
 
