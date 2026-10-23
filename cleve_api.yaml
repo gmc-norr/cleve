@@ -14,8 +14,8 @@ sections:
     description: Information gene panels.
   - name: platforms
     description: Information on sequencing platforms.
-  - name: panelqc
-    description: Gene Panel QC data.
+  - name: geneqc
+    description: Gene QC data.
 endpoints:
   - path: /runs
     method: GET
@@ -895,22 +895,17 @@ endpoints:
         description: platform name
         required: true
   
-  - path: /panelqc
+  - path: /geneqc
     method: GET
-    section: panelqc
-    description: Get all Gene Panel QC data
+    section: geneqc
+    description: Get all Gene QC data
   
-  - path: /panelqc/{run_id}
+  - path: /geneqc/{symbol}
     method: GET
-    section: panelqc
-    description: Get the Gene Panel QC data from a specific run ID
+    section: geneqc
+    description: Get the Gene QC for a specific symbol
     params:
-      - key: run_id
+      - key: symbol
         type: string
-        description: ID of the run to get
+        description: Gene symbol
         required: true
-
-  - path: /panelqc
-    method: POST
-    section: panelqc
-    description: Add new GenePanel QC data
