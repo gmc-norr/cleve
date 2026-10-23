@@ -36,9 +36,9 @@ var listCmd = &cobra.Command{
 func printTable(panelqcs []*cleve.PanelQc) {
 	for _, panelqc := range panelqcs {
 		fmt.Printf("|-%s-|-%s-|\n", strings.Repeat("-", 10), strings.Repeat("-", 40))
-		fmt.Printf("| %-10s | %-40s |\n", "Run ID", "Created At")
+		fmt.Printf("| %-10s | %-40s |\n", "Run ID", "Date")
 		fmt.Printf("|-%s-|-%s-|\n", strings.Repeat("-", 10), strings.Repeat("-", 40))
-		fmt.Printf("| %s | %s |\n", panelqc.RunId, panelqc.Created.String())
+		fmt.Printf("| %s | %s |\n", panelqc.RunId, panelqc.Date)
 		for _, genepanel := range panelqc.GenePanel {
 			fmt.Printf("|-%s-|-%s-|\n", strings.Repeat("-", 10), strings.Repeat("-", 20))
 			fmt.Printf("| %-10s | %-20s | %-20s | %-20s | \n", "GenePanelID", "Completness", "Feature Fraction", "Number of Samples")

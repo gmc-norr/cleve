@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
+	"strings"
+	"strconv"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
@@ -47,6 +48,13 @@ func (db DB) PanelQCs(filter cleve.PanelQcFilter) (cleve.PanelQcResult, error) {
 			},
 		})
 	}
+
+	// Sort by sequencing date
+	pipeline = append(pipeline, bson.D{
+		{Key: "$sort", Value: bson.D{
+			{Key: "date", Value: -1},
+		}},
+	})
 
 	metaPipeline := append(pipeline,bson.D{
 		{Key: "$count", Value: "total_count"},
@@ -235,7 +243,12 @@ func (db DB) PanelGeneQc(symbol string) (*cleve.GeneQCs, error) {
 
 func (db DB) CreatePanelQc(p cleve.PanelQc) error {
 
-	p.Created = time.Now()
+	date := strings.SplitN(p.RunId, "_",2)[0]
+	date_int, err := strconv.Atoi(date)
+	if err != nil {
+		return err
+	}
+	p.Date = date_int
 
 	if _, err := db.PanelQcCollection().InsertOne(context.TODO(), p); err != nil {
 		return err
