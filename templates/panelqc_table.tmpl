@@ -17,7 +17,7 @@
             <thead class="text-left">
                 <tr class="border-b border-slate-500">
                     <th>Run</th>
-                    <th>Created</th>
+                    <th>Date</th>
                     <th>Panel Id</th>
                     <th>Completness Threshold</th>
                     <th>Samples</th>
@@ -39,7 +39,7 @@
                 {{ range .panelqc }}
                 <tr class="hover:bg-accent-100">
                     <td><a class="text-accent-900" href="/panelQC/{{ .RunId }}">{{ .RunId }}</a></td>
-                    <td>{{ .Created }}</td>
+                    <td>{{ .Date }}</td>
                     {{ range .GenePanel }}
                         <td>{{ .GenePanelId }}</td>
                         <td>{{ .CompletnessThreshold }}</td>

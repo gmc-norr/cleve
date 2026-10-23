@@ -1,7 +1,6 @@
 package cleve
 
 import (
-	"time"
 	"errors"
 	"strings"
 )
@@ -13,7 +12,7 @@ type PanelQcResult struct {
 
 type PanelQc struct {
 	RunId               string                      `bson:"run_id"`
-	Created             time.Time                   `bson:"created"`
+	Date                int                         `bson:"date"`
 	GenePanel           []GenePanelQc               `bson:"genepanel"`
 	
 }
