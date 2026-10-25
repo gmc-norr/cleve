@@ -7,3 +7,33 @@ const (
 	AuthInternal AuthType = "internal"
 	AuthKeyCloak AuthType = "keycloak"
 )
+
+type Config struct {
+	AuthType     AuthType
+	ClientID     string
+	ClientSecret string
+	RealmURL     string
+	RedirectURL  string
+}
+
+func NoneConfig() *Config {
+	return &Config{
+		AuthType: AuthNone,
+	}
+}
+
+func InternalConfig() *Config {
+	return &Config{
+		AuthType: AuthInternal,
+	}
+}
+
+func KeycloakConfig(clientID, clientSecret, realm, redirectURL string) *Config {
+	return &Config{
+		AuthType:     AuthKeyCloak,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RealmURL:     realm,
+		RedirectURL:  redirectURL,
+	}
+}
