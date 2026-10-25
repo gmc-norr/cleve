@@ -163,8 +163,25 @@ var (
 			}()
 
 			authType := auth.AuthType(viper.GetString("auth.provider"))
+			var authConfig *auth.Config
+			switch authType {
+			case auth.AuthNone:
+				authConfig = auth.NoneConfig()
+			case auth.AuthInternal:
+				authConfig = auth.InternalConfig()
+			case auth.AuthKeycloak:
+				clientID := viper.GetString("auth.client")
+				clientSecret := viper.GetString("auth.secret")
+				realm := viper.GetString("auth.realm_url")
+				authConfig = auth.KeycloakConfig(clientID, clientSecret, realm, "")
+			default:
+				slog.Error("invalid authentication provider", "provider", authType)
+				os.Exit(1)
+			}
 
-			router := gin.NewRouter(db, authType, debug, webhookClient)
+			slog.Info("authentiction", "provider", authConfig.AuthType)
+
+			router := gin.NewRouter(db, authConfig, debug, webhookClient)
 			logger.Info("serving cleve", "address", addr)
 			err = http.ListenAndServe(addr, router)
 			if err != nil {

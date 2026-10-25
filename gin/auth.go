@@ -13,9 +13,9 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 )
 
-func userAuth(db *mongo.DB, authType auth.AuthType) gin.HandlerFunc {
+func userAuth(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		if authType == auth.AuthNone {
+		if config == nil || config.AuthType == auth.AuthNone {
 			session := auth.UserSession{
 				Session: auth.Session{
 					AuthType: auth.AuthNone,
@@ -67,7 +67,7 @@ func logoutHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-func loginHandler(db *mongo.DB, authType auth.AuthType) gin.HandlerFunc {
+func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if err := ctx.Request.ParseForm(); err != nil {
 			_ = ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("invalid form data: %w", err))
@@ -90,7 +90,7 @@ func loginHandler(db *mongo.DB, authType auth.AuthType) gin.HandlerFunc {
 			return
 		}
 
-		session, err := db.CreateSession(ctx.Request.Context(), user.ID, authType)
+		session, err := db.CreateSession(ctx.Request.Context(), user.ID, config.AuthType)
 		if err != nil {
 			slog.Error("auth", "message", "failed to create session", "error", err)
 			_ = ctx.AbortWithError(http.StatusInternalServerError, err)
@@ -102,28 +102,40 @@ func loginHandler(db *mongo.DB, authType auth.AuthType) gin.HandlerFunc {
 	}
 }
 
-func loginPageHandler(db *mongo.DB, authType auth.AuthType) gin.HandlerFunc {
+func keycloakLoginHandler(config *auth.Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		switch authType {
-		case auth.AuthNone:
+		client := keycloak.NewClientFromConfig(config)
+		// TODO don't hard-code the redirect URL
+		client.RedirectURL("https://vs1909.vll.se:8080/logincallback")
+		client.HandleLogin(ctx.Writer, ctx.Request)
+	}
+}
+
+func loginPageHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if config.AuthType == auth.AuthNone {
 			ctx.HTML(http.StatusNotFound, "error404", gin.H{
 				"error": "Authentication is disabled",
 			})
+			return
+		}
+
+		_, valid, err := auth.CurrentSession(ctx.Request, db)
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, err)
+		}
+		nextURL := auth.SafeRedirectURL(ctx.Query("next_url"))
+		if valid {
+			ctx.Redirect(http.StatusFound, nextURL)
+			return
+		}
+
+		switch config.AuthType {
 		case auth.AuthInternal:
-			_, valid, err := auth.CurrentSession(ctx.Request, db)
-			if err != nil {
-				_ = ctx.AbortWithError(http.StatusInternalServerError, err)
-			}
-			nextURL := auth.SafeRedirectURL(ctx.Query("next_url"))
-			if valid {
-				ctx.Redirect(http.StatusFound, nextURL)
-				return
-			}
-			ctx.HTML(http.StatusOK, "login", gin.H{"next_url": nextURL, "cleve_version": cleve.GetVersion()})
-		case auth.AuthKeyCloak:
-			ctx.HTML(http.StatusNotFound, "error404", gin.H{
-				"error": "Keycloak auth not yet implemented",
-			})
+			ctx.HTML(http.StatusOK, "login", gin.H{"next_url": nextURL, "cleve_version": cleve.GetVersion(), "auth_type": config.AuthType})
+		case auth.AuthKeycloak:
+			ctx.HTML(http.StatusOK, "login", gin.H{"cleve_version": cleve.GetVersion(), "auth_type": config.AuthType})
+			return
 		default:
 			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{
 				"error": "Invalid authentication provider",
@@ -132,9 +144,11 @@ func loginPageHandler(db *mongo.DB, authType auth.AuthType) gin.HandlerFunc {
 	}
 }
 
-func loginCallbackHandler() gin.HandlerFunc {
-	client := keycloak.NewClient("http://localhost:8088/realms/cleve-test", "cleve-test", "keycloaksecret", "http://host.docker.internal:8080/logincallback")
+func loginCallbackHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
+	client := keycloak.NewClientFromConfig(config)
+	// TODO don't hard-code the redirect URL
+	client.RedirectURL("https://vs1909.vll.se:8080/logincallback")
 	return func(ctx *gin.Context) {
-		client.HandleCallback(ctx.Writer, ctx.Request)
+		client.HandleCallback(ctx.Writer, ctx.Request, db)
 	}
 }

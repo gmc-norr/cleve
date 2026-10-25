@@ -186,7 +186,7 @@ func LoadHTMLFS(e *gin.Engine, fs fs.FS, patterns ...string) {
 	e.SetHTMLTemplate(t)
 }
 
-func NewRouter(db *mongo.DB, authType auth.AuthType, debug bool, webhook *webhook.Client) http.Handler {
+func NewRouter(db *mongo.DB, authConfig *auth.Config, debug bool, webhook *webhook.Client) http.Handler {
 	gin.DisableConsoleColor()
 	if viper.GetString("logfile") != "" {
 		f, err := os.OpenFile(viper.GetString("logfile"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o666)
@@ -203,7 +203,10 @@ func NewRouter(db *mongo.DB, authType auth.AuthType, debug bool, webhook *webhoo
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	if authType == auth.AuthNone {
+	if authConfig == nil {
+		authConfig = auth.NoneConfig()
+	}
+	if authConfig.AuthType == auth.AuthNone {
 		slog.Warn("no user authentication enabled, do not use in production")
 	}
 
@@ -240,14 +243,15 @@ func NewRouter(db *mongo.DB, authType auth.AuthType, debug bool, webhook *webhoo
 	r.Use(versionMiddleware())
 
 	// Endpoints that don't require authentication
-	r.GET("/login", loginPageHandler(db, authType))
-	r.POST("/login", loginHandler(db, authType))
-	r.GET("/logincallback", loginCallbackHandler())
+	r.GET("/login", loginPageHandler(db, authConfig))
+	r.POST("/login", loginHandler(db, authConfig))
+	r.GET("/keycloak-login", keycloakLoginHandler(authConfig))
+	r.GET("/logincallback", loginCallbackHandler(db, authConfig))
 	r.POST("/logout", logoutHandler(db))
 
 	// Dashboard endpoints that need authentication
 	userAuthEndpoints := r.Group("/")
-	userAuthEndpoints.Use(userAuth(db, authType))
+	userAuthEndpoints.Use(userAuth(db, authConfig))
 	userAuthEndpoints.GET("/", DashboardHandler(db))
 	userAuthEndpoints.GET("/runs", DashboardHandler(db))
 	userAuthEndpoints.GET("/runs/:runId", DashboardRunHandler(db))

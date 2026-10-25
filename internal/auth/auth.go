@@ -5,7 +5,7 @@ type AuthType string
 const (
 	AuthNone     AuthType = "none"
 	AuthInternal AuthType = "internal"
-	AuthKeyCloak AuthType = "keycloak"
+	AuthKeycloak AuthType = "keycloak"
 )
 
 type Config struct {
@@ -30,7 +30,7 @@ func InternalConfig() *Config {
 
 func KeycloakConfig(clientID, clientSecret, realm, redirectURL string) *Config {
 	return &Config{
-		AuthType:     AuthKeyCloak,
+		AuthType:     AuthKeycloak,
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		RealmURL:     realm,
