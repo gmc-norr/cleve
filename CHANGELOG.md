@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/gmc-norr/cleve/compare/v1.0.0...v1.1.0) (2026-10-23)
+
+
+### Features
+
+* add bed as file type ([#199](https://github.com/gmc-norr/cleve/issues/199)) ([185cc66](https://github.com/gmc-norr/cleve/commit/185cc66353abfa2b808f6e3ccbf87021924e9430))
+
+
+### Bug Fixes
+
+* update go and vulnerable packages ([#201](https://github.com/gmc-norr/cleve/issues/201)) ([8f2da89](https://github.com/gmc-norr/cleve/commit/8f2da890b880942e4e35d25a1bc98a442168158c))
+* update go version in Dockerfile ([#202](https://github.com/gmc-norr/cleve/issues/202)) ([55e19ee](https://github.com/gmc-norr/cleve/commit/55e19eebaf96fe114d5eef5f0837df3ff95dc5c8))
+
 ## [1.0.0](https://github.com/gmc-norr/cleve/compare/v0.7.0...v1.0.0) (2026-05-03)
 
 
