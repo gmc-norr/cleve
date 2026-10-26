@@ -7,6 +7,7 @@ import (
 func init() {
 	GeneQcCmd.AddCommand(addCmd)
 	GeneQcCmd.AddCommand(deleteCmd)
+	GeneQcCmd.AddCommand(updateCmd)
 }
 
 

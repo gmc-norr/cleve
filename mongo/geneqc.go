@@ -303,6 +303,19 @@ func (db DB) GenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, error) {
 	
 	)}
 
+	if filter.RunId != "" {
+		pipeline = append(pipeline,
+		bson.D{
+			{
+				Key: "$match",
+				Value: bson.D{ 
+					{Key: "genes.run_id", Value: filter.RunId},
+				},
+			},
+		},
+	
+	)}
+
 	
 
 	cursor, err := db.GeneQcCollection().Aggregate(context.TODO(), pipeline)
@@ -461,6 +474,15 @@ func (db DB) DeleteGeneQc(runId string) error {
 
 	res, err := db.GeneQcCollection().DeleteOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}})
 	if err == nil && res.DeletedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return err
+}
+
+func (db DB) UpdateGeneData(runId string, geneinfo cleve.GeneQc ) error {
+	update := bson.D{{Key: "$push", Value: bson.D{{Key: "genes", Value: geneinfo}}}}
+	result, err := db.GeneQcCollection().UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
+	if err == nil && result.MatchedCount == 0 {
 		return mongo.ErrNoDocuments
 	}
 	return err
