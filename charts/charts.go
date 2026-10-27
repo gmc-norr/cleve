@@ -153,8 +153,13 @@ func PanelqcLinechart(geneqc *cleve.GeneQCs, data string) (render.Renderer, erro
 
 	chart.SetGlobalOptions(
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
-		charts.WithYAxisOpts(opts.YAxis{Name: data}),
+		charts.WithYAxisOpts(opts.YAxis{
+			Name: data,
+			Min: 0,
+			Max: 100,
+		}),
 	)
+
 	xLabels := make([]string, 0)
 	lineData := make([]opts.LineData, 0)
 	if data == "mean_coverage" {
@@ -190,8 +195,13 @@ func PanelqcExonLinechart(exonqc *cleve.ExonQCs, data string) (render.Renderer, 
 
 	chart.SetGlobalOptions(
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
-		charts.WithYAxisOpts(opts.YAxis{Name: data}),
+		charts.WithYAxisOpts(opts.YAxis{
+			Name: data,
+			Min: 0,
+			Max: 100,
+		}),
 	)
+
 	xLabels := make([]string, 0)
 	lineData := make([]opts.LineData, 0)
 	if data == "mean_coverage_exon" {
