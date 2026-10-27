@@ -63,144 +63,147 @@
 </section>
 
 <section id="geneqc-chart" class="mx-6 my-8">
-
-    <h2 class="text-2xl my-4"> Coverage/Completness/MQ Chart for each gene </h2>
-        <div class="flex flex-col xl:flex-row gap-6 min-w-[900px]">
-            <div class="relative isolate w-[900px] h-[500px] m-auto xl:m-0">
-                <div id="geneqc-chart-spinner" class="bg-slate-400/25 absolute pointer-events-none w-full h-full htmx-indicator flex items-center justify-center z-10">
-                    <span class="flex items-center gap-2 text-4xl"><img class="inline-block size-[.8lh] animate-spin" src="/static/img/spinner.svg"> Loading chart...</span>
-                </div>
-                <div id="geneqc-chart-container"
-                    hx-get="/geneqc/charts/genes"
-                    hx-include="#chart-form"
-                    hx-trigger="load"
-                    hx-indicator="#geneqc-chart-spinner"
-                    hx-swap="innerHTML ignoreTitle:true">
-                </div>
-            </div>
-            <form
-                class="flex xl:flex-col justify-center xl:justify-center gap-2"
-                id="chart-form"
-                autocomplete="off"
-                hx-get="/geneqc/charts/genes"
-                hx-target="#geneqc-chart-container"
-                hx-trigger="change"
-                hx-indicator="#geneqc-chart-spinner"
-                hx-swap="innerHtml ignoreTitle:true">
-                <label class="flex flex-col">
-                    <span class="text-sm font-bold">Genes:</span>
-                    <select id="gene-select" class="border rounded-md" name="gene">
-                        {{ range .geneqc }}
-                            <option value="{{.Symbol}}">{{.Symbol}}</option>
-                        {{ end }}
-                    </select>
-                </label>
-                <label class="flex flex-col">
-                    <span class="text-sm font-bold">Data</span>
-                    <select id="qcdata-select" class="border rounded-md" name="gene_qcdata">
-                        <option value="mean_coverage">Mean Coverage</option>
-                        <option value="mean_completness">Mean Completness %</option>
-                        <option value="mean_mapping_quality">Mean Mapping Quality</option>
-                    </select>
-                </label>
-
-            </form>
-        </div>
-
-        {{ $incomplete_exons_found := false}}
-        {{ range .geneqc }}
-            {{ if .Incomplete_exons}}
-            {{ $incomplete_exons_found = true}}
-            
-            <h2 class="text-2xl my-4"> Incomplete Exons for {{.Symbol}} </h3>
-
-                    <table class="w-full ">
-                        <thead class="text-left">
-                            <tr class="border-b border-slate-500">
-                                <th> Exon number </th>
-                                <th> Genomic Position </th>
-                                <th> Mapping Quality </th>
-                                <th> Suboptional Cov </th>
-                                <th> Mean Coverage </th>
-                                <th> Mean Completness % </th> 
-                                <th> Segment Dup </th> 
-                                <th> Transcript </th>
-                            </tr>
-                            
-                        </thead>
-
-                        <tbody class="border-y border-slate-500" id="geneqc-body">
-                            {{ range .Incomplete_exons }}
-                            <tr class="hover:bg-accent-100
-                            {{if eq .Suboptional_coverage true}} tablehighlightbad
-                            {{else if eq .Segment_duplication true}} tablehighlightwarning
-                            {{end}}">
-                                <td>{{ .Exon_number   }}</td>
-                                <td>{{ .Genomic_position_exon }}</td>
-                                <td>{{ .Mean_mapping_quality }}</td>
-                                <td>{{ .Suboptional_coverage }}</td>
-                                <td>{{ .Mean_Coverage }}</td>
-                                <td>{{ .Mean_Completness }}</td>
-                                <td>{{ .Segment_duplication }}</td>
-                                <td>{{ .Transcript }}</td>
-                            
-                            </tr>
-                            {{ end }}
-                        </tbody>
-                    </table>
-
-
-            <h3 class="text-2xl my-4"> Coverage/Completness/MQ Chart for each incomplete exon in {{.Symbol}} </h2>
-                <div class="flex flex-col xl:flex-row gap-6 min-w-[900px]">
-                    <div class="relative isolate w-[900px] h-[500px] m-auto xl:m-0">
-                        <div id="geneqc-chart-spinner{{ .Symbol }}" class="bg-slate-400/25 absolute pointer-events-none w-full h-full htmx-indicator flex items-center justify-center z-10">
-                            <span class="flex items-center gap-2 text-4xl"><img class="inline-block size-[.8lh] animate-spin" src="/static/img/spinner.svg"> Loading chart...</span>
-                        </div>
-                        <div id="geneqc-chart-container{{ .Symbol }}"
-                            hx-get="/geneqc/charts/exons/{{ .Symbol }}"
-                            hx-include="#chart-form"
-                            hx-trigger="load"
-                            hx-indicator="#geneqc-chart-spinner{{ .Symbol }}"
-                            hx-swap="innerHTML ignoreTitle:true">
-                        </div>
+    {{ if .geneqc}}
+        <h2 class="text-2xl my-4"> Coverage/Completness/MQ Chart for each gene </h2>
+            <div class="flex flex-col xl:flex-row gap-6 min-w-[900px]">
+                <div class="relative isolate w-[900px] h-[500px] m-auto xl:m-0">
+                    <div id="geneqc-chart-spinner" class="bg-slate-400/25 absolute pointer-events-none w-full h-full htmx-indicator flex items-center justify-center z-10">
+                        <span class="flex items-center gap-2 text-4xl"><img class="inline-block size-[.8lh] animate-spin" src="/static/img/spinner.svg"> Loading chart...</span>
                     </div>
-                    <form
-                        class="flex xl:flex-col justify-center xl:justify-center gap-2"
-                        id="chart-form"
-                        autocomplete="off"
-                        hx-get="/geneqc/charts/exons/{{ .Symbol }}"
-                        hx-target="#geneqc-chart-container{{ .Symbol }}"
-                        hx-trigger="change"
-                        hx-indicator="#geneqc-chart-spinner{{ .Symbol }}"
-                        hx-swap="innerHtml ignoreTitle:true">
-                        <label class="flex flex-col">
-                            <span class="text-sm font-bold">Exon:</span>
-                            <select id="gene-select{{ .Symbol }}" class="border rounded-md" name="exon{{ .Symbol }}">
-                                {{ range .Incomplete_exons }}
-                                    <option value="{{.Exon_number}}">{{.Exon_number}}</option>
-                                {{ end }}
-                            </select>
-                        </label>
-                        <label class="flex flex-col">
-                            <span class="text-sm font-bold">Data</span>
-                            <select id="qcdata-exon-select{{ .Symbol}}" class="border rounded-md" name="exon_qcdata{{ .Symbol }}">
-                                <option value="mean_coverage_exon">Mean Coverage</option>
-                                <option value="mean_completness_exon">Mean Completness %</option>
-                                <option value="mean_mapping_quality_exon">Mean Mapping Quality</option>
-                            </select>
-                        </label>
-
-                    </form>
-
+                    <div id="geneqc-chart-container"
+                        hx-get="/geneqc/charts/genes"
+                        hx-include="#chart-form"
+                        hx-trigger="load"
+                        hx-indicator="#geneqc-chart-spinner"
+                        hx-swap="innerHTML ignoreTitle:true">
+                    </div>
                 </div>
+                <form
+                    class="flex xl:flex-col justify-center xl:justify-center gap-2"
+                    id="chart-form"
+                    autocomplete="off"
+                    hx-get="/geneqc/charts/genes"
+                    hx-target="#geneqc-chart-container"
+                    hx-trigger="change"
+                    hx-indicator="#geneqc-chart-spinner"
+                    hx-swap="innerHtml ignoreTitle:true">
+                    <label class="flex flex-col">
+                        <span class="text-sm font-bold">Genes:</span>
+                        <select id="gene-select" class="border rounded-md" name="gene">
+                            {{ range .geneqc }}
+                                <option value="{{.Symbol}}">{{.Symbol}}</option>
+                            {{ end }}
+                        </select>
+                    </label>
+                    <label class="flex flex-col">
+                        <span class="text-sm font-bold">Data</span>
+                        <select id="qcdata-select" class="border rounded-md" name="gene_qcdata">
+                            <option value="mean_coverage">Mean Coverage</option>
+                            <option value="mean_completness">Mean Completness %</option>
+                            <option value="mean_mapping_quality">Mean Mapping Quality</option>
+                        </select>
+                    </label>
+
+                </form>
+            </div>
+
+            {{ $incomplete_exons_found := false}}
+            {{ range .geneqc }}
+                {{ if .Incomplete_exons}}
+                {{ $incomplete_exons_found = true}}
+                
+                <h2 class="text-2xl my-4"> Incomplete Exons for {{.Symbol}} </h3>
+
+                        <table class="w-full ">
+                            <thead class="text-left">
+                                <tr class="border-b border-slate-500">
+                                    <th> Exon number </th>
+                                    <th> Genomic Position </th>
+                                    <th> Mapping Quality </th>
+                                    <th> Suboptional Cov </th>
+                                    <th> Mean Coverage </th>
+                                    <th> Mean Completness % </th> 
+                                    <th> Segment Dup </th> 
+                                    <th> Transcript </th>
+                                </tr>
+                                
+                            </thead>
+
+                            <tbody class="border-y border-slate-500" id="geneqc-body">
+                                {{ range .Incomplete_exons }}
+                                <tr class="hover:bg-accent-100
+                                {{if eq .Suboptional_coverage true}} tablehighlightbad
+                                {{else if eq .Segment_duplication true}} tablehighlightwarning
+                                {{end}}">
+                                    <td>{{ .Exon_number   }}</td>
+                                    <td>{{ .Genomic_position_exon }}</td>
+                                    <td>{{ .Mean_mapping_quality }}</td>
+                                    <td>{{ .Suboptional_coverage }}</td>
+                                    <td>{{ .Mean_Coverage }}</td>
+                                    <td>{{ .Mean_Completness }}</td>
+                                    <td>{{ .Segment_duplication }}</td>
+                                    <td>{{ .Transcript }}</td>
+                                
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
 
 
+                <h3 class="text-2xl my-4"> Coverage/Completness/MQ Chart for each incomplete exon in {{.Symbol}} </h2>
+                    <div class="flex flex-col xl:flex-row gap-6 min-w-[900px]">
+                        <div class="relative isolate w-[900px] h-[500px] m-auto xl:m-0">
+                            <div id="geneqc-chart-spinner{{ .Symbol }}" class="bg-slate-400/25 absolute pointer-events-none w-full h-full htmx-indicator flex items-center justify-center z-10">
+                                <span class="flex items-center gap-2 text-4xl"><img class="inline-block size-[.8lh] animate-spin" src="/static/img/spinner.svg"> Loading chart...</span>
+                            </div>
+                            <div id="geneqc-chart-container{{ .Symbol }}"
+                                hx-get="/geneqc/charts/exons/{{ .Symbol }}"
+                                hx-include="#chart-form"
+                                hx-trigger="load"
+                                hx-indicator="#geneqc-chart-spinner{{ .Symbol }}"
+                                hx-swap="innerHTML ignoreTitle:true">
+                            </div>
+                        </div>
+                        <form
+                            class="flex xl:flex-col justify-center xl:justify-center gap-2"
+                            id="chart-form"
+                            autocomplete="off"
+                            hx-get="/geneqc/charts/exons/{{ .Symbol }}"
+                            hx-target="#geneqc-chart-container{{ .Symbol }}"
+                            hx-trigger="change"
+                            hx-indicator="#geneqc-chart-spinner{{ .Symbol }}"
+                            hx-swap="innerHtml ignoreTitle:true">
+                            <label class="flex flex-col">
+                                <span class="text-sm font-bold">Exon:</span>
+                                <select id="gene-select{{ .Symbol }}" class="border rounded-md" name="exon{{ .Symbol }}">
+                                    {{ range .Incomplete_exons }}
+                                        <option value="{{.Exon_number}}">{{.Exon_number}}</option>
+                                    {{ end }}
+                                </select>
+                            </label>
+                            <label class="flex flex-col">
+                                <span class="text-sm font-bold">Data</span>
+                                <select id="qcdata-exon-select{{ .Symbol}}" class="border rounded-md" name="exon_qcdata{{ .Symbol }}">
+                                    <option value="mean_coverage_exon">Mean Coverage</option>
+                                    <option value="mean_completness_exon">Mean Completness %</option>
+                                    <option value="mean_mapping_quality_exon">Mean Mapping Quality</option>
+                                </select>
+                            </label>
+
+                        </form>
+
+                    </div>
+
+
+                {{ end }}
             {{ end }}
-        {{ end }}
-        {{ if not $incomplete_exons_found}}
-            <h3 class="text-2xl my-4"> No Incomplete Exons found </h3>
-        {{ end }}
-    
+            {{ if not $incomplete_exons_found}}
+                <h3 class="text-2xl my-4"> No Incomplete Exons found </h3>
+            {{ end }}
+
+    {{ else }}
+        <h3 class="text-2xl my-4"> No Genes found </h3>
+    {{ end }}
     
 </section>
 
