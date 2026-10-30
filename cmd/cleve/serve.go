@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -170,10 +171,16 @@ var (
 			case auth.AuthInternal:
 				authConfig = auth.InternalConfig()
 			case auth.AuthKeycloak:
+				baseURL, err := url.Parse(viper.GetString("url"))
+				if err != nil {
+					slog.Error("invalid application URL", "url", viper.GetString("url"), "error", err)
+					os.Exit(1)
+				}
 				clientID := viper.GetString("auth.client")
 				clientSecret := viper.GetString("auth.secret")
 				realm := viper.GetString("auth.realm_url")
-				authConfig = auth.KeycloakConfig(clientID, clientSecret, realm, "")
+				redirectURL := fmt.Sprintf("%s/logincallback", baseURL)
+				authConfig = auth.KeycloakConfig(clientID, clientSecret, realm, redirectURL)
 			default:
 				slog.Error("invalid authentication provider", "provider", authType)
 				os.Exit(1)

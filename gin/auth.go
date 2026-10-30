@@ -105,8 +105,6 @@ func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 func keycloakLoginHandler(config *auth.Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		client := keycloak.NewClientFromConfig(config)
-		// TODO don't hard-code the redirect URL
-		client.RedirectURL("https://vs1909.vll.se:8080/logincallback")
 		client.HandleLogin(ctx.Writer, ctx.Request)
 	}
 }
@@ -146,8 +144,6 @@ func loginPageHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 
 func loginCallbackHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 	client := keycloak.NewClientFromConfig(config)
-	// TODO don't hard-code the redirect URL
-	client.RedirectURL("https://vs1909.vll.se:8080/logincallback")
 	return func(ctx *gin.Context) {
 		client.HandleCallback(ctx.Writer, ctx.Request, db)
 	}

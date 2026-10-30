@@ -54,6 +54,7 @@ func initConfig() {
 	viper.SetDefault("loglevel", "WARN")
 	viper.SetDefault("auth.provider", "none")
 
+	viper.MustBindEnv("url", "CLEVE_URL")
 	viper.MustBindEnv("webhook_url", "CLEVE_WEBHOOK_URL")
 	viper.MustBindEnv("webhook_api_key", "CLEVE_WEBHOOK_API_KEY")
 	viper.MustBindEnv("loglevel", "CLEVE_LOGLEVEL")
