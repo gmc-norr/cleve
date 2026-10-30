@@ -74,6 +74,14 @@ func Connect() (*DB, error) {
 	}, nil
 }
 
+func (db DB) UserCollection() *mongo.Collection {
+	return db.Collection("users")
+}
+
+func (db DB) SessionCollection() *mongo.Collection {
+	return db.Collection("sessions")
+}
+
 func (db DB) RunCollection() *mongo.Collection {
 	return db.Collection("runs")
 }
@@ -103,7 +111,19 @@ func (db DB) SampleSheetCollection() *mongo.Collection {
 }
 
 func (db *DB) SetIndexes() error {
-	name, err := db.SetRunIndex()
+	name, err := db.SetUserIndex()
+	if err != nil {
+		return fmt.Errorf("failed to set index on users, does the collection exist? %w", err)
+	}
+	slog.Info("set index", "collection", "users", "name", name)
+
+	name, err = db.SetSessionIndex()
+	if err != nil {
+		return fmt.Errorf("failed to set index on sessions, does the collection exist? %w", err)
+	}
+	slog.Info("set index", "collection", "sessions", "name", name)
+
+	name, err = db.SetRunIndex()
 	if err != nil {
 		return fmt.Errorf("failed to set index on runs, does the collection exist? %w", err)
 	}
@@ -206,6 +226,16 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 		return nil, err
 	}
 
+	userIndex, err := db.UserIndex()
+	if err != nil {
+		return nil, err
+	}
+
+	sessionIndex, err := db.SessionIndex()
+	if err != nil {
+		return nil, err
+	}
+
 	keyIndex, err := db.KeyIndex()
 	if err != nil {
 		return nil, err
@@ -233,6 +263,8 @@ func (db *DB) GetIndexes() (map[string][]map[string]string, error) {
 
 	indexes := make(map[string][]map[string]string)
 	indexes["runs"] = runIndex
+	indexes["users"] = userIndex
+	indexes["sessions"] = sessionIndex
 	indexes["keys"] = keyIndex
 	indexes["analyses"] = analysesIndex
 	indexes["run_qc"] = runQcIndex

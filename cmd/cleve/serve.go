@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,6 +14,7 @@ import (
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/cmd/cleve/internal/cli"
 	"github.com/gmc-norr/cleve/gin"
+	"github.com/gmc-norr/cleve/internal/auth"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/gmc-norr/cleve/watcher"
@@ -161,7 +163,32 @@ var (
 				os.Exit(1)
 			}()
 
-			router := gin.NewRouter(db, debug, webhookClient)
+			authType := auth.AuthType(viper.GetString("auth.provider"))
+			var authConfig *auth.Config
+			switch authType {
+			case auth.AuthNone:
+				authConfig = auth.NoneConfig()
+			case auth.AuthInternal:
+				authConfig = auth.InternalConfig()
+			case auth.AuthKeycloak:
+				baseURL, err := url.Parse(viper.GetString("url"))
+				if err != nil {
+					slog.Error("invalid application URL", "url", viper.GetString("url"), "error", err)
+					os.Exit(1)
+				}
+				clientID := viper.GetString("auth.client")
+				clientSecret := viper.GetString("auth.secret")
+				realm := viper.GetString("auth.realm_url")
+				redirectURL := fmt.Sprintf("%s/logincallback", baseURL)
+				authConfig = auth.KeycloakConfig(clientID, clientSecret, realm, redirectURL)
+			default:
+				slog.Error("invalid authentication provider", "provider", authType)
+				os.Exit(1)
+			}
+
+			slog.Info("authentiction", "provider", authConfig.AuthType)
+
+			router := gin.NewRouter(db, authConfig, debug, webhookClient)
 			logger.Info("serving cleve", "address", addr)
 			err = http.ListenAndServe(addr, router)
 			if err != nil {

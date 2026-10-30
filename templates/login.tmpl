@@ -1,0 +1,34 @@
+{{ define "login" }}
+{{ template "header" . }}
+<div class="w-full max-w-xs mx-auto">
+    {{ if eq .auth_type "internal" }}
+    <form class="bg-slate-100 p-8 my-16" method="POST" action="/login">
+        {{ if .next_url }}
+        <input name="next_url" type="hidden" type="text" value="{{ .next_url }}">
+        {{ end }}
+        <div class="mb-4">
+            <label class="block font-bold text-sm mb-2" for="email">Email</label>
+            <input class="bg-white w-full border rounded border-accent-200 py-2 px-3" id="email" name="email" type="email" placeholder="name@example.com"{{ if .email }}value="{{ .email }}"{{ end }}>
+        </div>
+        <div class="mb-4">
+            <label class="block font-bold text-sm mb-2" for="#password">Password</label>
+            <input class="bg-white w-full border rounded border-accent-200 py-2 px-3" id="password" name="password" type="password"{{ if .password }}value="{{ .password }}"{{ end }}>
+        </div>
+        <div>
+            <input class="w-full cursor-pointer py-4 text-center inline-block bg-accent-900 text-white font-bold text-xl" type="submit" value="Sign in">
+        </div>
+    </form>
+    {{ end }}
+    {{ if eq .auth_type "keycloak" }}
+    <form class="bg-slate-100 p-8 my-16" method="GET" action="/keycloak-login">
+        <div>
+            <input class="w-full cursor-pointer py-4 text-center inline-block bg-accent-900 text-white font-bold text-xl" type="submit" value="Sign in with Keycloak">
+        </div>
+    </form>
+    {{ end }}
+</div>
+{{ if eq .message nil | not }}
+{{ template "message" .message }}
+{{ end }}
+{{ template "footer" . }}
+{{ end }}
