@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve/charts"
@@ -159,11 +160,17 @@ func ExonQcChartHandler(db GeneQCGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		symbol := c.Param("Symbol")
-		exon := c.Query("exon"+symbol)
-		exon_float, err := strconv.ParseFloat(exon, 64)
 		exon_qcdata := c.Query("exon_qcdata"+symbol)
 
-		exonqc, err := db.ExonQc(symbol, exon_float)
+		exon := c.Query("exon"+symbol)
+		exon_number, transcript, ok := strings.Cut(exon, " ")
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not find exon number or transcript")
+			return
+		}
+		exon_float, err := strconv.ParseFloat(exon_number, 64)
+
+		exonqc, err := db.ExonQc(symbol, exon_float, transcript)
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			c.String(http.StatusOK, "No data to plot")
 			return

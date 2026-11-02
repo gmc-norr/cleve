@@ -41,6 +41,7 @@ func (db DB) AllGeneQCs(filter cleve.PanelQcFilter) (cleve.AllGenesQcResult, err
 				{"_id", bson.D{
 					{"symbol", "$genes.symbol"},
 					{"exon_number", "$genes.incomplete_exons.exon_number"},
+					{"transcript", "$genes.incomplete_exons.transcript"},
 				}},
 
 				{"hgnc", bson.D{{"$first", "$genes.hgnc"}}},
@@ -380,6 +381,7 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 				{"_id", bson.D{
 					{"hgnc", "$genes.hgnc"},
 					{"exon_number", "$genes.incomplete_exons.exon_number"},
+					{"transcript", "$genes.incomplete_exons.transcript"},
 				}},
 				{"exons", bson.D{
 					{"$push", bson.D{
@@ -387,6 +389,7 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 						{"hgnc", "$genes.hgnc"},
 						{"symbol", "$genes.symbol"},
 						{"exon_number", "$genes.incomplete_exons.exon_number"},
+						{"transcript", "$genes.incomplete_exons.transcript"},
 						{"mean_coverage_exon", "$genes.incomplete_exons.mean_coverage_exon"},
 						{"mean_completness_exon", "$genes.incomplete_exons.mean_completness_exon"},
 						{"mean_mapping_quality_exon", "$genes.incomplete_exons.mean_mapping_quality_exon"},
@@ -402,13 +405,14 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 		}},
 	})
 
-	if ((filter.Exon_number != 0) && (filter.Symbol != "")) {
+	if ((filter.Exon_number != 0) && (filter.Symbol != "") && (filter.Transcript != "")) {
 		pipeline = append(pipeline,
 		bson.D{
 			{
 				Key: "$match",
 				Value: bson.D{ 
 					{Key: "exons.exon_number", Value: filter.Exon_number},
+					{Key: "exons.transcript", Value: filter.Transcript},
 					{Key: "exons.symbol", Value: filter.Symbol},
 				},
 			},
@@ -441,11 +445,12 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 
 }
 
-func (db DB) ExonQc(symbol string, exon_number float64) (*cleve.ExonQCs, error) {
+func (db DB) ExonQc(symbol string, exon_number float64, transcript string) (*cleve.ExonQCs, error) {
 	
 	filter := cleve.PanelQcFilter {
 		Symbol: symbol,
 		Exon_number: exon_number,
+		Transcript: transcript,
 		
 	}
 

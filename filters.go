@@ -266,6 +266,7 @@ type PanelQcFilter struct {
 	GenePanelId           string    `form:"genepanel_id"`
 	Symbol                string    `form:"symbol"`
 	Exon_number          float64    `bson:"exon_number"`
+	Transcript            string    `form:"transcript"`
 	PaginationFilter `form:",inline"`
 }
 

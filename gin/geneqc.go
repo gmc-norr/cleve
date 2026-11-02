@@ -15,7 +15,7 @@ type GeneQCGetter interface {
 	GenesQCs(cleve.PanelQcFilter) (cleve.GenesQcResult, error)
 	AllGeneQc(string) (*cleve.GeneQc, error)
 	AllGeneQCs(cleve.PanelQcFilter) (cleve.AllGenesQcResult, error)
-	ExonQc(string,float64) (*cleve.ExonQCs, error)
+	ExonQc(string,float64,string) (*cleve.ExonQCs, error)
 	ExonsQCs(cleve.PanelQcFilter) (cleve.ExonQcResult, error)
 }
 

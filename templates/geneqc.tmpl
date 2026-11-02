@@ -177,7 +177,7 @@
                                 <span class="text-sm font-bold">Exon:</span>
                                 <select id="gene-select{{ .Symbol }}" class="border rounded-md" name="exon{{ .Symbol }}">
                                     {{ range .Incomplete_exons }}
-                                        <option value="{{.Exon_number}}">{{.Exon_number}}</option>
+                                        <option value="{{.Exon_number}} {{.Transcript}}">{{.Exon_number}}-{{.Transcript}}</option>
                                     {{ end }}
                                 </select>
                             </label>
