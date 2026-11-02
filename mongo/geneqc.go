@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
+	"strings"
+	"strconv"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,6 +26,11 @@ func (db DB) AllGeneQCs(filter cleve.PanelQcFilter) (cleve.AllGenesQcResult, err
 	}
 
 	pipeline = append(pipeline,
+		// Important to recieve the last retrieved value in first later down
+		bson.D{
+			{"$sort", bson.D{{"date", -1}},},
+		},
+
 		bson.D{
 			{"$unwind", "$genes"},
 		},
@@ -273,6 +279,9 @@ func (db DB) GenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, error) {
 
 	pipeline = append(pipeline, 
 		bson.D{
+			{"$sort", bson.D{{"date", 1}},},
+		},
+		bson.D{
 			{Key: "$unwind", Value: "$genes"},
 		},
 		bson.D{
@@ -371,6 +380,9 @@ func (db DB) ExonsQCs(filter cleve.PanelQcFilter) (cleve.ExonQcResult, error) {
 	
 	pipeline = append(pipeline, 
 		bson.D{
+			{"$sort", bson.D{{"date", 1}},},
+		},
+		bson.D{
 			{Key: "$unwind", Value: "$genes"},
 		},
 		bson.D{
@@ -467,7 +479,12 @@ func (db DB) ExonQc(symbol string, exon_number float64, transcript string) (*cle
 
 func (db DB) CreateGeneQc(p cleve.GenesQc) error {
 
-	p.RunDate = time.Now()
+	date := strings.SplitN(p.RunId, "_",2)[0]
+	date_int, err := strconv.Atoi(date)
+	if err != nil {
+		return err
+	}
+	p.Date = date_int
 
 	if _, err := db.GeneQcCollection().InsertOne(context.TODO(), p); err != nil {
 		return err

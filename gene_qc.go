@@ -1,7 +1,6 @@
 package cleve
 
 import (
-	"time"
 	"errors"
 )
 type GenesQcResult struct {
@@ -33,7 +32,7 @@ type GenesQC struct {
 
 type GenesQc struct {
 	RunId               string                      `bson:"run_id"`
-	RunDate             time.Time                   `bson:"date"`
+	Date                int                         `bson:"date"`
 	Genes               []GeneQc                    `bson:"genes"`
 }
 
