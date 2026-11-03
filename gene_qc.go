@@ -67,6 +67,7 @@ type IncompleteExons struct {
 	Mean_Coverage                float64              `bson:"mean_coverage_exon"`
 	Transcript                   string               `bson:"transcript"`
 	Segment_duplication          bool                 `bson:"segment_duplication_exon"`
+	Select_type                  string               `bson:"select_type"`
 }
 
 type IncompleteExonsRunid struct {

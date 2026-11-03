@@ -63,6 +63,7 @@ func (db DB) AllGeneQCs(filter cleve.PanelQcFilter) (cleve.AllGenesQcResult, err
 
 				{"genomic_position_exon", bson.D{{"$first", "$genes.incomplete_exons.genomic_position_exon"}}},
 				{"transcript", bson.D{{"$first", "$genes.incomplete_exons.transcript"}}},
+				{"select_type", bson.D{{"$first", "$genes.incomplete_exons.select_type"}}},
 				{"segment_duplication_exon", bson.D{{"$first", "$genes.incomplete_exons.segment_duplication_exon"}}},
 				{"suboptional_coverage_exon", bson.D{{"$first", "$genes.incomplete_exons.suboptional_coverage_exon"}}},
 
@@ -96,6 +97,7 @@ func (db DB) AllGeneQCs(filter cleve.PanelQcFilter) (cleve.AllGenesQcResult, err
 						{"exon_number", "$_id.exon_number"},
 						{"genomic_position_exon", "$genomic_position_exon"},
 						{"transcript", "$transcript"},
+						{"select_type", "$select_type"},
 						{"segment_duplication_exon", "$segment_duplication_exon"},
 						{"mean_mapping_quality_exon", bson.D{
 							{"$round", bson.A{"$mean_mapping_quality_exon", 2}},
