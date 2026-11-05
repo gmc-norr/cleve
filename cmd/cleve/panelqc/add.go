@@ -57,7 +57,7 @@ var addCmd = &cobra.Command{
 
 		err = db.CreatePanelQc(panelqc)
 		if mongo.IsDuplicateKeyError(err) {
-			cobra.CheckErr("a panel with this id and version already exists")
+			cobra.CheckErr("a panel with this RunID already exists")
 		}
 		cobra.CheckErr(err)
 },

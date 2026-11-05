@@ -503,7 +503,7 @@ func (db DB) DeleteGeneQc(runId string) error {
 	return err
 }
 
-func (db DB) UpdateGeneData(runId string, geneinfo cleve.GeneQc ) error {
+func (db DB) UpdateGeneQc(runId string, geneinfo cleve.GeneQc ) error {
 	update := bson.D{{Key: "$push", Value: bson.D{{Key: "genes", Value: geneinfo}}}}
 	result, err := db.GeneQcCollection().UpdateOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}}, update)
 	if err == nil && result.MatchedCount == 0 {

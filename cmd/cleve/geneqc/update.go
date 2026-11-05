@@ -75,7 +75,7 @@ var updateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		
-		if err := db.UpdateGeneData(args[0], geneqc); err != nil {
+		if err := db.UpdateGeneQc(args[0], geneqc); err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				cobra.CheckErr("the RunID does not exist")
 			}

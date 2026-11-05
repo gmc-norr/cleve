@@ -44,7 +44,7 @@ func AddPanelQcHandler(db PanelQCSetter) gin.HandlerFunc {
 
 		if err := db.CreatePanelQc(p.PanelQc); err != nil {
 			if mongo.IsDuplicateKeyError(err) {
-				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Genepanel QC for this runID already exists"})
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Genepanel QC already exists for", "runid": p.RunId})
 				return
 			}
 			if errors.Is(err, mongo.ErrConflict) {
@@ -54,7 +54,7 @@ func AddPanelQcHandler(db PanelQCSetter) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"message": "successfully added GeePanel QC data for", "id": p.RunId})
+		c.JSON(http.StatusOK, gin.H{"message": "successfully added GenePanel QC data for", "id": p.RunId})
 
 
 
