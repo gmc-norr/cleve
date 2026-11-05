@@ -309,6 +309,8 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	authEndpoints.POST("/api/samples", AddSampleHandler(db))
 	authEndpoints.POST("/api/samplesheets", AddSampleSheetHandler(db))
 	authEndpoints.POST("/api/panelqc", AddPanelQcHandler(db))
+	authEndpoints.POST("/api/geneqc", AddGeneQcHandler(db))
+	authEndpoints.PATCH("/api/geneqc/:runId", UpdateGeneQcHandler(db))
 
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path

@@ -89,3 +89,9 @@ func (p GenesQc) Validate() error {
 	}
 	return nil
 }
+
+type GeneQCFile struct {
+	Path     string       `bson:"path" json:"path"`
+}
+
+type GeneQCFiles []GeneQCFile
