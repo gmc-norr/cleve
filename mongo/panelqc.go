@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 	"strconv"
+	"time"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
@@ -243,12 +244,19 @@ func (db DB) PanelGeneQc(symbol string) (*cleve.GeneQCs, error) {
 
 func (db DB) CreatePanelQc(p cleve.PanelQc) error {
 
-	date := strings.SplitN(p.RunId, "_",2)[0]
-	date_int, err := strconv.Atoi(date)
-	if err != nil {
-		return err
+	// Retrieve date from RunID if it exists, if not -> take today's date
+	date := strings.SplitN(p.RunId, "_", 2)[0]
+
+	if dateInt, err := strconv.Atoi(date); err == nil {
+		p.Date = dateInt
+	} else {
+		todayInt, err := strconv.Atoi(time.Now().Format("20060102"))
+		if err != nil {
+			return err
+		}
+		p.Date = todayInt
 	}
-	p.Date = date_int
+	
 
 	if _, err := db.PanelQcCollection().InsertOne(context.TODO(), p); err != nil {
 		return err

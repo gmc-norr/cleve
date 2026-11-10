@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 	"strconv"
+	"time"
 
 	"github.com/gmc-norr/cleve"
 	"go.mongodb.org/mongo-driver/bson"
@@ -480,13 +481,20 @@ func (db DB) ExonQc(symbol string, exon_number float64, transcript string) (*cle
 
 
 func (db DB) CreateGeneQc(p cleve.GenesQc) error {
+	
+	// Retrieve date from RunID if it exists, if not -> take today's date
+	date := strings.SplitN(p.RunId, "_", 2)[0]
 
-	date := strings.SplitN(p.RunId, "_",2)[0]
-	date_int, err := strconv.Atoi(date)
-	if err != nil {
-		return err
+	if dateInt, err := strconv.Atoi(date); err == nil {
+		p.Date = dateInt
+	} else {
+		todayInt, err := strconv.Atoi(time.Now().Format("20060102"))
+		if err != nil {
+			return err
+		}
+		p.Date = todayInt
 	}
-	p.Date = date_int
+
 
 	if _, err := db.GeneQcCollection().InsertOne(context.TODO(), p); err != nil {
 		return err
