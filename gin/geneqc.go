@@ -43,19 +43,21 @@ func GenesQCHandler(db GeneQCGetter) gin.HandlerFunc {
 		}
 
 		geneqcs, err := db.AllGeneQCs(filter)
-
-		if err != nil {
-			if err == mongo.ErrNoDocuments {
-				c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("GeneQC data not found")})
-				return
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			}
+		
+		if errors.As(err, &mongo.PageOutOfBoundsError{}) {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if err == nil && len(geneqcs.AllGenes) == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("GeneQC data not found")})
+		} else {
+			c.JSON(http.StatusOK, geneqcs)
+		}
 
-		c.JSON(http.StatusOK, geneqcs.AllGenes)
-		
 	}
 }
 
@@ -134,7 +136,7 @@ func AddGeneQcHandler(db GeneQCSetter) gin.HandlerFunc {
 
 		var geneqc cleve.GenesQc
 		err = json.Unmarshal([]byte(data), &geneqc)
-		// Validation
+
 		if err := geneqc.Validate(); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -239,6 +241,11 @@ func UpdateGeneQcHandler(db GeneQCStore) gin.HandlerFunc {
 				err = json.Unmarshal([]byte(data), &geneqc)
 				if err != nil {
 					c.JSON(http.StatusBadRequest, gin.H{"error": "failed to Unmarshal JSON file", "when": "updating gene QC"})
+					return
+				}
+
+				if err := geneqc.ValidateUpdate(); err != nil {
+					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 					return
 				}
 

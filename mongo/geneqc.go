@@ -266,6 +266,13 @@ func (db DB) AllGeneQc(symbol string) (*cleve.GeneQc , error) {
 	if err != nil {
 		return nil, err
 	}
+	if geneqc.Count == 0 {
+		return nil, mongo.ErrNoDocuments
+	}
+	if geneqc.Count > 1 {
+		// We don't expect more than one matching symbol.
+		return nil, fmt.Errorf("found more than one matching symbol")
+	}
 	
 	return geneqc.AllGenes[0], nil
 
