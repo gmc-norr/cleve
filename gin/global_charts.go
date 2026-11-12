@@ -94,7 +94,7 @@ func PanelGeneQcChartHandler(db PanelQCGetter) gin.HandlerFunc {
 		gene := c.Query("gene"+genePanelId)
 		gene_qcdata := c.Query("gene_qcdata"+genePanelId)
 
-		geneqc, err := db.PanelGeneQc(gene)
+		geneqc, err := db.PanelGeneQc(gene, genePanelId)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

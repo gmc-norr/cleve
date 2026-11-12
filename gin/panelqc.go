@@ -14,7 +14,7 @@ import (
 
 
 type PanelQCGetter interface {
-	PanelGeneQc(string) (*cleve.GeneQCs, error)
+	PanelGeneQc(string, string) (*cleve.GeneQCs, error)
 	PanelGenesQCs(cleve.PanelQcFilter) (cleve.GenesQcResult, error)
 }
 

@@ -3,9 +3,6 @@ package cleve
 import (
 	"errors"
 )
-type GenesQcResult struct {
-	GenesQcs                                        []*GeneQCs`bson:"geneqc" json:"geneqc"`
-}
 
 type AllGenesQcResult struct {
 	PaginationMetadata                                `bson:"metadata" json:"metadata"`
@@ -16,18 +13,10 @@ type ExonQcResult struct {
 	ExonQcs                                        []*ExonQCs`bson:"exonqc" json:"exonqc"`
 }
 
-type GeneQCs struct {
-	Genes                                           []*GeneQcrunid`bson:"genes"`
-	
-}
 
 type ExonQCs struct {
 	Exons                     []*IncompleteExonsRunid `bson:"exons"`
 	
-}
-
-type GenesQC struct {
-	Genes               []GeneQc                    `bson:"genes"`
 }
 
 type GenesQc struct {
@@ -48,14 +37,6 @@ type GeneQc struct {
 	Pseudogene            string			          `bson:"pseudogene"`
 	Pathogenic_variants   string                      `bson:"pathogenic_variants"`
 	Incomplete_exons      []IncompleteExons			  `bson:"incomplete_exons"`
-}
-
-type GeneQcrunid struct {
-	RunId                   string                    `bson:"run_id"`
-	Symbol                  string                    `bson:"symbol"`
-	Mean_coverage           float64	   	              `bson:"mean_coverage"`
-	Mean_completness        float64		              `bson:"mean_completness"`
-	Mean_mapping_quality    float64                   `bson:"mean_mapping_quality"`
 }
 
 type IncompleteExons struct {

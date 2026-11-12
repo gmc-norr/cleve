@@ -158,7 +158,7 @@ func (db DB) PanelGenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, err
 
 	panelqc_result.GenesQcs  = make([]*cleve.GeneQCs, 0)
 
-	
+
 	pipeline = append(pipeline, 
 		bson.D{
 			{Key: "$unwind", Value: "$genepanel"},
@@ -168,10 +168,14 @@ func (db DB) PanelGenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, err
 		},
 		bson.D{
 			{"$group", bson.D{
-				{"_id", "$genepanel.genes.symbol"},
+				{"_id", bson.D{
+					{"symbol", "$genepanel.genes.symbol"},
+					{"genepanel_id", "$genepanel.genepanel_id"},
+				}},
 				{"genes", bson.D{
 					{"$push", bson.D{
 						{"run_id", "$run_id"},
+						{"genepanel_id", "$genepanel.genepanel_id"},
 						{"symbol", "$genepanel.genes.symbol"},
 						{"mean_mapping_quality", bson.D{
 							{"$round", bson.A{"$genepanel.genes.mean_mapping_quality", 5}},
@@ -201,6 +205,18 @@ func (db DB) PanelGenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, err
 	
 	)}
 
+	if filter.GenePanelId != "" {
+		pipeline = append(pipeline, bson.D{
+			{
+				Key: "$match",
+				Value: bson.D{ 
+					{Key: "genes.genepanel_id", Value: filter.GenePanelId},
+				},
+			},
+		})
+	}
+
+
 	cursor, err := db.PanelQcCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return panelqc_result, err
@@ -227,10 +243,11 @@ func (db DB) PanelGenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, err
 
 }
 
-func (db DB) PanelGeneQc(symbol string) (*cleve.GeneQCs, error) {
+func (db DB) PanelGeneQc(symbol string, genepanelid string) (*cleve.GeneQCs, error) {
 	
 	filter := cleve.PanelQcFilter {
 		Symbol: symbol,
+		GenePanelId: genepanelid,
 	}
 
 	panelgeneqc, err := db.PanelGenesQCs(filter)

@@ -4,10 +4,18 @@ import (
 	"errors"
 	"strings"
 )
+type GenesQcResult struct {
+	GenesQcs                                        []*GeneQCs`bson:"geneqc" json:"geneqc"`
+}
 
 type PanelQcResult struct {
 	PaginationMetadata                             `bson:"metadata" json:"metadata"`
 	PanelQCs                                       []*PanelQc `bson:"runs" json:"runs"`
+}
+
+type GeneQCs struct {
+	Genes                                           []*GeneQcrunid`bson:"genes"`
+	
 }
 
 type PanelQc struct {
@@ -32,6 +40,15 @@ type GeneQC struct {
 	Mean_completness      float64		              `bson:"mean_completness"`
 	Mean_mapping_quality  float64					  `bson:"mean_mapping_quality"`
 	Suboptional_coverage  bool					      `bson:"suboptional_coverage"`
+}
+
+type GeneQcrunid struct {
+	RunId                   string                    `bson:"run_id"`
+	GenePanelId             string                    `bson:"genepanel_id"`
+	Symbol                  string                    `bson:"symbol"`
+	Mean_coverage           float64	   	              `bson:"mean_coverage"`
+	Mean_completness        float64		              `bson:"mean_completness"`
+	Mean_mapping_quality    float64                   `bson:"mean_mapping_quality"`
 }
 
 
