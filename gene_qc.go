@@ -68,6 +68,25 @@ func (p GenesQc) Validate() error {
 	if len(p.Genes) == 0 {
 		return errors.New("Must contain at least one gene")
 	}
+	for _, g := range p.Genes {
+		if g.Symbol == "" {
+			return errors.New("At least one gene misses value for symbol")
+		}
+		if g.HGNC == "" {
+			return errors.New("At least one gene misses value for HGNC")
+		}
+
+	}
+	return nil
+}
+
+func (g GeneQc) ValidateUpdate() error {
+	if g.Symbol == "" {
+		return errors.New("panelQC must have a value for Symbol")
+	}
+	if g.HGNC == "" {
+		return errors.New("panelQC must have a value for HGNC")
+	}
 	return nil
 }
 

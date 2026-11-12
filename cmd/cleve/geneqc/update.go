@@ -18,12 +18,12 @@ import (
 var updateCmd = &cobra.Command{
 
 
-	Use:   "update [flags] gene QC data",
+	Use:   "update [flags] run_id geneqc_file",
 	Short: "Add gene QC data for a runID",
 	Args: func(cmd *cobra.Command, args []string) error {
 		
 		if len(args) != 2 {
-			return fmt.Errorf("GeneQc File and RunID is required")
+			return fmt.Errorf("RunID and GeneQc File is required")
 		}
 		return nil
 	},
@@ -53,6 +53,9 @@ var updateCmd = &cobra.Command{
 		if err != nil {
 			slog.Error("failed to Unmarshal JSON file", "error", err)
 		}
+
+		err = geneqc.ValidateUpdate()
+		cobra.CheckErr(err)
 		
 		// Check if RunID exists
 		filter := cleve.PanelQcFilter {

@@ -16,7 +16,7 @@ import (
 var addCmd = &cobra.Command{
 
 
-	Use:   "add [flags] geneqc file",
+	Use:   "add [flags] geneqc_file",
 	Short: "Add gene QC data for a runID",
 	Args: func(cmd *cobra.Command, args []string) error {
 		

@@ -2,7 +2,8 @@ package geneqc
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/spf13/cobra"
@@ -24,10 +25,16 @@ var deleteCmd = &cobra.Command{
 		cobra.CheckErr(err)
 
 		if err := db.DeleteGeneQc(args[0]); err != nil {
-			log.Fatal(err)
-		}
+			if err == mongo.ErrNoDocuments {
+				slog.Error("RunID not found")
+				os.Exit(1)
+			}
+			slog.Error("failed to delete RunID", "error", err)
+			os.Exit(1)
 
-		log.Printf("Deleted run %s", args[0])
+		fmt.Printf("Deleted run %s", args[0])
+		
+		}
 		
 	},
 }
