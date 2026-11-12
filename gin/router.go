@@ -244,6 +244,13 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	r.GET("/qc/charts/global", GlobalChartsHandler(db))
 	r.GET("/qc/charts/run/:runId", RunChartsHandler(db))
 	r.GET("/qc/charts/run/:runId/index", IndexChartHandler(db))
+	r.GET("/panelQC", DashboardPanelQCHandler(db))
+	r.GET("/panelQC/:runId", DashboardPanelQCRunHandler(db))
+	r.GET("/panelqc/charts/genes/:genepanalId", PanelGeneQcChartHandler(db))
+	r.GET("/geneQC", DashboardGeneQCHandler(db))
+	r.GET("/geneqc/charts/genes", GeneQcChartHandler(db))
+	r.GET("/geneqc/charts/exons/:Symbol", ExonQcChartHandler(db))
+	
 
 	hxEndpoints := r.Group("/")
 	hxEndpoints.Use(hxMiddleware())
@@ -283,6 +290,9 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	r.GET("/api/samples/:sampleId/analyses", AnalysesHandler(db))
 	r.GET("/api/samples/:sampleId/analyses/:analysisId", AnalysisHandler(db))
 	r.GET("/api/samplesheets/:uuid", SampleSheetHandler(db))
+	r.GET("/api/geneqc", GenesQCHandler(db))
+	r.GET("/api/geneqc/:symbol", GeneQCHandler(db))
+
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))
@@ -298,6 +308,9 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	authEndpoints.POST("/api/runs/:runId/qc", AddRunQcHandler(db))
 	authEndpoints.POST("/api/samples", AddSampleHandler(db))
 	authEndpoints.POST("/api/samplesheets", AddSampleSheetHandler(db))
+	authEndpoints.POST("/api/panelqc", AddPanelQcHandler(db))
+	authEndpoints.POST("/api/geneqc", AddGeneQcHandler(db))
+	authEndpoints.PATCH("/api/geneqc/:runId", UpdateGeneQcHandler(db))
 
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path

@@ -144,3 +144,46 @@ func ScatterChart[T cmp.Ordered](d ScatterData[T]) *charts.Scatter {
 	}
 	return chart
 }
+
+
+func GeneQCLineChart[T any](
+    items []T,
+    data string,
+    runID func(T) string,
+    metric func(T) float64,
+) (render.Renderer, error) {
+
+    chart := charts.NewLine()
+
+    chart.SetGlobalOptions(
+		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
+		charts.WithYAxisOpts(opts.YAxis{
+			Name: data,
+			Min: 0,
+			Max: 100,
+		}),
+		charts.WithXAxisOpts(opts.XAxis{
+			Name:         "RunIDs",
+			NameLocation: "middle",
+			NameGap:      30,
+			AxisLabel: &opts.AxisLabel{
+				Show: opts.Bool(false),
+			},
+		}),
+	)
+
+    var xLabels []string
+    var lineData []opts.LineData
+
+    for _, item := range items {
+        xLabels = append(xLabels, runID(item))
+        lineData = append(lineData, opts.LineData{
+            Value: metric(item),
+        })
+    }
+
+    chart.SetXAxis(xLabels).
+        AddSeries("", lineData)
+
+    return chart, nil
+}

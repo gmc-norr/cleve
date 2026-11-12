@@ -16,6 +16,8 @@ import (
 	"github.com/gmc-norr/cleve/cmd/cleve/platform"
 	"github.com/gmc-norr/cleve/cmd/cleve/run"
 	"github.com/gmc-norr/cleve/cmd/cleve/samplesheet"
+	"github.com/gmc-norr/cleve/cmd/cleve/panelqc"
+	"github.com/gmc-norr/cleve/cmd/cleve/geneqc"
 	"github.com/maehler/webhook"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -132,6 +134,9 @@ func init() {
 	rootCmd.AddCommand(panel.PanelCmd)
 	rootCmd.AddCommand(platform.PlatformCmd)
 	rootCmd.AddCommand(samplesheet.SampleSheetCmd)
+	rootCmd.AddCommand(panelqc.PanelQcCmd)
+	rootCmd.AddCommand(geneqc.GeneQcCmd)
+
 
 	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file")

@@ -14,6 +14,10 @@ sections:
     description: Information gene panels.
   - name: platforms
     description: Information on sequencing platforms.
+  - name: panelqc
+    description: Genepanel QC data.
+  - name: geneqc
+    description: Gene QC data.
 endpoints:
   - path: /runs
     method: GET
@@ -891,4 +895,68 @@ endpoints:
       - key: platform
         type: string
         description: platform name
+        required: true
+  
+  - path: /geneqc
+    method: GET
+    section: geneqc
+    description: Get all Gene QC data
+  
+  - path: /geneqc
+    method: POST
+    section: geneqc
+    description: Create a new Gene QC data
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: path
+        type: string
+        description: path to the file containing the gene QC data
+        required: true
+  
+  - path: /geneqc/{symbol}
+    method: GET
+    section: geneqc
+    description: Get the Gene QC for a specific symbol
+    params:
+      - key: symbol
+        type: string
+        description: Gene symbol
+        required: true
+    
+  - path: /geneqc/{runId}
+    method: PATCH
+    section: geneqc
+    description: Update the gene QC data for a specific runId
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: path
+        type: string
+        description: path to the file containing the gene QC data
+        required: true
+      - key: runId
+        type: string
+        description: The RunId the gene QC data is added to
+        required: true 
+
+  - path: /panelqc
+    method: POST
+    section: panelqc
+    description: Create a new Geneoanel QC data
+    headers:
+      - key: Authorization
+        type: string
+        description: API key
+        required: true
+    params:
+      - key: path
+        type: string
+        description: path to the file containing the genepanel QC data
         required: true

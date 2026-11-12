@@ -257,7 +257,95 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 		platformNames := platforms.Names()
 
+		data := map[string]any{
+			"data_type": "runs",
+		}
+
 		c.Header("Hx-Push-Url", filter.UrlParams())
-		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "chart_config": chartConfig, "cleve_version": cleve.GetVersion()})
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "data": data, "chart_config": chartConfig, "cleve_version": cleve.GetVersion()})
 	}
+}
+
+
+func DashboardPanelQCHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		filter, err := getPanelQcFilter(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		panelqc, err := db.PanelQCs(filter)
+		var oobError mongo.PageOutOfBoundsError
+		if errors.As(err, &oobError) {
+			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError})
+			return
+		} 
+
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		data := map[string]any{
+			"data_type": "runs",
+		}
+		
+		c.Header("Hx-Push-Url", filter.UrlParams())
+		c.HTML(http.StatusOK, "panelqc_table", gin.H{"panelqc": panelqc.PanelQCs, "metadata": panelqc.PaginationMetadata, "filter": filter, "data": data, "cleve_version": cleve.GetVersion()})
+	}
+
+
+}
+
+func DashboardPanelQCRunHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		runId := c.Param("runId")
+
+		panelqc, err := db.PanelQc(runId)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.HTML(http.StatusNotFound, "error404", gin.H{"error": fmt.Sprintf("panelqc with id %q not found", runId)})
+				c.Abort()
+				return
+			}
+			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err.Error()})
+			c.Abort()
+			return
+		}
+
+		c.HTML(http.StatusOK, "panelqc", gin.H{"panelqc": panelqc, "cleve_version": cleve.GetVersion()})
+	
+	}
+}
+
+func DashboardGeneQCHandler(db *mongo.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		filter, err := getPanelQcFilter(c)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		geneqc, err := db.AllGeneQCs(filter)
+		var oobError mongo.PageOutOfBoundsError
+		if errors.As(err, &oobError) {
+			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError})
+			return
+		} 
+
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		data := map[string]any{
+			"data_type": "genes",
+		}
+
+		
+		c.Header("Hx-Push-Url", filter.UrlParams())
+		c.HTML(http.StatusOK, "geneqc", gin.H{"geneqc": geneqc.AllGenes, "metadata": geneqc.PaginationMetadata, "filter": filter, "data": data, "cleve_version": cleve.GetVersion()})
+	}
+
+
 }
