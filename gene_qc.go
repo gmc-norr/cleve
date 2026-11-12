@@ -22,7 +22,7 @@ type GeneQCs struct {
 }
 
 type ExonQCs struct {
-	Exons                     []IncompleteExonsRunid `bson:"exons"`
+	Exons                     []*IncompleteExonsRunid `bson:"exons"`
 	
 }
 

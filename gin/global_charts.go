@@ -10,6 +10,7 @@ import (
 	"github.com/gmc-norr/cleve/charts"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
+	"github.com/gmc-norr/cleve"
 )
 
 func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
@@ -96,20 +97,21 @@ func PanelGeneQcChartHandler(db PanelQCGetter) gin.HandlerFunc {
 		geneqc, err := db.PanelGeneQc(gene)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
-		
-		data := "mean_coverage"
-
-		switch gene_qcdata {
-		case "mean_coverage":
-			data = "mean_coverage"
-		case "mean_completness":
-			data = "mean_completness"
-		case "mean_mapping_quality":
-			data = "mean_mapping_quality"
+			return
 		}
 
-		p, err := charts.PanelqcLinechart(geneqc, data)
+		metric, ok := geneMetrics[gene_qcdata]
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Cannot retrieve the metrice data"})
+			return
+		}
+
+		p, err := charts.GeneQCLineChart(
+			geneqc.Genes, 
+			gene_qcdata, 
+			func(g *cleve.GeneQcrunid) string { return g.RunId },
+			metric,
+		)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -133,18 +135,18 @@ func GeneQcChartHandler(db GeneQCGetter) gin.HandlerFunc {
 			return
 		}
 
-		data := "mean_coverage"
-
-		switch gene_qcdata {
-		case "mean_coverage":
-			data = "mean_coverage"
-		case "mean_completness":
-			data = "mean_completness"
-		case "mean_mapping_quality":
-			data = "mean_mapping_quality"
+		metric, ok := geneMetrics[gene_qcdata]
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Cannot retrieve the metrice data"})
+			return
 		}
 
-		p, err := charts.PanelqcLinechart(geneqc, data)
+		p, err := charts.GeneQCLineChart(
+			geneqc.Genes, 
+			gene_qcdata, 
+			func(g *cleve.GeneQcrunid) string { return g.RunId },
+			metric,
+		)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -176,18 +178,17 @@ func ExonQcChartHandler(db GeneQCGetter) gin.HandlerFunc {
 			return
 		}
 		
-		data := "mean_coverage"
-
-		switch exon_qcdata {
-		case "mean_coverage_exon":
-			data = "mean_coverage_exon"
-		case "mean_completness_exon":
-			data = "mean_completness_exon"
-		case "mean_mapping_quality_exon":
-			data = "mean_mapping_quality_exon"
+		metric, ok := exonMetrics[exon_qcdata]
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Cannot retrieve the metrice data"})
+			return
 		}
-
-		p, err := charts.PanelqcExonLinechart(exonqc, data)
+		p, err := charts.GeneQCLineChart(
+			exonqc.Exons, 
+			exon_qcdata, 
+			func(g *cleve.IncompleteExonsRunid) string { return g.RunId },
+			metric,
+		)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

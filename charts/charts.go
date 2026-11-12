@@ -9,7 +9,6 @@ import (
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/go-echarts/go-echarts/v2/render"
-	"github.com/gmc-norr/cleve"
 )
 
 type RunStats[T interop.OptionalFloat | float64 | int] struct {
@@ -147,86 +146,44 @@ func ScatterChart[T cmp.Ordered](d ScatterData[T]) *charts.Scatter {
 }
 
 
-func PanelqcLinechart(geneqc *cleve.GeneQCs, data string) (render.Renderer, error) {
+func GeneQCLineChart[T any](
+    items []T,
+    data string,
+    runID func(T) string,
+    metric func(T) float64,
+) (render.Renderer, error) {
 
-	chart := charts.NewLine()
+    chart := charts.NewLine()
 
-	chart.SetGlobalOptions(
+    chart.SetGlobalOptions(
 		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
 		charts.WithYAxisOpts(opts.YAxis{
 			Name: data,
 			Min: 0,
 			Max: 100,
 		}),
-	)
-
-	xLabels := make([]string, 0)
-	lineData := make([]opts.LineData, 0)
-	if data == "mean_coverage" {
-		for _, k := range geneqc.Genes{
-		xLabels = append(xLabels, k.RunId)
-		lineData = append(lineData, opts.LineData{Value: k.Mean_coverage})
-	}
-	} else if data == "mean_completness" {
-		for _, k := range geneqc.Genes{
-		xLabels = append(xLabels, k.RunId)
-		lineData = append(lineData, opts.LineData{Value: k.Mean_completness})
-	} 
-	} else if data == "mean_mapping_quality" {
-		for _, k := range geneqc.Genes{
-		xLabels = append(xLabels, k.RunId)
-		lineData = append(lineData, opts.LineData{Value: k.Mean_mapping_quality})
-	}
-	}
-	
-
-	chart.SetXAxis(xLabels).
-		AddSeries("Mean/RunId", lineData, charts.WithLineChartOpts(
-			opts.LineChart{ShowSymbol: opts.Bool(true), SymbolSize: 5},
-		)) 
-	
-	return chart, nil
-
-}
-
-func PanelqcExonLinechart(exonqc *cleve.ExonQCs, data string) (render.Renderer, error) {
-
-	chart := charts.NewLine()
-
-	chart.SetGlobalOptions(
-		charts.WithTooltipOpts(opts.Tooltip{Show: opts.Bool(true)}),
-		charts.WithYAxisOpts(opts.YAxis{
-			Name: data,
-			Min: 0,
-			Max: 100,
+		charts.WithXAxisOpts(opts.XAxis{
+			Name:         "RunIDs",
+			NameLocation: "middle",
+			NameGap:      30,
+			AxisLabel: &opts.AxisLabel{
+				Show: opts.Bool(false),
+			},
 		}),
 	)
 
-	xLabels := make([]string, 0)
-	lineData := make([]opts.LineData, 0)
-	if data == "mean_coverage_exon" {
-		for _, k := range exonqc.Exons{
-		xLabels = append(xLabels, k.RunId)
-		lineData = append(lineData, opts.LineData{Value: k.Mean_Coverage})
-	}
-	} else if data == "mean_completness_exon" {
-		for _, k := range exonqc.Exons{
-		xLabels = append(xLabels, k.RunId)
-		lineData = append(lineData, opts.LineData{Value: k.Mean_Completness})
-	} 
-	} else if data == "mean_mapping_quality_exon" {
-		for _, k := range exonqc.Exons{
-		xLabels = append(xLabels, k.RunId)
-		lineData = append(lineData, opts.LineData{Value: k.Mean_mapping_quality})
-	}
-	}
-	
+    var xLabels []string
+    var lineData []opts.LineData
 
-	chart.SetXAxis(xLabels).
-		AddSeries("Mean/RunId", lineData, charts.WithLineChartOpts(
-			opts.LineChart{ShowSymbol: opts.Bool(true), SymbolSize: 5},
-		)) 
-	
-	return chart, nil
+    for _, item := range items {
+        xLabels = append(xLabels, runID(item))
+        lineData = append(lineData, opts.LineData{
+            Value: metric(item),
+        })
+    }
 
+    chart.SetXAxis(xLabels).
+        AddSeries("", lineData)
+
+    return chart, nil
 }

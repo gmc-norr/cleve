@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve"
 )
 
 type ChartConfig struct {
@@ -40,4 +41,16 @@ func GetRunChartConfig(c *gin.Context) RunChartConfig {
 		YData:     c.DefaultQuery("chart-data-y", "percent_pf"),
 		ColorBy:   c.DefaultQuery("chart-color-by", "lane"),
 	}
+}
+
+var geneMetrics = map[string]func(*cleve.GeneQcrunid) float64{
+    "mean_coverage":        func(g *cleve.GeneQcrunid) float64 { return g.Mean_coverage },
+    "mean_completness":    func(g *cleve.GeneQcrunid) float64 { return g.Mean_completness },
+    "mean_mapping_quality": func(g *cleve.GeneQcrunid) float64 { return g.Mean_mapping_quality },
+}
+
+var exonMetrics = map[string]func(*cleve.IncompleteExonsRunid) float64{
+    "mean_coverage_exon":        func(g *cleve.IncompleteExonsRunid) float64 { return g.Mean_Coverage },
+    "mean_completness_exon":    func(g *cleve.IncompleteExonsRunid) float64 { return g.Mean_Completness },
+    "mean_mapping_quality_exon": func(g *cleve.IncompleteExonsRunid) float64 { return g.Mean_mapping_quality },
 }
