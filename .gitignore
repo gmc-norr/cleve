@@ -6,3 +6,4 @@ test_data/
 cleve*.dump
 tmp/
 certs/
+cleve_watcher.log
