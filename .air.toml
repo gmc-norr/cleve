@@ -4,8 +4,8 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = ["serve", "--debug"]
-  bin = "./bin/cleve"
-  cmd = "make cleve"
+  bin = "./bin/cleve-linux-amd64"
+  cmd = "make linux"
   delay = 1000
   exclude_dir = ["bin", "testdata"]
   exclude_file = []
