@@ -217,6 +217,12 @@ func (db *DB) Init(ctx context.Context) error {
 	if _, err := db.SetSampleSheetIndex(); err != nil {
 		return err
 	}
+	if err := createCollection("users"); err != nil {
+		return err
+	}
+	if _, err := db.SetUserIndex(); err != nil {
+		return err
+	}
 	return nil
 }
 
