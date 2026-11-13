@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -18,13 +19,19 @@ import (
 
 const oauthCookieName = "oauth_state"
 
+type Renderer interface {
+	Execute(io.Writer, any) error
+	ExecuteTemplate(io.Writer, string, any) error
+}
+
 // TODO add a *slog.Logger and use this for all logging
 type Client struct {
 	oauth2Config oauth2.Config
 	userinfoURL  string
+	renderer     Renderer
 }
 
-func NewClient(client, secret, realm, internalRealm, redirectURL string) *Client {
+func NewClient(client, secret, realm, internalRealm, redirectURL string, renderer Renderer) *Client {
 	if internalRealm == "" {
 		internalRealm = realm
 	}
@@ -43,11 +50,12 @@ func NewClient(client, secret, realm, internalRealm, redirectURL string) *Client
 			},
 		},
 		userinfoURL: userinfoURL,
+		renderer:    renderer,
 	}
 }
 
-func NewClientFromConfig(config *auth.Config) *Client {
-	return NewClient(config.ClientID, config.ClientSecret, config.RealmURL, config.InternalRealmURL, config.RedirectURL)
+func NewClientFromConfig(config *auth.Config, renderer Renderer) *Client {
+	return NewClient(config.ClientID, config.ClientSecret, config.RealmURL, config.InternalRealmURL, config.RedirectURL, renderer)
 }
 
 func (c *Client) HandleLogin(w http.ResponseWriter, r *http.Request) {
@@ -81,25 +89,37 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 	token, err := c.oauth2Config.Exchange(r.Context(), code)
 	if err != nil {
 		slog.Error("failed to exchange keycloak authentication code", "error", err)
-		http.Error(w, "failed to exchange code", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := c.renderer.ExecuteTemplate(w, "error500", map[string]string{"error": "Failed to exchange keycloak authentication code."}); err != nil {
+			slog.Error("failed to render template", "error", err)
+		}
 		return
 	}
 
 	user, err := GetUserInfo(r.Context(), c.userinfoURL, token)
 	if err != nil {
-		slog.Error("failed to get user info", "error", err)
-		http.Error(w, "failed to get user info", http.StatusInternalServerError)
+		slog.Error("failed to get user info", "url", c.userinfoURL, "error", err, "token", token)
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := c.renderer.ExecuteTemplate(w, "error500", map[string]string{"error": "Authentication successful, but failed to get user info."}); err != nil {
+			slog.Error("failed to render template", "error", err)
+		}
 		return
 	}
 
 	storeUser, found, err := store.GetUserByEmail(r.Context(), user.Email)
 	if err != nil {
 		slog.Error("failed to get local user info", "error", err)
-		http.Error(w, "failed to fetch user info", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := c.renderer.ExecuteTemplate(w, "error500", map[string]string{"error": "Unexpected error when looking up user."}); err != nil {
+			slog.Error("failed to render template", "error", err)
+		}
 		return
 	}
 	if !found {
-		http.Error(w, "not authorized", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusUnauthorized)
+		if err := c.renderer.ExecuteTemplate(w, "error500", map[string]string{"error": "Authentication successful, but user is not allowed to view this content."}); err != nil {
+			slog.Error("failed to render template", "error", err)
+		}
 		return
 	}
 
