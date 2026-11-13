@@ -81,6 +81,11 @@ type userStore interface {
 func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store userStore) {
 	stateCookie, err := r.Cookie(oauthCookieName)
 	if err != nil || r.URL.Query().Get("state") != stateCookie.Value {
+		if err != nil {
+			slog.Error("failed to get oauth cookie", "error", err)
+		} else {
+			slog.Error("mismatching session state", "cookie", stateCookie.Value, "request", r.URL.Query().Get("state"))
+		}
 		http.Error(w, "invalid state parameter", http.StatusBadRequest)
 		return
 	}
