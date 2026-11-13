@@ -16,9 +16,17 @@
                 <!-- <li class="inline-block bg-accent-200 text-accent-900 mr-2 font-bold"><a class="px-4 py-2" href="/panels">Gene panels</a></li> -->
             </ul>
         </nav>
-        {{ if .cleve_version }}
-        <div class="absolute top-0 right-0 text-sm mt-1 mr-2">
+        {{ if or .cleve_version .session }}
+        <div class="absolute top-0 right-0 text-sm mt-1 mr-2 text-right">
+            {{ if .cleve_version }}
             <p>cleve {{ .cleve_version }}</p>
+            {{ end }}
+            {{ if and .session (not (eq .session.Session.AuthType "none" )) }}
+            <p class="w-full mb-2">Logged in as {{ .session.User.DisplayName }}</p>
+            <form method="POST" action="/logout">
+            <input class="px-3 py-2 bg-accent-200 text-accent-900 font-bold" type="submit" value="Log out">
+            </form>
+            {{ end }}
         </div>
         {{ end }}
     </header>

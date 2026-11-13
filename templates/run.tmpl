@@ -1,5 +1,5 @@
 {{ define "message" }}
-<div class="w-fit p-2 m-6 text-white {{ if eq .Class "warning" }} bg-amber-600 {{ else }} bg-slate-500 {{ end }}">
+<div class="w-fit p-2 m-6 text-white mx-auto {{ if eq .Class "warning" }} bg-amber-600 {{ else }} bg-slate-500 {{ end }}">
     <p>{{ .Text }}</p>
 </div>
 {{ end }}

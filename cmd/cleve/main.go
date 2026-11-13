@@ -16,6 +16,7 @@ import (
 	"github.com/gmc-norr/cleve/cmd/cleve/platform"
 	"github.com/gmc-norr/cleve/cmd/cleve/run"
 	"github.com/gmc-norr/cleve/cmd/cleve/samplesheet"
+	"github.com/gmc-norr/cleve/cmd/cleve/user"
 	"github.com/maehler/webhook"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -51,10 +52,15 @@ func initConfig() {
 	}
 
 	viper.SetDefault("loglevel", "WARN")
+	viper.SetDefault("auth.provider", "none")
 
+	viper.MustBindEnv("url", "CLEVE_URL")
 	viper.MustBindEnv("webhook_url", "CLEVE_WEBHOOK_URL")
 	viper.MustBindEnv("webhook_api_key", "CLEVE_WEBHOOK_API_KEY")
 	viper.MustBindEnv("loglevel", "CLEVE_LOGLEVEL")
+	viper.MustBindEnv("auth.provider", "CLEVE_AUTHPROVIDER")
+	viper.MustBindEnv("auth.realm_url", "CLEVE_KEYCLOAK_REALM_URL")
+	viper.MustBindEnv("auth.internal_realm_url", "CLEVE_KEYCLOAK_INTERNAL_REALM_URL")
 
 	if err := logger(); err != nil {
 		slog.Error(err.Error())
@@ -132,6 +138,7 @@ func init() {
 	rootCmd.AddCommand(panel.PanelCmd)
 	rootCmd.AddCommand(platform.PlatformCmd)
 	rootCmd.AddCommand(samplesheet.SampleSheetCmd)
+	rootCmd.AddCommand(user.UserCmd())
 
 	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file")

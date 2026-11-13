@@ -23,6 +23,8 @@ services:
     environment:
       - CLEVE_WEBHOOK_URL=${CLEVE_WEBHOOK_URL:-}
       - CLEVE_WEBHOOK_API_KEY=${CLEVE_WEBHOOK_API_KEY:-}
+      - CLEVE_KEYCLOAK_REALM_URL=${CLEVE_KEYCLOAK_REALM_URL:-http://127.0.0.1:8088/realms/cleve}
+      - CLEVE_KEYCLOAK_INTERNAL_REALM_URL=${CLEVE_KEYCLOAK_INTERNAL_REALM_URL:-http://keycloak:8080/realms/cleve}
     networks:
       - cleve-net
     ports:
@@ -30,8 +32,58 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+    post_start:
+      - command: ["cleve", "db", "init"]
+      - command: ["cleve", "user", "create", "John Doe", "john.doe@example.com"]
     volumes:
       - ./config.yaml:/etc/cleve/config.yaml
+    command: ["serve", "--debug", "-l", "debug"]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: true
+      KC_HOSTNAME: http://127.0.0.1:8088
+    networks:
+      - cleve-net
+    ports:
+      - 127.0.0.1:8088:8080
+      - 127.0.0.1:8089:9000
+    post_start:
+      - command:
+        - "sh"
+        - "-c"
+        - |
+          logfile=/opt/keycloak/post_start.log
+          echo "waiting for service to be ready" >> $$logfile
+          count=0
+          # while ! { printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000; do
+          while true; do
+            { printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep --silent 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000
+            if [ $? -eq 0 ]; then
+              break
+            fi
+            if [ $$count -ge 10 ]; then
+              echo "tried $$count times, giving up" >> $$logfile
+              exit 1
+            fi
+            echo "attempt failed, trying again soon" >> $$logfile
+            count=$$(($$count + 1))
+            sleep 4
+          done
+          echo "service is ready, setting up test environment" >> $$logfile
+          /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --user admin --password admin --realm master &>> $$logfile
+          /opt/keycloak/bin/kcadm.sh create realms -s realm=cleve -s enabled=true &>> $$logfile
+          /opt/keycloak/bin/kcadm.sh create clients -r cleve -s clientId=cleve -s secret=secretkey -s 'redirectUris=["http://127.0.0.1:8080/*"]' &>> $$logfile
+          /opt/keycloak/bin/kcadm.sh create users -r cleve -s username=jodo01 -s email=john.doe@example.com -s enabled=true &>> $$logfile
+          /opt/keycloak/bin/kcadm.sh set-password -r cleve --username jodo01 --new-password password &>> $$logfile
+          /opt/keycloak/bin/kcadm.sh create users -r cleve -s username=jado01 -s email=jane.doe@example.com -s enabled=true &>> $$logfile
+          /opt/keycloak/bin/kcadm.sh set-password -r cleve --username jado01 --new-password password &>> $$logfile
+        user: keycloak
+        privileged: true
+    command: start-dev
 
 networks:
   cleve-net:

@@ -27,6 +27,10 @@ apidoc: cleve_api.yaml
 host: 0.0.0.0
 port: 8080
 
+# URL where Cleve will be accessible. If behind a reverse proxy, for example,
+# the external address should be used here.
+url: http://127.0.0.1:8080
+
 # Base URL where webhook requests should be sent. If not defined, no
 # webhook requests will be sent. The webhook API key should define
 # both the header key that will be used in the request, as well as the
@@ -34,3 +38,25 @@ port: 8080
 # it is assumed that no authentication is needed.
 # webhook_url:
 # webhook_api_key:
+
+
+# Authentication settings. Three different settings are currently implemented:
+# no authentication, internal authentication, and keycloak authentication. These
+# are listed in order of level of security. Obviously, no authentication should
+# *only* be used for local testing and nothing else. Internal authentication should
+# generally also only be used for local testing to avoid handling of user credentials.
+# The best alternative is to delegate the authentication to keycloak whenever possible.
+#
+# Depending on which authentication provider is used, the required options differ slightly.
+# Uncomment one of these and edit accordingly.
+# auth:
+#   provider: keycloak
+#   client: "cleve"
+#   secret: "secretkey"
+#   realm_url: "https://keycloak.local/realms/cleve"
+#
+# auth:
+#   provider: internal
+#
+# auth:
+#   provider: none
