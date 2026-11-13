@@ -59,6 +59,8 @@ func initConfig() {
 	viper.MustBindEnv("webhook_api_key", "CLEVE_WEBHOOK_API_KEY")
 	viper.MustBindEnv("loglevel", "CLEVE_LOGLEVEL")
 	viper.MustBindEnv("auth.provider", "CLEVE_AUTHPROVIDER")
+	viper.MustBindEnv("auth.realm_url", "CLEVE_KEYCLOAK_REALM_URL")
+	viper.MustBindEnv("auth.internal_realm_url", "CLEVE_KEYCLOAK_INTERNAL_REALM_URL")
 
 	if err := logger(); err != nil {
 		slog.Error(err.Error())

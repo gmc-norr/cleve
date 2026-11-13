@@ -24,10 +24,13 @@ type Client struct {
 	userinfoURL  string
 }
 
-func NewClient(client, secret, realm, redirectURL string) *Client {
+func NewClient(client, secret, realm, internalRealm, redirectURL string) *Client {
+	if internalRealm == "" {
+		internalRealm = realm
+	}
 	authURL, _ := url.JoinPath(realm, "protocol/openid-connect/auth")
-	tokenURL, _ := url.JoinPath(realm, "protocol/openid-connect/token")
-	userinfoURL, _ := url.JoinPath(realm, "protocol/openid-connect/userinfo")
+	tokenURL, _ := url.JoinPath(internalRealm, "protocol/openid-connect/token")
+	userinfoURL, _ := url.JoinPath(internalRealm, "protocol/openid-connect/userinfo")
 	return &Client{
 		oauth2Config: oauth2.Config{
 			ClientID:     client,
@@ -44,7 +47,7 @@ func NewClient(client, secret, realm, redirectURL string) *Client {
 }
 
 func NewClientFromConfig(config *auth.Config) *Client {
-	return NewClient(config.ClientID, config.ClientSecret, config.RealmURL, config.RedirectURL)
+	return NewClient(config.ClientID, config.ClientSecret, config.RealmURL, config.InternalRealmURL, config.RedirectURL)
 }
 
 func (c *Client) HandleLogin(w http.ResponseWriter, r *http.Request) {
