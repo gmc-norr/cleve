@@ -22,4 +22,5 @@ FROM alpine:3.23 AS final
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /bin/cleve /bin/cleve
 
-CMD [ "cleve", "serve" ]
+ENTRYPOINT [ "cleve" ]
+CMD [ "serve" ]
