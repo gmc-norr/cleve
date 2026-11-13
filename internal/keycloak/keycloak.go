@@ -17,7 +17,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const oauthCookieName = "oauth_state"
+const oauthCookieName = "CLEVE_OAUTH_STATE"
 
 type Renderer interface {
 	Execute(io.Writer, any) error
