@@ -66,14 +66,7 @@ func NewClientFromConfig(config *auth.Config) *Client {
 
 func (c *Client) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	state := generateState(32)
-	http.SetCookie(w, &http.Cookie{
-		Name:     oauthCookieName,
-		Value:    state,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	})
+	setStateCookie(w, state)
 
 	authURL := c.oauth2Config.AuthCodeURL(state)
 	http.Redirect(w, r, authURL, http.StatusFound)
@@ -82,6 +75,27 @@ func (c *Client) HandleLogin(w http.ResponseWriter, r *http.Request) {
 type userStore interface {
 	GetUserByEmail(ctx context.Context, email string) (cleve.User, bool, error)
 	CreateSession(ctx context.Context, userID uuid.UUID, authType auth.AuthType) (auth.Session, error)
+}
+
+func setStateCookie(w http.ResponseWriter, state string) {
+	cookie := &http.Cookie{
+		Name:     oauthCookieName,
+		Value:    state,
+		Path:     "/",
+		MaxAge:   600,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, cookie)
+}
+
+func deleteStateCookie(w http.ResponseWriter) {
+	cookie := &http.Cookie{
+		Name:   oauthCookieName,
+		MaxAge: -1,
+	}
+	http.SetCookie(w, cookie)
 }
 
 func SetNextURLCookie(w http.ResponseWriter, path string) {
@@ -174,6 +188,7 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 		c.redirectToLoginWithError(w, r, "State mismatch between Cleve and Keycloak")
 		return
 	}
+	deleteStateCookie(w)
 
 	code := r.URL.Query().Get("code")
 	token, err := c.oauth2Config.Exchange(r.Context(), code)
