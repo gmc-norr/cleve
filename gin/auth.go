@@ -104,7 +104,7 @@ func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 }
 
 func keycloakLoginHandler(config *auth.Config, renderer render.HTMLProduction) gin.HandlerFunc {
-	client := keycloak.NewClientFromConfig(config, renderer.Template)
+	client := keycloak.NewClientFromConfig(config)
 	return func(ctx *gin.Context) {
 		client.HandleLogin(ctx.Writer, ctx.Request)
 	}
@@ -152,7 +152,7 @@ func loginPageHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 }
 
 func loginCallbackHandler(db *mongo.DB, config *auth.Config, renderer render.HTMLProduction) gin.HandlerFunc {
-	client := keycloak.NewClientFromConfig(config, renderer.Template)
+	client := keycloak.NewClientFromConfig(config)
 	return func(ctx *gin.Context) {
 		client.HandleCallback(ctx.Writer, ctx.Request, db)
 	}

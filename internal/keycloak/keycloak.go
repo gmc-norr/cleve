@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -22,19 +21,13 @@ const (
 	LoginErrorCookieName = "CLEVE_LOGIN_ERROR"
 )
 
-type Renderer interface {
-	Execute(io.Writer, any) error
-	ExecuteTemplate(io.Writer, string, any) error
-}
-
 // TODO add a *slog.Logger and use this for all logging
 type Client struct {
 	oauth2Config oauth2.Config
 	userinfoURL  string
-	renderer     Renderer
 }
 
-func NewClient(client, secret, realm, internalRealm, redirectURL string, renderer Renderer) *Client {
+func NewClient(client, secret, realm, internalRealm, redirectURL string) *Client {
 	if internalRealm == "" {
 		internalRealm = realm
 	}
@@ -53,12 +46,11 @@ func NewClient(client, secret, realm, internalRealm, redirectURL string, rendere
 			},
 		},
 		userinfoURL: userinfoURL,
-		renderer:    renderer,
 	}
 }
 
-func NewClientFromConfig(config *auth.Config, renderer Renderer) *Client {
-	return NewClient(config.ClientID, config.ClientSecret, config.RealmURL, config.InternalRealmURL, config.RedirectURL, renderer)
+func NewClientFromConfig(config *auth.Config) *Client {
+	return NewClient(config.ClientID, config.ClientSecret, config.RealmURL, config.InternalRealmURL, config.RedirectURL)
 }
 
 func (c *Client) HandleLogin(w http.ResponseWriter, r *http.Request) {
