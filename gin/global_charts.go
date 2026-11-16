@@ -3,8 +3,11 @@ package gin
 import (
 	"errors"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/charts"
 	"github.com/gmc-norr/cleve/interop"
 	"github.com/gmc-norr/cleve/mongo"
@@ -80,5 +83,130 @@ func GlobalChartsHandler(db *mongo.DB) gin.HandlerFunc {
 				return
 			}
 		}
+	}
+}
+
+func PanelGeneQcChartHandler(db PanelQCGetter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		genePanelId := c.Param("genepanalId")
+		gene := c.Query("gene" + genePanelId)
+		gene_qcdata := c.Query("gene_qcdata" + genePanelId)
+
+		geneqc, err := db.PanelGeneQc(gene, genePanelId)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.String(http.StatusOK, "No data to plot")
+				return
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+		metric, ok := geneMetrics[gene_qcdata]
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Cannot retrieve the metrice data"})
+			return
+		}
+
+		p, err := charts.GeneQCLineChart(
+			geneqc.Genes,
+			gene_qcdata,
+			func(g *cleve.GeneQcrunid) string { return g.RunId },
+			metric,
+		)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		s := p.RenderSnippet()
+		c.String(http.StatusOK, s.Element+s.Script)
+	}
+}
+
+func GeneQcChartHandler(db GeneQCGetter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		gene := c.Query("gene")
+		gene_qcdata := c.Query("gene_qcdata")
+
+		geneqc, err := db.GeneQc(gene)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.String(http.StatusOK, "No data to plot")
+				return
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+
+		metric, ok := geneMetrics[gene_qcdata]
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Cannot retrieve the metrice data"})
+			return
+		}
+
+		p, err := charts.GeneQCLineChart(
+			geneqc.Genes,
+			gene_qcdata,
+			func(g *cleve.GeneQcrunid) string { return g.RunId },
+			metric,
+		)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		s := p.RenderSnippet()
+		c.String(http.StatusOK, s.Element+s.Script)
+	}
+}
+
+func ExonQcChartHandler(db GeneQCGetter) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		symbol := c.Param("Symbol")
+		exon_qcdata := c.Query("exon_qcdata" + symbol)
+
+		exon := c.Query("exon" + symbol)
+		exon_number, transcript, ok := strings.Cut(exon, " ")
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "Could not find exon number or transcript")
+			return
+		}
+		exon_float, err := strconv.ParseFloat(exon_number, 64)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		exonqc, err := db.ExonQc(symbol, exon_float, transcript)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				c.String(http.StatusOK, "No data to plot")
+				return
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+
+		metric, ok := exonMetrics[exon_qcdata]
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Cannot retrieve the metrice data"})
+			return
+		}
+		p, err := charts.GeneQCLineChart(
+			exonqc.Exons,
+			exon_qcdata,
+			func(g *cleve.IncompleteExonsRunid) string { return g.RunId },
+			metric,
+		)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		s := p.RenderSnippet()
+		c.String(http.StatusOK, s.Element+s.Script)
 	}
 }
