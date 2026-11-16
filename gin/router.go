@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/render"
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/internal/auth"
 	"github.com/gmc-norr/cleve/interop"
@@ -246,9 +245,9 @@ func NewRouter(db *mongo.DB, authConfig *auth.Config, debug bool, webhook *webho
 	// Endpoints that don't require authentication
 	r.GET("/login", loginPageHandler(db, authConfig))
 	r.POST("/login", loginHandler(db, authConfig))
-	r.GET("/keycloak-login", keycloakLoginHandler(authConfig, r.HTMLRender.(render.HTMLProduction)))
-	r.GET("/logincallback", loginCallbackHandler(db, authConfig, r.HTMLRender.(render.HTMLProduction)))
 	r.POST("/logout", logoutHandler(db))
+	r.GET("/keycloak-login", keycloakLoginHandler(authConfig))
+	r.GET("/logincallback", loginCallbackHandler(db, authConfig))
 
 	// Dashboard endpoints that need authentication
 	userAuthEndpoints := r.Group("/")
