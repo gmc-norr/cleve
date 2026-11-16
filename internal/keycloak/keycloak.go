@@ -86,7 +86,10 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 		} else {
 			slog.Error("mismatching session state", "cookie", stateCookie.Value, "request", r.URL.Query().Get("state"))
 		}
-		http.Error(w, "invalid state parameter", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusBadRequest, "status": http.StatusText(http.StatusBadRequest), "message": "State mismatch between Cleve and Keycloak."}); err != nil {
+			slog.Error("failed to render template", "error", err)
+		}
 		return
 	}
 
@@ -95,7 +98,7 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 	if err != nil {
 		slog.Error("failed to exchange keycloak authentication code", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		if err := c.renderer.ExecuteTemplate(w, "error500", map[string]string{"error": "Failed to exchange keycloak authentication code."}); err != nil {
+		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusInternalServerError, "status": http.StatusText(http.StatusInternalServerError), "message": "Failed to exchange keycloak authentication code."}); err != nil {
 			slog.Error("failed to render template", "error", err)
 		}
 		return
@@ -105,7 +108,7 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 	if err != nil {
 		slog.Error("failed to get user info", "url", c.userinfoURL, "error", err, "token", token)
 		w.WriteHeader(http.StatusInternalServerError)
-		if err := c.renderer.ExecuteTemplate(w, "error500", map[string]string{"error": "Authentication successful, but failed to get user info."}); err != nil {
+		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusInternalServerError, "status": http.StatusText(http.StatusInternalServerError), "message": "Authentication successful, but failed to get user info."}); err != nil {
 			slog.Error("failed to render template", "error", err)
 		}
 		return
@@ -115,14 +118,14 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 	if err != nil {
 		slog.Error("failed to get local user info", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		if err := c.renderer.ExecuteTemplate(w, "error500", map[string]string{"error": "Unexpected error when looking up user."}); err != nil {
+		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusInternalServerError, "status": http.StatusText(http.StatusInternalServerError), "message": "Unexpected error when looking up user."}); err != nil {
 			slog.Error("failed to render template", "error", err)
 		}
 		return
 	}
 	if !found {
 		w.WriteHeader(http.StatusUnauthorized)
-		if err := c.renderer.ExecuteTemplate(w, "error500", map[string]string{"error": "Authentication successful, but user is not allowed to view this content."}); err != nil {
+		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusUnauthorized, "status": http.StatusText(http.StatusUnauthorized), "message": "Authentication successful, but user is not allowed to view this content."}); err != nil {
 			slog.Error("failed to render template", "error", err)
 		}
 		return
@@ -130,7 +133,11 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 
 	session, err := store.CreateSession(r.Context(), storeUser.ID, auth.AuthKeycloak)
 	if err != nil {
-		http.Error(w, "failed to create session", http.StatusInternalServerError)
+		slog.Error("failed to create session", "error", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusInternalServerError, "status": http.StatusText(http.StatusInternalServerError), "message": "Failed to create session."}); err != nil {
+			slog.Error("failed to render template", "error", err)
+		}
 		return
 	}
 
