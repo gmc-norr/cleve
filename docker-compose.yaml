@@ -36,7 +36,7 @@ services:
       - command: ["cleve", "db", "init"]
       - command: ["cleve", "user", "create", "John Doe", "john.doe@example.com"]
     volumes:
-      - ./config.yaml:/etc/cleve/config.yaml
+      - ./config_docker.yaml:/etc/cleve/config.yaml
     command: ["serve", "--debug", "-l", "debug"]
 
   keycloak:
