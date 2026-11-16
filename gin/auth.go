@@ -45,7 +45,7 @@ func userAuth(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 	}
 }
 
-func logoutHandler(db *mongo.DB) gin.HandlerFunc {
+func logoutHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		session, found, err := auth.CurrentSession(ctx.Request, db)
 		if err != nil {
@@ -63,7 +63,22 @@ func logoutHandler(db *mongo.DB) gin.HandlerFunc {
 			return
 		}
 		auth.DeleteSessionCookie(ctx.Writer)
+		if config.AuthType == auth.AuthKeycloak {
+			client := keycloak.NewClientFromConfig(config)
+			logoutURL, err := client.LogoutURL(config.PostLogoutRedirectURL)
+			if err != nil {
+				slog.Error("failed to log out from keycloak session", "error", err)
+			}
+			ctx.Redirect(http.StatusSeeOther, logoutURL)
+			return
+		}
 		ctx.Redirect(http.StatusSeeOther, "/login")
+	}
+}
+
+func loggedoutHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.HTML(http.StatusOK, "loggedout", nil)
 	}
 }
 

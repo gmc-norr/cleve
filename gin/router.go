@@ -245,9 +245,10 @@ func NewRouter(db *mongo.DB, authConfig *auth.Config, debug bool, webhook *webho
 	// Endpoints that don't require authentication
 	r.GET("/login", loginPageHandler(db, authConfig))
 	r.POST("/login", loginHandler(db, authConfig))
-	r.POST("/logout", logoutHandler(db))
 	r.GET("/keycloak-login", keycloakLoginHandler(authConfig))
 	r.GET("/logincallback", loginCallbackHandler(db, authConfig))
+	r.POST("/logout", logoutHandler(db, authConfig))
+	r.GET("/logged-out", loggedoutHandler())
 
 	// Dashboard endpoints that need authentication
 	userAuthEndpoints := r.Group("/")

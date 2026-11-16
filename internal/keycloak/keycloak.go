@@ -25,6 +25,7 @@ const (
 type Client struct {
 	oauth2Config oauth2.Config
 	userinfoURL  string
+	logoutURL    string
 }
 
 func NewClient(client, secret, realm, internalRealm, redirectURL string) *Client {
@@ -34,6 +35,7 @@ func NewClient(client, secret, realm, internalRealm, redirectURL string) *Client
 	authURL, _ := url.JoinPath(realm, "protocol/openid-connect/auth")
 	tokenURL, _ := url.JoinPath(internalRealm, "protocol/openid-connect/token")
 	userinfoURL, _ := url.JoinPath(internalRealm, "protocol/openid-connect/userinfo")
+	logoutURL, _ := url.JoinPath(realm, "protocol/openid-connect/logout")
 	return &Client{
 		oauth2Config: oauth2.Config{
 			ClientID:     client,
@@ -46,6 +48,7 @@ func NewClient(client, secret, realm, internalRealm, redirectURL string) *Client
 			},
 		},
 		userinfoURL: userinfoURL,
+		logoutURL:   logoutURL,
 	}
 }
 
@@ -89,6 +92,20 @@ func (c *Client) redirectWithError(w http.ResponseWriter, r *http.Request, redir
 
 func (c *Client) redirectToLoginWithError(w http.ResponseWriter, r *http.Request, message string) {
 	c.redirectWithError(w, r, "/login", message)
+}
+
+func (c *Client) LogoutURL(redirectURL string) (string, error) {
+	revokeURL, err := url.Parse(c.logoutURL)
+	if err != nil {
+		return "", err
+	}
+	params := url.Values{}
+	params.Set("client_id", c.oauth2Config.ClientID)
+	if redirectURL != "" {
+		params.Set("post_logout_redirect_uri", redirectURL)
+	}
+	revokeURL.RawQuery = params.Encode()
+	return revokeURL.String(), nil
 }
 
 func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store userStore) {

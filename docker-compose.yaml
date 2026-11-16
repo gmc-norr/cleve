@@ -76,7 +76,7 @@ services:
           echo "service is ready, setting up test environment" >> $$logfile
           /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --user admin --password admin --realm master &>> $$logfile
           /opt/keycloak/bin/kcadm.sh create realms -s realm=cleve -s enabled=true &>> $$logfile
-          /opt/keycloak/bin/kcadm.sh create clients -r cleve -s clientId=cleve -s secret=secretkey -s 'redirectUris=["http://127.0.0.1:8080/*"]' &>> $$logfile
+          /opt/keycloak/bin/kcadm.sh create clients -r cleve -s clientId=cleve -s secret=secretkey -s 'redirectUris=["http://127.0.0.1:8080/*"]' -s 'attributes."post.logout.redirect.uris"="+"' &>> $$logfile
           /opt/keycloak/bin/kcadm.sh create users -r cleve -s username=jodo01 -s email=john.doe@example.com -s enabled=true &>> $$logfile
           /opt/keycloak/bin/kcadm.sh set-password -r cleve --username jodo01 --new-password password &>> $$logfile
           /opt/keycloak/bin/kcadm.sh create users -r cleve -s username=jado01 -s email=jane.doe@example.com -s enabled=true &>> $$logfile

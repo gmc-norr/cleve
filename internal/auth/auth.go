@@ -9,12 +9,13 @@ const (
 )
 
 type Config struct {
-	AuthType         AuthType
-	ClientID         string
-	ClientSecret     string
-	RealmURL         string
-	InternalRealmURL string
-	RedirectURL      string
+	AuthType              AuthType
+	ClientID              string
+	ClientSecret          string
+	RealmURL              string
+	InternalRealmURL      string
+	RedirectURL           string
+	PostLogoutRedirectURL string
 }
 
 func NoneConfig() *Config {
@@ -29,13 +30,14 @@ func InternalConfig() *Config {
 	}
 }
 
-func KeycloakConfig(clientID, clientSecret, realm, internalRealm, redirectURL string) *Config {
+func KeycloakConfig(clientID, clientSecret, realm, internalRealm, redirectURL, postLogoutRedirectURL string) *Config {
 	return &Config{
-		AuthType:         AuthKeycloak,
-		ClientID:         clientID,
-		ClientSecret:     clientSecret,
-		RealmURL:         realm,
-		InternalRealmURL: internalRealm,
-		RedirectURL:      redirectURL,
+		AuthType:              AuthKeycloak,
+		ClientID:              clientID,
+		ClientSecret:          clientSecret,
+		RealmURL:              realm,
+		InternalRealmURL:      internalRealm,
+		RedirectURL:           redirectURL,
+		PostLogoutRedirectURL: postLogoutRedirectURL,
 	}
 }

@@ -181,7 +181,8 @@ var (
 				realm := viper.GetString("auth.realm_url")
 				internalRealm := viper.GetString("auth.internal_realm_url")
 				redirectURL := fmt.Sprintf("%s/logincallback", baseURL)
-				authConfig = auth.KeycloakConfig(clientID, clientSecret, realm, internalRealm, redirectURL)
+				postLogoutRedirectURL := fmt.Sprintf("%s/logged-out", baseURL)
+				authConfig = auth.KeycloakConfig(clientID, clientSecret, realm, internalRealm, redirectURL, postLogoutRedirectURL)
 			default:
 				slog.Error("invalid authentication provider", "provider", authType)
 				os.Exit(1)

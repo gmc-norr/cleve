@@ -32,3 +32,12 @@
 {{ end }}
 {{ template "footer" . }}
 {{ end }}
+
+{{ define "loggedout" }}
+{{ template "header" . }}
+<div class="m-6">
+    <p>Successfully logged out</p>
+    <p><a class="text-accent-900 underline" href="/login">Log in</a></p>
+</div>
+{{ template "footer" . }}
+{{ end }}
