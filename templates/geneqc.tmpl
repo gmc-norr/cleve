@@ -20,9 +20,9 @@
                     <th>Symbol</th>
                     <th>HGNC</th>
                     <th>Gene type</th>
-                    <th>Mapping Quality</th> 
-                    <th>Suboptional Coverage</th> 
-                    <th>Mean Coverage</th> 
+                    <th>Mapping Quality</th>
+                    <th>Suboptional Coverage</th>
+                    <th>Mean Coverage</th>
                     <th>Mean Completness %</th>
                     <th>Pseudogenes</th>
                     <th>Segment Duplication</th>
@@ -31,16 +31,16 @@
                 <tr>
                     <th><input class="w-full border border-slate-300" type="search" name="symbol" placeholder="Filter by Gene Symbol" value="{{ .filter.Symbol }}" /></th>
                 </tr>
-                
+
             </thead>
 
             <tbody class="border-y border-slate-500" id="genes-body">
                 {{ range .geneqc }}
-                <tr class="hover:bg-accent-100 
+                <tr class="hover:bg-accent-100
                     {{if eq .Suboptional_coverage true}} tablehighlightbad
                     {{else if eq .Segment_duplication true}} tablehighlightwarning
                     {{end}}">
-                    
+
                     <td>{{ .Symbol }}</td>
                     <td>{{ .HGNC }}</td>
                     <td>{{ .Gene_type }}</td>
@@ -51,13 +51,13 @@
                     <td>{{ .Pseudogene }}</td>
                     <td>{{ .Segment_duplication }}</td>
                     <td>{{ .Pathogenic_variants }}</td>
-                    
+
                 </tr>
-                
+
                 {{ end }}
             </tbody>
 
-         
+
         </table>
     </form>
 </section>
@@ -111,7 +111,7 @@
             {{ range .geneqc }}
                 {{ if .Incomplete_exons}}
                 {{ $incomplete_exons_found = true}}
-                
+
                 <h2 class="text-2xl my-4"> Incomplete Exons for {{.Symbol}} </h3>
 
                         <table class="w-full ">
@@ -122,12 +122,12 @@
                                     <th> Mapping Quality </th>
                                     <th> Suboptional Cov </th>
                                     <th> Mean Coverage </th>
-                                    <th> Mean Completness % </th> 
-                                    <th> Segment Dup </th> 
+                                    <th> Mean Completness % </th>
+                                    <th> Segment Dup </th>
                                     <th> Transcript </th>
                                     <th> Select type </th>
                                 </tr>
-                                
+
                             </thead>
 
                             <tbody class="border-y border-slate-500" id="geneqc-body">
@@ -145,7 +145,7 @@
                                     <td>{{ .Segment_duplication }}</td>
                                     <td>{{ .Transcript }}</td>
                                     <td>{{ .Select_type }}</td>
-                                
+
                                 </tr>
                                 {{ end }}
                             </tbody>
@@ -206,7 +206,7 @@
     {{ else }}
         <h3 class="text-2xl my-4"> No Genes found </h3>
     {{ end }}
-    
+
 </section>
 
 

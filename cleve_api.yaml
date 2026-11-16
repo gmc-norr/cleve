@@ -896,12 +896,12 @@ endpoints:
         type: string
         description: platform name
         required: true
-  
+
   - path: /geneqc
     method: GET
     section: geneqc
     description: Get all Gene QC data
-  
+
   - path: /geneqc
     method: POST
     section: geneqc
@@ -916,7 +916,7 @@ endpoints:
         type: string
         description: path to the file containing the gene QC data
         required: true
-  
+
   - path: /geneqc/{symbol}
     method: GET
     section: geneqc
@@ -926,7 +926,7 @@ endpoints:
         type: string
         description: Gene symbol
         required: true
-    
+
   - path: /geneqc/{runId}
     method: PATCH
     section: geneqc
@@ -944,7 +944,7 @@ endpoints:
       - key: runId
         type: string
         description: The RunId the gene QC data is added to
-        required: true 
+        required: true
 
   - path: /panelqc
     method: POST

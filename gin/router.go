@@ -250,7 +250,6 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	r.GET("/geneQC", DashboardGeneQCHandler(db))
 	r.GET("/geneqc/charts/genes", GeneQcChartHandler(db))
 	r.GET("/geneqc/charts/exons/:Symbol", ExonQcChartHandler(db))
-	
 
 	hxEndpoints := r.Group("/")
 	hxEndpoints.Use(hxMiddleware())
@@ -292,7 +291,6 @@ func NewRouter(db *mongo.DB, debug bool, webhook *webhook.Client) http.Handler {
 	r.GET("/api/samplesheets/:uuid", SampleSheetHandler(db))
 	r.GET("/api/geneqc", GenesQCHandler(db))
 	r.GET("/api/geneqc/:symbol", GeneQCHandler(db))
-
 
 	authEndpoints := r.Group("/")
 	authEndpoints.Use(authMiddleware(db))

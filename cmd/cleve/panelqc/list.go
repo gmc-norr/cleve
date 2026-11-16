@@ -3,9 +3,9 @@ package panelqc
 import (
 	"fmt"
 	"log/slog"
-	"strings"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
@@ -16,14 +16,12 @@ var listCmd = &cobra.Command{
 	Use:   "list [flags] run_id",
 	Short: "List panel QC data for a specific Run ID",
 	Args: func(cmd *cobra.Command, args []string) error {
-		
 		if len(args) != 1 {
-			return fmt.Errorf("Run ID is required")
+			return fmt.Errorf("run ID is required")
 		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-
 		db, err := mongo.Connect()
 		if err != nil {
 			slog.Error("failed to connect to database", "error", err)
@@ -33,7 +31,7 @@ var listCmd = &cobra.Command{
 		// Check if RunID exists
 		panelqc, err := db.PanelQc(args[0])
 		if err != nil {
-			slog.Error("failed to extract data of RunId", args[0], "error", err)
+			slog.Error("failed to extract data of RunId", "error", err, "RunID", args[0])
 			os.Exit(1)
 		}
 
@@ -47,7 +45,6 @@ func truncateString(str string, maxLen int) string {
 	}
 	return fmt.Sprintf("%-*s", maxLen, str)
 }
-
 
 func printTable(panelqc *cleve.PanelQc) {
 	fmt.Printf("|-%s-|-%s-|\n", strings.Repeat("-", 35), strings.Repeat("-", 8))
@@ -63,4 +60,3 @@ func printTable(panelqc *cleve.PanelQc) {
 	}
 	fmt.Printf("|-%s-|-%s-|-%s-|-%s-|\n", strings.Repeat("-", 25), strings.Repeat("-", 15), strings.Repeat("-", 16), strings.Repeat("-", 20))
 }
-

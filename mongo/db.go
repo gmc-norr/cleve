@@ -152,7 +152,6 @@ func (db *DB) SetIndexes() error {
 		return fmt.Errorf("failed to set index on panelQC, does the collection exist? %w", err)
 	}
 	slog.Info("set index", "collection", "PanelQC", "name", name)
-	return nil
 
 	name, err = db.SetGeneQcIndex()
 	if err != nil {
@@ -229,7 +228,7 @@ func (db *DB) Init(ctx context.Context) error {
 	if _, err := db.SetGeneQcIndex(); err != nil {
 		return err
 	}
-		
+
 	return nil
 }
 

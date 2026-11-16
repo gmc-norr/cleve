@@ -262,11 +262,11 @@ func NewPanelFilter() PanelFilter {
 }
 
 type PanelQcFilter struct {
-	RunId                 string    `form:"run_id"`
-	GenePanelId           string    `form:"genepanel_id"`
-	Symbol                string    `form:"symbol"`
-	Exon_number          float64    `bson:"exon_number"`
-	Transcript            string    `form:"transcript"`
+	RunId            string  `form:"run_id"`
+	GenePanelId      string  `form:"genepanel_id"`
+	Symbol           string  `form:"symbol"`
+	Exon_number      float64 `bson:"exon_number"`
+	Transcript       string  `form:"transcript"`
 	PaginationFilter `form:",inline"`
 }
 
@@ -284,7 +284,10 @@ func (f PanelQcFilter) UrlParams() string {
 		sep = "&"
 	}
 	if f.Page != 0 {
-		p += fmt.Sprintf("%spage=%d", p, f.Page)
+		p += fmt.Sprintf("%s%spage=%d", p, sep, f.Page)
+	}
+	if f.PageSize != 0 {
+		p = fmt.Sprintf("%s%spage_size=%d", p, sep, f.PageSize)
 	}
 	return p
 }

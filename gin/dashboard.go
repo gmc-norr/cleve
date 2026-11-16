@@ -266,7 +266,6 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 	}
 }
 
-
 func DashboardPanelQCHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		filter, err := getPanelQcFilter(c)
@@ -280,7 +279,7 @@ func DashboardPanelQCHandler(db *mongo.DB) gin.HandlerFunc {
 		if errors.As(err, &oobError) {
 			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError})
 			return
-		} 
+		}
 
 		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -289,17 +288,14 @@ func DashboardPanelQCHandler(db *mongo.DB) gin.HandlerFunc {
 		data := map[string]any{
 			"data_type": "runs",
 		}
-		
+
 		c.Header("Hx-Push-Url", filter.UrlParams())
 		c.HTML(http.StatusOK, "panelqc_table", gin.H{"panelqc": panelqc.PanelQCs, "metadata": panelqc.PaginationMetadata, "filter": filter, "data": data, "cleve_version": cleve.GetVersion()})
 	}
-
-
 }
 
 func DashboardPanelQCRunHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		runId := c.Param("runId")
 
 		panelqc, err := db.PanelQc(runId)
@@ -315,7 +311,6 @@ func DashboardPanelQCRunHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 
 		c.HTML(http.StatusOK, "panelqc", gin.H{"panelqc": panelqc, "cleve_version": cleve.GetVersion()})
-	
 	}
 }
 
@@ -332,7 +327,7 @@ func DashboardGeneQCHandler(db *mongo.DB) gin.HandlerFunc {
 		if errors.As(err, &oobError) {
 			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError})
 			return
-		} 
+		}
 
 		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -342,10 +337,7 @@ func DashboardGeneQCHandler(db *mongo.DB) gin.HandlerFunc {
 			"data_type": "genes",
 		}
 
-		
 		c.Header("Hx-Push-Url", filter.UrlParams())
 		c.HTML(http.StatusOK, "geneqc", gin.H{"geneqc": geneqc.AllGenes, "metadata": geneqc.PaginationMetadata, "filter": filter, "data": data, "cleve_version": cleve.GetVersion()})
 	}
-
-
 }

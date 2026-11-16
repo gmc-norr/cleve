@@ -2,7 +2,7 @@
 {{ template "header" . }}
 
 <header class="m-6">
-    <h2 
+    <h2
         class="text-3xl">GenePanel QC for {{ .panelqc.RunId }}
     </h2>
 </header>
@@ -10,7 +10,7 @@
 
 {{ range .panelqc.GenePanel }}
     <section class="m-6">
-    
+
         <table class="bg-accent-100 my-6 max-w-fit">
             <tr>
                 <th class="bg-accent-900 text-accent-100 text-right px-2">Gene Panel ID</th>
@@ -30,37 +30,37 @@
             </tr>
         </table>
 
-    
+
         <table class="w-full">
             <thead class="text-left">
                 <tr class="border-b border-slate-500">
                     <th>HGNC</th>
                     <th>Symbol</th>
-                    <th>Mapping Quality</th> 
-                    <th>Suboptional Coverage</th> 
-                    <th>Mean Coverage</th> 
+                    <th>Mapping Quality</th>
+                    <th>Suboptional Coverage</th>
+                    <th>Mean Coverage</th>
                     <th>Mean Completness %</th>
                 </tr>
-                
+
             </thead>
 
             <tbody class="border-y border-slate-500" id="genes-body">
                 {{ range .Genes }}
-                <tr class="hover:bg-accent-100 
+                <tr class="hover:bg-accent-100
                     {{if eq .Suboptional_coverage true}} tablehighlightbad
                     {{end}}">
-                    
+
                     <td>{{ .HGNC }}</td>
                     <td>{{ .Symbol }}</td>
                     <td>{{ .Mean_mapping_quality  }}</td>
                     <td>{{ .Suboptional_coverage  }}</td>
                     <td>{{ .Mean_coverage }}</td>
                     <td>{{ .Mean_completness }}</td>
-                    
+
                 </tr>
                 {{ end }}
             </tbody>
-        
+
         </table>
 
         <h2 class="text-2xl my-4"> Coverage/Completness/MQ Chart for each gene </h2>
@@ -107,7 +107,7 @@
 
         </div>
 
-        
+
 
 
     </section>

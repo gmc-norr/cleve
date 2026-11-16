@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gmc-norr/cleve"
@@ -14,11 +14,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-
 func (db DB) PanelQCs(filter cleve.PanelQcFilter) (cleve.PanelQcResult, error) {
 	var (
-		pipeline             mongo.Pipeline
-		panelqc_result       cleve.PanelQcResult
+		pipeline       mongo.Pipeline
+		panelqc_result cleve.PanelQcResult
 	)
 
 	panelqc_result.PanelQCs = make([]*cleve.PanelQc, 0)
@@ -31,9 +30,8 @@ func (db DB) PanelQCs(filter cleve.PanelQcFilter) (cleve.PanelQcResult, error) {
 	if filter.RunId != "" {
 		pipeline = append(pipeline, bson.D{
 			{
-				Key: "$match",
-				Value: bson.M{
-					"run_id": filter.RunId,
+				Key: "$match", Value: bson.D{
+					{Key: "run_id", Value: filter.RunId},
 				},
 			},
 		})
@@ -43,7 +41,7 @@ func (db DB) PanelQCs(filter cleve.PanelQcFilter) (cleve.PanelQcResult, error) {
 		pipeline = append(pipeline, bson.D{
 			{
 				Key: "$match",
-				Value: bson.D{ 
+				Value: bson.D{
 					{Key: "genepanel.genepanel_id", Value: filter.GenePanelId},
 				},
 			},
@@ -57,14 +55,14 @@ func (db DB) PanelQCs(filter cleve.PanelQcFilter) (cleve.PanelQcResult, error) {
 		}},
 	})
 
-	metaPipeline := append(pipeline,bson.D{
+	metaPipeline := append(pipeline, bson.D{
 		{Key: "$count", Value: "total_count"},
 	})
 
 	cursor, err := db.PanelQcCollection().Aggregate(context.TODO(), metaPipeline)
 	if err != nil {
 		return panelqc_result, err
-	} 
+	}
 	if !cursor.Next(context.TODO()) {
 		panelqc_result.TotalCount = 0
 	}
@@ -91,7 +89,7 @@ func (db DB) PanelQCs(filter cleve.PanelQcFilter) (cleve.PanelQcResult, error) {
 			{Key: "$limit", Value: filter.PageSize},
 		})
 	}
-	
+
 	cursor, err = db.PanelQcCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
 		return panelqc_result, err
@@ -99,7 +97,6 @@ func (db DB) PanelQCs(filter cleve.PanelQcFilter) (cleve.PanelQcResult, error) {
 
 	defer closeCursor(cursor, context.TODO())
 
-	
 	for cursor.Next(context.TODO()) {
 		var run cleve.PanelQc
 		err = cursor.Decode(&run)
@@ -109,14 +106,13 @@ func (db DB) PanelQCs(filter cleve.PanelQcFilter) (cleve.PanelQcResult, error) {
 		panelqc_result.Count++
 		panelqc_result.PanelQCs = append(panelqc_result.PanelQCs, &run)
 	}
-	
 
 	if panelqc_result.TotalCount == 0 {
 
 		panelqc_result.TotalPages = 1
 		panelqc_result.PanelQCs = make([]*cleve.PanelQc, 0)
 	}
-	
+
 	if panelqc_result.Page > panelqc_result.TotalPages {
 		return panelqc_result, PageOutOfBoundsError{
 			page:       panelqc_result.Page,
@@ -125,12 +121,10 @@ func (db DB) PanelQCs(filter cleve.PanelQcFilter) (cleve.PanelQcResult, error) {
 	}
 
 	return panelqc_result, nil
-
 }
 
 func (db DB) PanelQc(runId string) (*cleve.PanelQc, error) {
-	
-	filter := cleve.PanelQcFilter {
+	filter := cleve.PanelQcFilter{
 		RunId: runId,
 	}
 
@@ -145,21 +139,19 @@ func (db DB) PanelQc(runId string) (*cleve.PanelQc, error) {
 	if panelqc.Count > 1 {
 		return nil, fmt.Errorf("found more than one matching run")
 	}
-	
-	return panelqc.PanelQCs[0], nil
 
+	return panelqc.PanelQCs[0], nil
 }
 
 func (db DB) PanelGenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, error) {
 	var (
-		pipeline             mongo.Pipeline
-		panelqc_result       cleve.GenesQcResult
+		pipeline       mongo.Pipeline
+		panelqc_result cleve.GenesQcResult
 	)
 
-	panelqc_result.GenesQcs  = make([]*cleve.GeneQCs, 0)
+	panelqc_result.GenesQcs = make([]*cleve.GeneQCs, 0)
 
-
-	pipeline = append(pipeline, 
+	pipeline = append(pipeline,
 		bson.D{
 			{Key: "$unwind", Value: "$genepanel"},
 		},
@@ -167,24 +159,33 @@ func (db DB) PanelGenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, err
 			{Key: "$unwind", Value: "$genepanel.genes"},
 		},
 		bson.D{
-			{"$group", bson.D{
-				{"_id", bson.D{
-					{"symbol", "$genepanel.genes.symbol"},
-					{"genepanel_id", "$genepanel.genepanel_id"},
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: bson.D{
+					{Key: "symbol", Value: "$genepanel.genes.symbol"},
+					{Key: "genepanel_id", Value: "$genepanel.genepanel_id"},
 				}},
-				{"genes", bson.D{
-					{"$push", bson.D{
-						{"run_id", "$run_id"},
-						{"genepanel_id", "$genepanel.genepanel_id"},
-						{"symbol", "$genepanel.genes.symbol"},
-						{"mean_mapping_quality", bson.D{
-							{"$round", bson.A{"$genepanel.genes.mean_mapping_quality", 5}},
+				{Key: "genes", Value: bson.D{
+					{Key: "$push", Value: bson.D{
+						{Key: "run_id", Value: "$run_id"},
+						{Key: "genepanel_id", Value: "$genepanel.genepanel_id"},
+						{Key: "symbol", Value: "$genepanel.genes.symbol"},
+						{Key: "mean_mapping_quality", Value: bson.D{
+							{Key: "$round", Value: bson.A{
+								"$genepanel.genes.mean_mapping_quality",
+								5,
+							}},
 						}},
-						{"mean_completness", bson.D{
-							{"$round", bson.A{"$genepanel.genes.mean_completness", 5}},
+						{Key: "mean_completness", Value: bson.D{
+							{Key: "$round", Value: bson.A{
+								"$genepanel.genes.mean_completness",
+								5,
+							}},
 						}},
-						{"mean_coverage", bson.D{
-							{"$round", bson.A{"$genepanel.genes.mean_coverage", 5}},
+						{Key: "mean_coverage", Value: bson.D{
+							{Key: "$round", Value: bson.A{
+								"$genepanel.genes.mean_coverage",
+								5,
+							}},
 						}},
 					}},
 				}},
@@ -194,28 +195,27 @@ func (db DB) PanelGenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, err
 
 	if filter.Symbol != "" {
 		pipeline = append(pipeline,
-		bson.D{
-			{
-				Key: "$match",
-				Value: bson.D{ 
-					{Key: "genes.symbol", Value: filter.Symbol},
+			bson.D{
+				{
+					Key: "$match",
+					Value: bson.D{
+						{Key: "genes.symbol", Value: filter.Symbol},
+					},
 				},
 			},
-		},
-	
-	)}
+		)
+	}
 
 	if filter.GenePanelId != "" {
 		pipeline = append(pipeline, bson.D{
 			{
 				Key: "$match",
-				Value: bson.D{ 
+				Value: bson.D{
 					{Key: "genes.genepanel_id", Value: filter.GenePanelId},
 				},
 			},
 		})
 	}
-
 
 	cursor, err := db.PanelQcCollection().Aggregate(context.TODO(), pipeline)
 	if err != nil {
@@ -224,13 +224,12 @@ func (db DB) PanelGenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, err
 
 	defer closeCursor(cursor, context.TODO())
 
-	
 	for cursor.Next(context.TODO()) {
 		var run cleve.GeneQCs
 		err = cursor.Decode(&run)
 		if err != nil {
 			return panelqc_result, err
-		} 
+		}
 		panelqc_result.GenesQcs = append(panelqc_result.GenesQcs, &run)
 	}
 
@@ -238,15 +237,12 @@ func (db DB) PanelGenesQCs(filter cleve.PanelQcFilter) (cleve.GenesQcResult, err
 		return panelqc_result, mongo.ErrNoDocuments
 	}
 
-
 	return panelqc_result, nil
-
 }
 
 func (db DB) PanelGeneQc(symbol string, genepanelid string) (*cleve.GeneQCs, error) {
-	
-	filter := cleve.PanelQcFilter {
-		Symbol: symbol,
+	filter := cleve.PanelQcFilter{
+		Symbol:      symbol,
 		GenePanelId: genepanelid,
 	}
 
@@ -256,11 +252,9 @@ func (db DB) PanelGeneQc(symbol string, genepanelid string) (*cleve.GeneQCs, err
 	}
 
 	return panelgeneqc.GenesQcs[0], nil
-
 }
 
 func (db DB) CreatePanelQc(p cleve.PanelQc) error {
-
 	// Retrieve date from RunID if it exists, if not -> take today's date
 	date := strings.SplitN(p.RunId, "_", 2)[0]
 
@@ -273,7 +267,6 @@ func (db DB) CreatePanelQc(p cleve.PanelQc) error {
 		}
 		p.Date = todayInt
 	}
-	
 
 	if _, err := db.PanelQcCollection().InsertOne(context.TODO(), p); err != nil {
 		return err
@@ -282,7 +275,6 @@ func (db DB) CreatePanelQc(p cleve.PanelQc) error {
 }
 
 func (db DB) DeletePanelQc(runId string) error {
-
 	res, err := db.PanelQcCollection().DeleteOne(context.TODO(), bson.D{{Key: "run_id", Value: runId}})
 	if err == nil && res.DeletedCount == 0 {
 		return mongo.ErrNoDocuments
@@ -315,7 +307,6 @@ func (db DB) PanelQcIndex() ([]map[string]string, error) {
 	return indexes, nil
 }
 
-
 func (db DB) SetPanelQcIndex() (string, error) {
 	indexModel := mongo.IndexModel{
 		Keys: bson.D{
@@ -333,5 +324,4 @@ func (db DB) SetPanelQcIndex() (string, error) {
 
 	name, err := db.PanelQcCollection().Indexes().CreateOne(context.TODO(), indexModel)
 	return name, err
-	
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var deleteCmd = &cobra.Command{
 	Use:   "delete [flags] run_id",
 	Short: "Delete the GeneQc for a sequencing run",
@@ -20,7 +19,6 @@ var deleteCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-
 		db, err := mongo.Connect()
 		cobra.CheckErr(err)
 
@@ -32,9 +30,8 @@ var deleteCmd = &cobra.Command{
 			slog.Error("failed to delete RunID", "error", err)
 			os.Exit(1)
 
-		fmt.Printf("Deleted run %s", args[0])
-		
+			fmt.Printf("Deleted run %s", args[0])
+
 		}
-		
 	},
 }

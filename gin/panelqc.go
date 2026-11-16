@@ -1,17 +1,16 @@
 package gin
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"os"
-	"io"
-	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
 	"github.com/gmc-norr/cleve/mongo"
 )
-
 
 type PanelQCGetter interface {
 	PanelGeneQc(string, string) (*cleve.GeneQCs, error)
@@ -24,9 +23,8 @@ type PanelQCSetter interface {
 
 func AddPanelQcHandler(db PanelQCSetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		var updateRequest struct {
-			Path    string              `json:"path"`
+			Path string `json:"path"`
 		}
 		if err := c.BindJSON(&updateRequest); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -39,23 +37,23 @@ func AddPanelQcHandler(db PanelQCSetter) gin.HandlerFunc {
 			if err != nil {
 				if errors.Is(err, os.ErrNotExist) {
 					c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
-						"error":       "Path does not exists",
-						"path": updateRequest.Path,
+						"error": "Path does not exists",
+						"path":  updateRequest.Path,
 					})
 					return
 				}
 				if errors.Is(err, os.ErrPermission) {
 					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-						"error":       "Permission denied",
-						"path": updateRequest.Path,
+						"error": "Permission denied",
+						"path":  updateRequest.Path,
 					})
 					return
 				}
 			}
 			if path.IsDir() {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-					"error":   "path is a directory",
-					"path": updateRequest.Path,
+					"error": "path is a directory",
+					"path":  updateRequest.Path,
 				})
 				return
 			}
@@ -69,7 +67,7 @@ func AddPanelQcHandler(db PanelQCSetter) gin.HandlerFunc {
 			defer func() {
 				if err := f.Close(); err != nil {
 					c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to close file", "when": "adding panelgene QC"})
-				return
+					return
 				}
 			}()
 
@@ -82,6 +80,10 @@ func AddPanelQcHandler(db PanelQCSetter) gin.HandlerFunc {
 			var panelqc cleve.PanelQc
 
 			err = json.Unmarshal([]byte(data), &panelqc)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Could not unmarshal file data", "when": "adding panelgene QC"})
+				return
+			}
 			// Validation
 			if err := panelqc.Validate(); err != nil {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})

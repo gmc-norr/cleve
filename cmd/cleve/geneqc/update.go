@@ -1,27 +1,22 @@
 package geneqc
 
-
 import (
-	"log/slog"
-	"fmt"
-	"os"
 	"encoding/json"
-	"io"
 	"errors"
-	
+	"fmt"
+	"io"
+	"log/slog"
+	"os"
+
 	"github.com/gmc-norr/cleve"
-	"github.com/spf13/cobra"
 	"github.com/gmc-norr/cleve/mongo"
+	"github.com/spf13/cobra"
 )
 
-
 var updateCmd = &cobra.Command{
-
-
 	Use:   "update [flags] run_id geneqc_file",
 	Short: "Add gene QC data for a runID",
 	Args: func(cmd *cobra.Command, args []string) error {
-		
 		if len(args) != 2 {
 			return fmt.Errorf("RunID and GeneQc File is required")
 		}
@@ -56,37 +51,34 @@ var updateCmd = &cobra.Command{
 
 		err = geneqc.ValidateUpdate()
 		cobra.CheckErr(err)
-		
+
 		// Check if RunID exists
-		filter := cleve.PanelQcFilter {
-		RunId: args[0],
+		filter := cleve.PanelQcFilter{
+			RunId: args[0],
 		}
 		_, err = db.GenesQCs(filter)
 		if err != nil {
-			slog.Error("failed to extract data of RunId", args[0], "error", err)
+			slog.Error("failed to extract data of RunId", "error", err, "run ID", args[0])
 			os.Exit(1)
 		}
 
 		// Check if data for the Gene already exists
-		filter = cleve.PanelQcFilter {
-		Symbol: geneqc.Symbol,
-		RunId: args[0],
+		filter = cleve.PanelQcFilter{
+			Symbol: geneqc.Symbol,
+			RunId:  args[0],
 		}
 		_, err = db.GenesQCs(filter)
 		if err != mongo.ErrNoDocuments {
-			slog.Error("Data for gene already exists", geneqc.Symbol)
+			slog.Error("data for gene already exists", "error", err, "symbol", geneqc.Symbol)
 			os.Exit(1)
 		}
-		
+
 		if err := db.UpdateGeneQc(args[0], geneqc); err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				cobra.CheckErr("the RunID does not exist")
 			}
-			slog.Error("failed to update run", "run", args[0], "error", err)
+			slog.Error("failed to update run", "error", err, "run ID", args[0])
 			os.Exit(1)
 		}
-},
-
+	},
 }
-
-

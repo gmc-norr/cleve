@@ -1,25 +1,21 @@
 package panelqc
 
-
 import (
-	"log/slog"
-	"fmt"
-	"os"
 	"encoding/json"
+	"fmt"
 	"io"
+	"log/slog"
+	"os"
 
 	"github.com/gmc-norr/cleve"
-	"github.com/spf13/cobra"
 	"github.com/gmc-norr/cleve/mongo"
+	"github.com/spf13/cobra"
 )
 
 var addCmd = &cobra.Command{
-
-
 	Use:   "add [flags] panelqc file",
 	Short: "Add panel QC data for a runID",
 	Args: func(cmd *cobra.Command, args []string) error {
-		
 		if len(args) != 1 {
 			return fmt.Errorf("PanelQc File is required")
 		}
@@ -45,7 +41,7 @@ var addCmd = &cobra.Command{
 		if err != nil {
 			slog.Error("failed to read the file", "error", err)
 		}
-		
+
 		var panelqc cleve.PanelQc
 		err = json.Unmarshal([]byte(data), &panelqc)
 		if err != nil {
@@ -60,9 +56,5 @@ var addCmd = &cobra.Command{
 			cobra.CheckErr("a panel with this RunID already exists")
 		}
 		cobra.CheckErr(err)
-},
-
+	},
 }
-
-
-

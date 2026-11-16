@@ -10,7 +10,6 @@ func init() {
 	GeneQcCmd.AddCommand(updateCmd)
 }
 
-
 var GeneQcCmd = &cobra.Command{
 	Use:   "geneqc",
 	Short: "Interact with gene QC data",
