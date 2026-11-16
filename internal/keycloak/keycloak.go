@@ -17,7 +17,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const oauthCookieName = "CLEVE_OAUTH_STATE"
+const (
+	oauthCookieName      = "CLEVE_OAUTH_STATE"
+	LoginErrorCookieName = "CLEVE_LOGIN_ERROR"
+)
 
 type Renderer interface {
 	Execute(io.Writer, any) error
@@ -78,6 +81,24 @@ type userStore interface {
 	CreateSession(ctx context.Context, userID uuid.UUID, authType auth.AuthType) (auth.Session, error)
 }
 
+func (c *Client) redirectWithError(w http.ResponseWriter, r *http.Request, redirectURL string, message string) {
+	cookie := &http.Cookie{
+		Name:     LoginErrorCookieName,
+		Value:    url.QueryEscape(message),
+		Path:     "/",
+		MaxAge:   60,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, cookie)
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+}
+
+func (c *Client) redirectToLoginWithError(w http.ResponseWriter, r *http.Request, message string) {
+	c.redirectWithError(w, r, "/login", message)
+}
+
 func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store userStore) {
 	stateCookie, err := r.Cookie(oauthCookieName)
 	if err != nil || r.URL.Query().Get("state") != stateCookie.Value {
@@ -86,10 +107,7 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 		} else {
 			slog.Error("mismatching session state", "cookie", stateCookie.Value, "request", r.URL.Query().Get("state"))
 		}
-		w.WriteHeader(http.StatusBadRequest)
-		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusBadRequest, "status": http.StatusText(http.StatusBadRequest), "message": "State mismatch between Cleve and Keycloak."}); err != nil {
-			slog.Error("failed to render template", "error", err)
-		}
+		c.redirectToLoginWithError(w, r, "State mismatch between Cleve and Keycloak")
 		return
 	}
 
@@ -97,47 +115,32 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 	token, err := c.oauth2Config.Exchange(r.Context(), code)
 	if err != nil {
 		slog.Error("failed to exchange keycloak authentication code", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusInternalServerError, "status": http.StatusText(http.StatusInternalServerError), "message": "Failed to exchange keycloak authentication code."}); err != nil {
-			slog.Error("failed to render template", "error", err)
-		}
+		c.redirectToLoginWithError(w, r, "Failed to exchange keycloak authentication code")
 		return
 	}
 
 	user, err := GetUserInfo(r.Context(), c.userinfoURL, token)
 	if err != nil {
 		slog.Error("failed to get user info", "url", c.userinfoURL, "error", err, "token", token)
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusInternalServerError, "status": http.StatusText(http.StatusInternalServerError), "message": "Authentication successful, but failed to get user info."}); err != nil {
-			slog.Error("failed to render template", "error", err)
-		}
+		c.redirectToLoginWithError(w, r, "Authentication successful, but failed to get user info")
 		return
 	}
 
 	storeUser, found, err := store.GetUserByEmail(r.Context(), user.Email)
 	if err != nil {
 		slog.Error("failed to get local user info", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusInternalServerError, "status": http.StatusText(http.StatusInternalServerError), "message": "Unexpected error when looking up user."}); err != nil {
-			slog.Error("failed to render template", "error", err)
-		}
+		c.redirectToLoginWithError(w, r, "Unexpected error when looking up user")
 		return
 	}
 	if !found {
-		w.WriteHeader(http.StatusUnauthorized)
-		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusUnauthorized, "status": http.StatusText(http.StatusUnauthorized), "message": "Authentication successful, but user is not allowed to view this content."}); err != nil {
-			slog.Error("failed to render template", "error", err)
-		}
+		c.redirectToLoginWithError(w, r, "Authentication successful, but user is not allowed to view this content")
 		return
 	}
 
 	session, err := store.CreateSession(r.Context(), storeUser.ID, auth.AuthKeycloak)
 	if err != nil {
 		slog.Error("failed to create session", "error", err)
-		w.WriteHeader(http.StatusUnauthorized)
-		if err := c.renderer.ExecuteTemplate(w, "error", map[string]any{"code": http.StatusInternalServerError, "status": http.StatusText(http.StatusInternalServerError), "message": "Failed to create session."}); err != nil {
-			slog.Error("failed to render template", "error", err)
-		}
+		c.redirectToLoginWithError(w, r, "Authentication successful, but user is not allowed to view this content")
 		return
 	}
 

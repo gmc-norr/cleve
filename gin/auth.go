@@ -133,7 +133,15 @@ func loginPageHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 		case auth.AuthInternal:
 			ctx.HTML(http.StatusOK, "login", gin.H{"next_url": nextURL, "cleve_version": cleve.GetVersion(), "auth_type": config.AuthType})
 		case auth.AuthKeycloak:
-			ctx.HTML(http.StatusOK, "login", gin.H{"cleve_version": cleve.GetVersion(), "auth_type": config.AuthType})
+			var msg *UserMessage
+			if cookie, err := ctx.Cookie(keycloak.LoginErrorCookieName); err == nil {
+				msg = &UserMessage{Text: cookie, Class: "error"}
+				http.SetCookie(ctx.Writer, &http.Cookie{
+					Name:   keycloak.LoginErrorCookieName,
+					MaxAge: -1,
+				})
+			}
+			ctx.HTML(http.StatusOK, "login", gin.H{"cleve_version": cleve.GetVersion(), "auth_type": config.AuthType, "message": msg})
 			return
 		default:
 			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{
