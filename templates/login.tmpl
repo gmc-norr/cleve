@@ -22,6 +22,7 @@
     {{ if eq .auth_type "keycloak" }}
     <form class="bg-slate-100 p-8 my-16" method="GET" action="/keycloak-login">
         <div>
+            <input name="next_url" type="hidden" type="text" value="{{ .next_url }}">
             <input class="w-full cursor-pointer py-4 text-center inline-block bg-accent-900 text-white font-bold text-xl" type="submit" value="Sign in with Keycloak">
         </div>
     </form>

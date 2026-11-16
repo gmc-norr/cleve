@@ -137,6 +137,15 @@ func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 func keycloakLoginHandler(config *auth.Config) gin.HandlerFunc {
 	client := keycloak.NewClientFromConfig(config)
 	return func(ctx *gin.Context) {
+		if err := ctx.Request.ParseForm(); err != nil {
+			slog.Error("failed to parse form data", "error", err)
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"error": "failed to parse form data"})
+			return
+		}
+		if nextURL := ctx.Request.FormValue("next_url"); nextURL != "" {
+			slog.Debug("login redirect", "path", nextURL)
+			keycloak.SetNextURLCookie(ctx.Writer, nextURL)
+		}
 		client.HandleLogin(ctx.Writer, ctx.Request)
 	}
 }
@@ -169,7 +178,7 @@ func loginPageHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 				msg = &UserMessage{Text: cookie, Class: "error"}
 				keycloak.DeleteLoginErrorCookie(ctx.Writer)
 			}
-			ctx.HTML(http.StatusOK, "login", gin.H{"cleve_version": cleve.GetVersion(), "auth_type": config.AuthType, "message": msg})
+			ctx.HTML(http.StatusOK, "login", gin.H{"next_url": nextURL, "cleve_version": cleve.GetVersion(), "auth_type": config.AuthType, "message": msg})
 			return
 		default:
 			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{

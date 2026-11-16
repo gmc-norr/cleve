@@ -19,6 +19,7 @@ import (
 const (
 	oauthCookieName      = "CLEVE_OAUTH_STATE"
 	LoginErrorCookieName = "CLEVE_LOGIN_ERROR"
+	NextURLCookieName    = "CLEVE_NEXT_URL"
 )
 
 // TODO add a *slog.Logger and use this for all logging
@@ -81,6 +82,27 @@ func (c *Client) HandleLogin(w http.ResponseWriter, r *http.Request) {
 type userStore interface {
 	GetUserByEmail(ctx context.Context, email string) (cleve.User, bool, error)
 	CreateSession(ctx context.Context, userID uuid.UUID, authType auth.AuthType) (auth.Session, error)
+}
+
+func SetNextURLCookie(w http.ResponseWriter, path string) {
+	cookie := &http.Cookie{
+		Name:     NextURLCookieName,
+		Value:    auth.SafeRedirectURL(path),
+		Path:     "/",
+		MaxAge:   60,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, cookie)
+}
+
+func DeleteNextURLCookie(w http.ResponseWriter) {
+	cookie := &http.Cookie{
+		Name:   NextURLCookieName,
+		MaxAge: -1,
+	}
+	http.SetCookie(w, cookie)
 }
 
 func setLoginErrorCookie(w http.ResponseWriter, message string) {
@@ -191,8 +213,14 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 		return
 	}
 
+	nextURL := "/"
+	if nextURLCookie, err := r.Cookie(NextURLCookieName); err == nil {
+		nextURL = nextURLCookie.Value
+		DeleteNextURLCookie(w)
+	}
+
 	auth.SetSessionCookie(w, session)
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, nextURL, http.StatusFound)
 }
 
 func (c *Client) RedirectURL(url string) {
