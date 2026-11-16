@@ -23,12 +23,15 @@ const (
 
 // TODO add a *slog.Logger and use this for all logging
 type Client struct {
-	oauth2Config oauth2.Config
-	userinfoURL  string
-	logoutURL    string
+	oauth2Config          oauth2.Config
+	userinfoURL           string
+	externalLogoutURL     string
+	internalLogoutURL     string
+	postLogoutRedirectURL string
+	clientBaseURL         string
 }
 
-func NewClient(client, secret, realm, internalRealm, redirectURL string) *Client {
+func NewClient(client, secret, realm, internalRealm, clientBaseURL, redirectPath string) *Client {
 	if internalRealm == "" {
 		internalRealm = realm
 	}
@@ -36,24 +39,28 @@ func NewClient(client, secret, realm, internalRealm, redirectURL string) *Client
 	tokenURL, _ := url.JoinPath(internalRealm, "protocol/openid-connect/token")
 	userinfoURL, _ := url.JoinPath(internalRealm, "protocol/openid-connect/userinfo")
 	logoutURL, _ := url.JoinPath(realm, "protocol/openid-connect/logout")
+	internalLogoutURL, _ := url.JoinPath(internalRealm, "protocol/openid-connect/logout")
 	return &Client{
 		oauth2Config: oauth2.Config{
 			ClientID:     client,
 			ClientSecret: secret,
-			RedirectURL:  redirectURL,
+			RedirectURL:  clientBaseURL + redirectPath,
 			Scopes:       []string{"openid", "email", "profile"},
 			Endpoint: oauth2.Endpoint{
 				AuthURL:  authURL,
 				TokenURL: tokenURL,
 			},
 		},
-		userinfoURL: userinfoURL,
-		logoutURL:   logoutURL,
+		userinfoURL:           userinfoURL,
+		externalLogoutURL:     logoutURL,
+		internalLogoutURL:     internalLogoutURL,
+		postLogoutRedirectURL: clientBaseURL + "/logged-out",
+		clientBaseURL:         clientBaseURL,
 	}
 }
 
 func NewClientFromConfig(config *auth.Config) *Client {
-	return NewClient(config.ClientID, config.ClientSecret, config.RealmURL, config.InternalRealmURL, config.RedirectURL)
+	return NewClient(config.ClientID, config.ClientSecret, config.RealmURL, config.InternalRealmURL, config.ClientBaseURL, config.RedirectPath)
 }
 
 func (c *Client) HandleLogin(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +83,7 @@ type userStore interface {
 	CreateSession(ctx context.Context, userID uuid.UUID, authType auth.AuthType) (auth.Session, error)
 }
 
-func (c *Client) redirectWithError(w http.ResponseWriter, r *http.Request, redirectURL string, message string) {
+func setLoginErrorCookie(w http.ResponseWriter, message string) {
 	cookie := &http.Cookie{
 		Name:     LoginErrorCookieName,
 		Value:    url.QueryEscape(message),
@@ -87,6 +94,17 @@ func (c *Client) redirectWithError(w http.ResponseWriter, r *http.Request, redir
 		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, cookie)
+}
+
+func DeleteLoginErrorCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   LoginErrorCookieName,
+		MaxAge: -1,
+	})
+}
+
+func (c *Client) redirectWithError(w http.ResponseWriter, r *http.Request, redirectURL string, message string) {
+	setLoginErrorCookie(w, message)
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
@@ -95,7 +113,19 @@ func (c *Client) redirectToLoginWithError(w http.ResponseWriter, r *http.Request
 }
 
 func (c *Client) LogoutURL(redirectURL string) (string, error) {
-	revokeURL, err := url.Parse(c.logoutURL)
+	return c.logoutURL(redirectURL, "", false)
+}
+
+func (c *Client) logoutURL(redirectURL, idToken string, internal bool) (string, error) {
+	var (
+		err       error
+		revokeURL *url.URL
+	)
+	if internal {
+		revokeURL, err = url.Parse(c.internalLogoutURL)
+	} else {
+		revokeURL, err = url.Parse(c.externalLogoutURL)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -103,6 +133,9 @@ func (c *Client) LogoutURL(redirectURL string) (string, error) {
 	params.Set("client_id", c.oauth2Config.ClientID)
 	if redirectURL != "" {
 		params.Set("post_logout_redirect_uri", redirectURL)
+	}
+	if idToken != "" {
+		params.Set("id_token_hint", idToken)
 	}
 	revokeURL.RawQuery = params.Encode()
 	return revokeURL.String(), nil
@@ -142,7 +175,12 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 		return
 	}
 	if !found {
-		c.redirectToLoginWithError(w, r, "Authentication successful, but user is not allowed to view this content")
+		setLoginErrorCookie(w, "Authentication successful, but user is not allowed to view this content")
+		revokeURL, err := c.logoutURL(c.clientBaseURL+"/login", token.Extra("id_token").(string), false)
+		if err != nil {
+			slog.Error("failed to create logout url", "error", err)
+		}
+		http.Redirect(w, r, revokeURL, http.StatusSeeOther)
 		return
 	}
 

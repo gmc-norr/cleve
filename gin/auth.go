@@ -65,9 +65,18 @@ func logoutHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 		auth.DeleteSessionCookie(ctx.Writer)
 		if config.AuthType == auth.AuthKeycloak {
 			client := keycloak.NewClientFromConfig(config)
-			logoutURL, err := client.LogoutURL(config.PostLogoutRedirectURL)
+			http.SetCookie(ctx.Writer, &http.Cookie{
+				Name:     "CLEVE_JUST_LOGGED_OUT",
+				Value:    "true",
+				Path:     "/",
+				MaxAge:   60,
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteLaxMode,
+			})
+			logoutURL, err := client.LogoutURL(config.ClientBaseURL + "/logged-out")
 			if err != nil {
-				slog.Error("failed to log out from keycloak session", "error", err)
+				slog.Error("failed to create keycloak logout url", "error", err)
 			}
 			ctx.Redirect(http.StatusSeeOther, logoutURL)
 			return
@@ -78,6 +87,14 @@ func logoutHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 
 func loggedoutHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		if _, err := ctx.Cookie("CLEVE_JUST_LOGGED_OUT"); err != nil {
+			ctx.Redirect(http.StatusSeeOther, "/")
+			return
+		}
+		http.SetCookie(ctx.Writer, &http.Cookie{
+			Name:   "CLEVE_JUST_LOGGED_OUT",
+			MaxAge: -1,
+		})
 		ctx.HTML(http.StatusOK, "loggedout", nil)
 	}
 }
@@ -150,10 +167,7 @@ func loginPageHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 			var msg *UserMessage
 			if cookie, err := ctx.Cookie(keycloak.LoginErrorCookieName); err == nil {
 				msg = &UserMessage{Text: cookie, Class: "error"}
-				http.SetCookie(ctx.Writer, &http.Cookie{
-					Name:   keycloak.LoginErrorCookieName,
-					MaxAge: -1,
-				})
+				keycloak.DeleteLoginErrorCookie(ctx.Writer)
 			}
 			ctx.HTML(http.StatusOK, "login", gin.H{"cleve_version": cleve.GetVersion(), "auth_type": config.AuthType, "message": msg})
 			return
