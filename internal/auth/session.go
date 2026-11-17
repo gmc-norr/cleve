@@ -55,6 +55,7 @@ func SetSessionCookie(w http.ResponseWriter, session Session) {
 		Value:    session.Token,
 		Path:     "/",
 		Expires:  session.ExpiresAt,
+		Secure:   true,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
