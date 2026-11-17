@@ -121,31 +121,18 @@ func userCreateCmd(v *viper.Viper) *cobra.Command {
 
 func userDeleteCmd(_ *viper.Viper) *cobra.Command {
 	var (
-		email string
-		id    uuid.UUID
+		email  string
+		userID uuid.UUID
 	)
 	cmd := &cobra.Command{
-		Use:   "delete",
+		Use:   "delete EMAIL|ID",
 		Short: "Delete a user",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			email, _ = cmd.Flags().GetString("email")
-			rawID, _ := cmd.Flags().GetString("id")
-			if rawID != "" {
-				var err error
-				id, err = uuid.Parse(rawID)
-				if err != nil {
-					return err
-				}
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			userID, err = uuid.Parse(args[0])
+			if err != nil {
+				email = args[0]
 			}
-			if email != "" && id != uuid.Nil {
-				return fmt.Errorf("give either an email or ID, not both")
-			}
-			if email == "" && id == uuid.Nil {
-				return fmt.Errorf("supply either email or ID for the user to be deleted")
-			}
-			return nil
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+
 			db, err := mongo.Connect()
 			if err != nil {
 				return err
@@ -159,24 +146,21 @@ func userDeleteCmd(_ *viper.Viper) *cobra.Command {
 				if !found {
 					return fmt.Errorf("user not found")
 				}
-				id = user.ID
+				userID = user.ID
 			}
 
-			ok, err := db.DeleteUser(cmd.Context(), id)
+			ok, err := db.DeleteUser(cmd.Context(), userID)
 			if err != nil {
 				return err
 			}
 			if ok {
-				fmt.Printf("user with ID %s successfully deleted\n", id)
+				fmt.Printf("user with ID %s successfully deleted\n", userID)
 			} else {
 				fmt.Println("user not found")
 			}
 			return nil
 		},
 	}
-
-	cmd.Flags().StringP("email", "m", "", "Email of user to delete")
-	cmd.Flags().String("id", "", "ID of user to delete")
 
 	return cmd
 }
