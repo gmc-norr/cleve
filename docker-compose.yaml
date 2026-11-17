@@ -34,7 +34,13 @@ services:
         condition: service_healthy
     post_start:
       - command: ["cleve", "db", "init"]
-      - command: ["sh", "-c", "cleve user create 'John Doe' john.doe@example.com || true"]
+      - command:
+        - "sh"
+        - "-c"
+        - |
+          if ! cleve user list | grep -q john.doe@example.com; then
+            cleve user create 'John Doe' john.doe@example.com
+          fi
     volumes:
       - ./config_docker.yaml:/etc/cleve/config.yaml
     command: ["serve", "--debug", "-l", "debug"]
