@@ -41,9 +41,6 @@ func generatePassword(length int, includeSpecial bool) (string, error) {
 }
 
 func GenerateTempPassword() (string, error) {
-	// b := make([]byte, 8)
-	// _, _ = rand.Read(b)
-	// return fmt.Sprintf("%x", b)
 	return generatePassword(8, false)
 }
 
