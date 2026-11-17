@@ -42,6 +42,7 @@ func userAuth(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 		q := make(url.Values, 1)
 		q.Set("next_url", ctx.Request.URL.Path)
 		ctx.Redirect(http.StatusFound, fmt.Sprintf("/login?%s", q.Encode()))
+		ctx.Abort()
 	}
 }
 
