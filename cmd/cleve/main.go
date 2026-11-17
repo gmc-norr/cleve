@@ -138,7 +138,7 @@ func init() {
 	rootCmd.AddCommand(panel.PanelCmd)
 	rootCmd.AddCommand(platform.PlatformCmd)
 	rootCmd.AddCommand(samplesheet.SampleSheetCmd)
-	rootCmd.AddCommand(user.UserCmd())
+	rootCmd.AddCommand(user.UserCmd(viper.GetViper()))
 
 	rootCmd.SetVersionTemplate(`{{with .Name}}{{printf "%s " .}}{{end}}{{printf "%s\n" .Version}}`)
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file")

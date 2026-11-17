@@ -13,21 +13,22 @@ import (
 	"github.com/gmc-norr/cleve/mongo"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-func UserCmd() *cobra.Command {
+func UserCmd(v *viper.Viper) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "user",
 		Short: "Manage users",
 	}
-	cmd.AddCommand(userListCmd())
-	cmd.AddCommand(userCreateCmd())
-	cmd.AddCommand(userDeleteCmd())
-	cmd.AddCommand(userUpdateCmd())
+	cmd.AddCommand(userListCmd(v))
+	cmd.AddCommand(userCreateCmd(v))
+	cmd.AddCommand(userDeleteCmd(v))
+	cmd.AddCommand(userUpdateCmd(v))
 	return cmd
 }
 
-func userListCmd() *cobra.Command {
+func userListCmd(_ *viper.Viper) *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List users",
@@ -55,7 +56,7 @@ func userListCmd() *cobra.Command {
 	}
 }
 
-func userCreateCmd() *cobra.Command {
+func userCreateCmd(v *viper.Viper) *cobra.Command {
 	var (
 		stringRoles []string
 		roles       []cleve.UserRole
@@ -78,6 +79,7 @@ func userCreateCmd() *cobra.Command {
 			return errors.Join(errs...)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			authType := auth.AuthType(v.GetString("auth.provider"))
 			pwd, _ := cmd.Flags().GetString("password")
 			if pwd == "" {
 				var err error
@@ -104,7 +106,9 @@ func userCreateCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Created user %s (%s) with role(s): %s\n", user.DisplayName, user.Email, strings.Join(stringRoles, ", "))
-			fmt.Printf("Temporary password: %s\n", pwd)
+			if authType == auth.AuthInternal {
+				fmt.Printf("Temporary password: %s\n", pwd)
+			}
 			return nil
 		},
 	}
@@ -115,7 +119,7 @@ func userCreateCmd() *cobra.Command {
 	return cmd
 }
 
-func userDeleteCmd() *cobra.Command {
+func userDeleteCmd(_ *viper.Viper) *cobra.Command {
 	var (
 		email string
 		id    uuid.UUID
@@ -177,7 +181,7 @@ func userDeleteCmd() *cobra.Command {
 	return cmd
 }
 
-func userUpdateCmd() *cobra.Command {
+func userUpdateCmd(_ *viper.Viper) *cobra.Command {
 	var (
 		email  string
 		userID uuid.UUID
