@@ -103,7 +103,8 @@ func loggedoutHandler() gin.HandlerFunc {
 func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if err := ctx.Request.ParseForm(); err != nil {
-			_ = ctx.AbortWithError(http.StatusBadRequest, fmt.Errorf("invalid form data: %w", err))
+			// TODO should be a 403, not a 500, but this I will wait with changing until I start dealing with the templating issues.
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"error": "failed to parse form data", "cleve_version": "cleve_version"})
 			return
 		}
 		nextURL := auth.SafeRedirectURL(ctx.Request.FormValue("next_url"))
@@ -112,11 +113,11 @@ func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 
 		user, found, err := db.GetUserByEmail(ctx.Request.Context(), email)
 		if err != nil {
-			_ = ctx.AbortWithError(http.StatusInternalServerError, err)
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"error": "failed to get user information", "cleve_version": "cleve_version"})
 			return
 		}
 		if !found || !auth.VerifyPassword(user.PasswordHash, password) {
-			ctx.HTML(http.StatusUnauthorized, "login", gin.H{"email": email, "password": password, "auth_type": config.AuthType, "message": UserMessage{
+			ctx.HTML(http.StatusUnauthorized, "login", gin.H{"cleve_version": cleve.GetVersion(), "email": email, "password": password, "auth_type": config.AuthType, "message": UserMessage{
 				Text:  "Incorrect email or password",
 				Class: "warning",
 			}})
@@ -126,7 +127,7 @@ func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 		session, err := db.CreateSession(ctx.Request.Context(), user.ID, ctx.GetHeader("User-Agent"), config.AuthType)
 		if err != nil {
 			slog.Error("auth", "message", "failed to create session", "error", err)
-			_ = ctx.AbortWithError(http.StatusInternalServerError, err)
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"error": "failede to create session", "cleve_version": "cleve_version"})
 			return
 		}
 		auth.SetSessionCookie(ctx.Writer, session)
@@ -144,7 +145,6 @@ func keycloakLoginHandler(config *auth.Config) gin.HandlerFunc {
 			return
 		}
 		if nextURL := ctx.Request.FormValue("next_url"); nextURL != "" {
-			slog.Debug("login redirect", "path", nextURL)
 			keycloak.SetNextURLCookie(ctx.Writer, nextURL)
 		}
 		client.HandleLogin(ctx.Writer, ctx.Request)
@@ -162,7 +162,10 @@ func loginPageHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 
 		_, valid, err := auth.CurrentSession(ctx.Request, db)
 		if err != nil {
-			_ = ctx.AbortWithError(http.StatusInternalServerError, err)
+			slog.Error("failed to fetch session data", "error", err)
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{
+				"error": "Failed to fetch session data",
+			})
 		}
 		nextURL := auth.SafeRedirectURL(ctx.Query("next_url"))
 		if valid {
