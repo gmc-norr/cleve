@@ -25,9 +25,10 @@ import (
 var (
 	configFile string
 	rootCmd    = &cobra.Command{
-		Use:     "cleve",
-		Short:   "Interact with the sequencing database",
-		Version: cleve.GetVersion(),
+		Use:          "cleve",
+		Short:        "Interact with the sequencing database",
+		Version:      cleve.GetVersion(),
+		SilenceUsage: true,
 	}
 )
 
