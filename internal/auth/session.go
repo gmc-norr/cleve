@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const sessionCookieName = "session_id"
+const sessionCookieName = "CLEVE_SESSION_ID"
 
 type contextSessionKey struct{}
 
