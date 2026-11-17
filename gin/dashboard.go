@@ -43,10 +43,8 @@ func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session, found := auth.SessionFrom(c.Request.Context())
 		if !found {
-			if err := c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("could not find session data")); err != nil {
-				c.Writer.WriteHeader(http.StatusUnauthorized)
-				return
-			}
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
 		}
 
 		filter, err := getRunFilter(c)
@@ -76,9 +74,8 @@ func DashboardPanelListHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session, found := auth.SessionFrom(c.Request.Context())
 		if !found {
-			if err := c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("could not find session data")); err != nil {
-				c.Writer.WriteHeader(http.StatusUnauthorized)
-			}
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
 		}
 
 		if err := c.Request.ParseForm(); err != nil {
@@ -111,9 +108,8 @@ func DashboardPanelHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session, found := auth.SessionFrom(c.Request.Context())
 		if !found {
-			if err := c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("could not find session data")); err != nil {
-				c.Writer.WriteHeader(http.StatusUnauthorized)
-			}
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
 		}
 
 		panelId := c.Param("panelId")
@@ -185,9 +181,8 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session, found := auth.SessionFrom(c.Request.Context())
 		if !found {
-			if err := c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("could not find session data")); err != nil {
-				c.Writer.WriteHeader(http.StatusUnauthorized)
-			}
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
 		}
 
 		runId := c.Param("runId")
@@ -241,10 +236,8 @@ func DashboardRunTable(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session, found := auth.SessionFrom(c.Request.Context())
 		if !found {
-			if err := c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("could not find session data")); err != nil {
-				c.Writer.WriteHeader(http.StatusUnauthorized)
-				return
-			}
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
 		}
 
 		filter, err := getRunFilter(c)
@@ -273,9 +266,8 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session, found := auth.SessionFrom(c.Request.Context())
 		if !found {
-			if err := c.AbortWithError(http.StatusUnauthorized, fmt.Errorf("could not find session data")); err != nil {
-				c.Writer.WriteHeader(http.StatusUnauthorized)
-			}
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
 		}
 
 		chartConfig := GetChartConfig(c)
