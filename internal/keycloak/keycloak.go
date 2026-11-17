@@ -238,10 +238,6 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 	http.Redirect(w, r, nextURL, http.StatusFound)
 }
 
-func (c *Client) RedirectURL(url string) {
-	c.oauth2Config.RedirectURL = url
-}
-
 func generateState(length int) string {
 	b := make([]byte, length)
 	_, _ = rand.Read(b)
