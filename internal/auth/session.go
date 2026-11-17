@@ -20,6 +20,7 @@ type Session struct {
 	LastAuthenticatedAt time.Time `bson:"last_authenticated_at"`
 	CreatedAt           time.Time `bson:"created_at"`
 	AuthType            AuthType  `bson:"auth_type"`
+	UserAgent           string    `bson:"user_agent"`
 	Token               string    `bson:"token"`
 }
 
@@ -32,7 +33,7 @@ type userStore interface {
 	GetUserByID(ctx context.Context, userID uuid.UUID) (cleve.User, error)
 	GetUserByEmail(ctx context.Context, email string) (cleve.User, bool, error)
 	GetCurrentSession(ctx context.Context, token string) (UserSession, bool, error)
-	CreateSession(ctx context.Context, userID uuid.UUID, authType AuthType) (Session, error)
+	CreateSession(ctx context.Context, userID uuid.UUID, userAgent string, authType AuthType) (Session, error)
 	DeleteSessionByUserAndToken(ctx context.Context, userID uuid.UUID, token string) error
 }
 

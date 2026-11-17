@@ -23,7 +23,7 @@ const sessionTTL = 7 * 24 * time.Hour
 // The session token is hashed when stored in the database, but the session
 // that is returned contains the unhashed token. Returns a non-nil error if
 // the session cannot be added to the database.
-func (db DB) CreateSession(ctx context.Context, userID uuid.UUID, authType auth.AuthType) (auth.Session, error) {
+func (db DB) CreateSession(ctx context.Context, userID uuid.UUID, userAgent string, authType auth.AuthType) (auth.Session, error) {
 	now := time.Now()
 	expiresAt := now.Add(sessionTTL)
 
@@ -38,6 +38,7 @@ func (db DB) CreateSession(ctx context.Context, userID uuid.UUID, authType auth.
 		LastAuthenticatedAt: now,
 		ExpiresAt:           expiresAt,
 		AuthType:            authType,
+		UserAgent:           userAgent,
 	}
 
 	_, err := db.SessionCollection().InsertOne(ctx, session)
@@ -48,6 +49,7 @@ func (db DB) CreateSession(ctx context.Context, userID uuid.UUID, authType auth.
 		LastAuthenticatedAt: now,
 		ExpiresAt:           expiresAt,
 		AuthType:            authType,
+		UserAgent:           userAgent,
 	}, err
 }
 

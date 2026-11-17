@@ -122,7 +122,7 @@ func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 			return
 		}
 
-		session, err := db.CreateSession(ctx.Request.Context(), user.ID, config.AuthType)
+		session, err := db.CreateSession(ctx.Request.Context(), user.ID, ctx.GetHeader("User-Agent"), config.AuthType)
 		if err != nil {
 			slog.Error("auth", "message", "failed to create session", "error", err)
 			_ = ctx.AbortWithError(http.StatusInternalServerError, err)

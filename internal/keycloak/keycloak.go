@@ -74,7 +74,7 @@ func (c *Client) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 type userStore interface {
 	GetUserByEmail(ctx context.Context, email string) (cleve.User, bool, error)
-	CreateSession(ctx context.Context, userID uuid.UUID, authType auth.AuthType) (auth.Session, error)
+	CreateSession(ctx context.Context, userID uuid.UUID, userAgent string, authType auth.AuthType) (auth.Session, error)
 }
 
 func setStateCookie(w http.ResponseWriter, state string) {
@@ -221,7 +221,7 @@ func (c *Client) HandleCallback(w http.ResponseWriter, r *http.Request, store us
 		return
 	}
 
-	session, err := store.CreateSession(r.Context(), storeUser.ID, auth.AuthKeycloak)
+	session, err := store.CreateSession(r.Context(), storeUser.ID, r.Header.Get("User-Agent"), auth.AuthKeycloak)
 	if err != nil {
 		slog.Error("failed to create session", "error", err)
 		c.redirectToLoginWithError(w, r, "Authentication successful, but user is not allowed to view this content")
