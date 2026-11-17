@@ -115,7 +115,7 @@ func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
 			return
 		}
 		if !found || !auth.VerifyPassword(user.PasswordHash, password) {
-			ctx.HTML(http.StatusUnauthorized, "login", gin.H{"email": email, "password": password, "message": UserMessage{
+			ctx.HTML(http.StatusUnauthorized, "login", gin.H{"email": email, "password": password, "auth_type": config.AuthType, "message": UserMessage{
 				Text:  "Incorrect email or password",
 				Class: "warning",
 			}})
