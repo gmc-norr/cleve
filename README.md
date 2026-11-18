@@ -25,7 +25,21 @@ The simplest way to spin up a test environment of Cleve is to use docker compose
 docker compose up -d --build
 ```
 
-This will spin up two containers: one for Cleve and one for MongoDB. Cleve will by default be served on `127.0.0.1:8080`.
+This will spin up three containers: one for Cleve, one for MongoDB, and one for Keycloak (see [Authentication](#Authentication).
+Cleve will by default be served on `http://127.0.0.1:8080`, and Keycloak will be served on `http://127.0.0.1:8088`.
+
+When spinning up the environment, a realm, client, and two users are added to Keycloak.
+Only one of these users are also added to Cleve do demonstrate how it looks when a user is able to authenticate with Keycloak, but is not authorized by Cleve.
+
+The users are:
+
+Name     | Username | Email                  | Password   | Authorized
+---------|----------|------------------------|------------|-------------------
+John Doe | jodo01   | `john.doe@example.com` | `password` | Yes
+Jane Doe | jado01   | `jane.doe@example.com` | `password` | No
+
+In order to add new users, they have to be added to both Keycloak and Cleve.
+You can access the Keycloak admin interface on `http://127.0.0.1:8088` with username `admin` and password `admin`.
 
 ## Installation
 
@@ -77,6 +91,10 @@ logfile: cleve.log
 # Host and port where cleve will be served
 host: 127.0.0.1
 port: 8080
+
+# Authentication
+auth:
+  provider: none
 ```
 
 The only part that doesn't have decent defaults is the database.
@@ -85,6 +103,7 @@ If any required values are undefined the application will exit with an error.
 ## CLI
 
 ```
+❯ cleve --help
 Interact with the sequencing database
 
 Usage:
@@ -95,15 +114,20 @@ Available Commands:
   db          Database management
   help        Help about any command
   key         API key management
+  panel       Manage in-silico gene panels
   platform    Manage sequencing platforms
   run         Interact with sequencing runs
   samplesheet Interact with sample sheets
   serve       Serve the cleve api
+  user        Manage users
 
 Flags:
-  -c, --config string   config file
-  -h, --help            help for cleve
-  -v, --version         version for cleve
+  -c, --config string            config file
+  -h, --help                     help for cleve
+  -l, --loglevel string          Logging verbosity (case-insensitive: DEBUG, INFO, WARN, ERROR) (default "WARN")
+  -v, --version                  version for cleve
+      --webhook-api-key string   API key for the webhook service ("<header-key>=<api-key>")
+      --webhook-url string       URL to send webhook messages to
 
 Use "cleve [command] --help" for more information about a command.
 ```
@@ -121,6 +145,80 @@ cleve serve
 In a production environment, it is highly recommended to set this up with a reverse proxy.
 
 Once everything is up and running, the API documentation can be found at `<cleve-host>:<cleve-port>/api`.
+
+## Authentication
+
+There are three options for authentication for the web interface: no authentication (default, use with care), internal authentication, and Keycloak authentication.
+
+### No authentication
+
+With no authentication, a user will never be asked to authenticate, and all content will be available to them.
+This should not be used in a production setting. This is the default setting.
+
+#### Configuration
+
+```yaml
+auth:
+  provider: none
+```
+
+### Internal authentication
+
+Internal authentication stores user credentials in the Cleve database, and Cleve handles the authentication.
+Users can be managed with the CLI command `cleve user`:
+
+
+```
+❯ cleve user --help
+Manage users
+
+Usage:
+  cleve user [command]
+
+Available Commands:
+  create      Create a new user
+  delete      Delete a user
+  list        List users
+  update      Update user details
+
+Flags:
+  -h, --help   help for user
+
+Global Flags:
+  -c, --config string            config file
+  -l, --loglevel string          Logging verbosity (case-insensitive: DEBUG, INFO, WARN, ERROR) (default "WARN")
+      --webhook-api-key string   API key for the webhook service ("<header-key>=<api-key>")
+      --webhook-url string       URL to send webhook messages to
+
+Use "cleve user [command] --help" for more information about a command.
+```
+
+#### Configuration
+
+```yaml
+auth:
+  provider: internal
+```
+
+### Keycloak authentication
+
+Keycloak authentication delegates the authentication to [Keycloak](https://www.keycloak.org/).
+For this to work, a Keycloak server needs to be avaliable and configured with a realm and client that Cleve can use.
+Keycloak only handles the authentication side of things.
+Authorization is handled by Cleve, so users that should have access should also be added to the Cleve database using the CLI (see previous section).
+
+There is a Keycloak service set up in the Docker compose environment in this repo, and this can be used to get familiar with Keycloak.
+It should require no extra setup, but work out of the box.
+
+#### Configuration
+
+```yaml
+auth:
+  provider: keycloak
+  realm_url: https://keycloak.example.com/realms/cleve # Full Keycloak realm URL
+  client: cleve # Keycloak client ID
+  secret: supersecretkey # Client secret provided by Keycloak
+```
 
 ## Outgoing webhooks
 
