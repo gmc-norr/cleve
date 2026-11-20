@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/internal/auth"
 	"github.com/gmc-norr/cleve/mongo"
 )
 
@@ -23,7 +24,7 @@ func NewUserMessage(text, class string) UserMessage {
 	}
 }
 
-func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
+func getDashboardData(db *mongo.DB, filter cleve.RunFilter, session auth.UserSession) (gin.H, error) {
 	runs, err := db.Runs(filter)
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return gin.H{"error": err.Error()}, err
@@ -35,26 +36,32 @@ func getDashboardData(db *mongo.DB, filter cleve.RunFilter) (gin.H, error) {
 	}
 	platformNames := platforms.Names()
 
-	return gin.H{"runs": runs.Runs, "metadata": runs.PaginationMetadata, "platforms": platformNames, "filter": filter, "cleve_version": cleve.GetVersion()}, nil
+	return gin.H{"runs": runs.Runs, "metadata": runs.PaginationMetadata, "platforms": platformNames, "filter": filter, "cleve_version": cleve.GetVersion(), "session": session}, nil
 }
 
 func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		filter, err := getRunFilter(c)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		session, found := auth.SessionFrom(c.Request.Context())
+		if !found {
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
 			return
 		}
 
-		dashboardData, err := getDashboardData(db, filter)
+		filter, err := getRunFilter(c)
 		if err != nil {
-			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err})
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "cleve_version": cleve.GetVersion(), "session": session})
+			return
+		}
+
+		dashboardData, err := getDashboardData(db, filter, session)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error500", gin.H{"error": err, "cleve_version": cleve.GetVersion(), "session": session})
 			return
 		}
 
 		var oobError mongo.PageOutOfBoundsError
 		if errors.As(err, &oobError) {
-			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError})
+			c.HTML(http.StatusNotFound, "error404", gin.H{"error": oobError, "cleve_version": cleve.GetVersion(), "session": session})
 			return
 		}
 
@@ -65,6 +72,12 @@ func DashboardHandler(db *mongo.DB) gin.HandlerFunc {
 
 func DashboardPanelListHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		session, found := auth.SessionFrom(c.Request.Context())
+		if !found {
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
+		}
+
 		if err := c.Request.ParseForm(); err != nil {
 			slog.Error("failed to parse form data", "error", err)
 		}
@@ -87,12 +100,18 @@ func DashboardPanelListHandler(db *mongo.DB) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		c.HTML(http.StatusOK, "panel-list", gin.H{"filter": filter, "categories": categories, "panels": panels})
+		c.HTML(http.StatusOK, "panel-list", gin.H{"filter": filter, "categories": categories, "panels": panels, "session": session})
 	}
 }
 
 func DashboardPanelHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		session, found := auth.SessionFrom(c.Request.Context())
+		if !found {
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
+		}
+
 		panelId := c.Param("panelId")
 		if err := c.Request.ParseForm(); err != nil {
 			slog.Error("failed to parse form data", "error", err)
@@ -105,6 +124,7 @@ func DashboardPanelHandler(db *mongo.DB) gin.HandlerFunc {
 		}
 		d := gin.H{
 			"cleve_version": cleve.GetVersion(),
+			"session":       session,
 		}
 		panels, err := db.Panels(filter)
 		if err != nil {
@@ -159,6 +179,12 @@ func DashboardPanelHandler(db *mongo.DB) gin.HandlerFunc {
 
 func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		session, found := auth.SessionFrom(c.Request.Context())
+		if !found {
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
+		}
+
 		runId := c.Param("runId")
 		run, err := db.Run(runId)
 		if err != nil {
@@ -202,19 +228,25 @@ func DashboardRunHandler(db *mongo.DB) gin.HandlerFunc {
 			}
 		}
 
-		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet, "chart_config": GetRunChartConfig(c), "cleve_version": cleve.GetVersion(), "message": message})
+		c.HTML(http.StatusOK, "run", gin.H{"run": run, "qc": qc, "hasQc": hasQc, "samplesheet": sampleSheet, "chart_config": GetRunChartConfig(c), "cleve_version": cleve.GetVersion(), "message": message, "session": session})
 	}
 }
 
 func DashboardRunTable(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		session, found := auth.SessionFrom(c.Request.Context())
+		if !found {
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
+		}
+
 		filter, err := getRunFilter(c)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		dashboardData, err := getDashboardData(db, filter)
+		dashboardData, err := getDashboardData(db, filter, session)
 		var oobError mongo.PageOutOfBoundsError
 		if errors.As(err, &oobError) {
 			c.HTML(http.StatusNotFound, "error404", dashboardData)
@@ -232,6 +264,12 @@ func DashboardRunTable(db *mongo.DB) gin.HandlerFunc {
 
 func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		session, found := auth.SessionFrom(c.Request.Context())
+		if !found {
+			c.HTML(http.StatusUnauthorized, "error401", gin.H{"cleve_version": cleve.GetVersion(), "next_url": c.Request.URL.Path})
+			return
+		}
+
 		chartConfig := GetChartConfig(c)
 		filter, err := getQcFilter(c)
 		if err != nil {
@@ -258,6 +296,6 @@ func DashboardQCHandler(db *mongo.DB) gin.HandlerFunc {
 		platformNames := platforms.Names()
 
 		c.Header("Hx-Push-Url", filter.UrlParams())
-		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "chart_config": chartConfig, "cleve_version": cleve.GetVersion()})
+		c.HTML(http.StatusOK, "qc", gin.H{"qc": qc.InteropSummary, "metadata": qc.PaginationMetadata, "platforms": platformNames, "filter": filter, "chart_config": chartConfig, "cleve_version": cleve.GetVersion(), "session": session})
 	}
 }

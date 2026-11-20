@@ -1,0 +1,14 @@
+{{ define "error401" }}
+{{ template "header" . }}
+<section class="mx-6">
+    <h1 class="text-4xl mb-4">401 Unauthorized</h1>
+    <p class="error my-4">
+        {{ if .error }}
+        Error: {{ .error }}
+        {{ else }}
+        You need to <a class="text-accent-900 underline" href="/login{{ if .next_url }}?next_url={{ .next_url }}{{ end }}">log in</a> to view this page.
+        {{ end }}
+    </p>
+</section>
+{{ template "footer" }}
+{{ end }}

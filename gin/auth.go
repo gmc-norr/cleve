@@ -1,0 +1,200 @@
+package gin
+
+import (
+	"fmt"
+	"log/slog"
+	"net/http"
+	"net/url"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gmc-norr/cleve"
+	"github.com/gmc-norr/cleve/internal/auth"
+	"github.com/gmc-norr/cleve/internal/keycloak"
+	"github.com/gmc-norr/cleve/mongo"
+)
+
+func userAuth(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if config == nil || config.AuthType == auth.AuthNone {
+			session := auth.UserSession{
+				Session: auth.Session{
+					AuthType: auth.AuthNone,
+				},
+			}
+			sessionCtx := auth.WithSession(ctx.Request.Context(), session)
+			ctx.Request = ctx.Request.WithContext(sessionCtx)
+			ctx.Next()
+			return
+		}
+		session, valid, err := auth.CurrentSession(ctx.Request, db)
+		if err != nil {
+			ctx.HTML(http.StatusInternalServerError, "error500", nil)
+			ctx.Abort()
+			return
+		}
+		if valid {
+			sessionCtx := auth.WithSession(ctx.Request.Context(), session)
+			ctx.Request = ctx.Request.WithContext(sessionCtx)
+			ctx.Next()
+			return
+		}
+
+		q := make(url.Values, 1)
+		q.Set("next_url", ctx.Request.URL.Path)
+		ctx.Redirect(http.StatusFound, fmt.Sprintf("/login?%s", q.Encode()))
+		ctx.Abort()
+	}
+}
+
+func logoutHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		session, found, err := auth.CurrentSession(ctx.Request, db)
+		if err != nil {
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"message": "unexpected error when fetching user session"})
+			return
+		}
+		if !found {
+			auth.DeleteSessionCookie(ctx.Writer)
+			ctx.Redirect(http.StatusSeeOther, "/login")
+			return
+		}
+		err = auth.DeleteSession(ctx.Request.Context(), db, session)
+		if err != nil {
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"message": "unexpected error when deleting user session"})
+			return
+		}
+		auth.DeleteSessionCookie(ctx.Writer)
+		http.SetCookie(ctx.Writer, &http.Cookie{
+			Name:     "CLEVE_JUST_LOGGED_OUT",
+			Value:    "true",
+			Path:     "/",
+			MaxAge:   60,
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+		})
+		if config.AuthType == auth.AuthKeycloak {
+			client := keycloak.NewClientFromConfig(config)
+			logoutURL, err := client.LogoutURL(config.ClientBaseURL + "/logged-out")
+			if err != nil {
+				slog.Error("failed to create keycloak logout url", "error", err)
+			}
+			ctx.Redirect(http.StatusSeeOther, logoutURL)
+			return
+		}
+		ctx.Redirect(http.StatusSeeOther, "/logged-out")
+	}
+}
+
+func loggedoutHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if _, err := ctx.Cookie("CLEVE_JUST_LOGGED_OUT"); err != nil {
+			ctx.Redirect(http.StatusSeeOther, "/")
+			return
+		}
+		http.SetCookie(ctx.Writer, &http.Cookie{
+			Name:   "CLEVE_JUST_LOGGED_OUT",
+			MaxAge: -1,
+		})
+		ctx.HTML(http.StatusOK, "loggedout", nil)
+	}
+}
+
+func loginHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if err := ctx.Request.ParseForm(); err != nil {
+			// TODO should be a 403, not a 500, but this I will wait with changing until I start dealing with the templating issues.
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"error": "failed to parse form data", "cleve_version": "cleve_version"})
+			return
+		}
+		nextURL := auth.SafeRedirectURL(ctx.Request.FormValue("next_url"))
+		email := ctx.Request.FormValue("email")
+		password := ctx.Request.FormValue("password")
+
+		user, found, err := db.GetUserByEmail(ctx.Request.Context(), email)
+		if err != nil {
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"error": "failed to get user information", "cleve_version": "cleve_version"})
+			return
+		}
+		if !found || !auth.VerifyPassword(user.PasswordHash, password) {
+			ctx.HTML(http.StatusUnauthorized, "login", gin.H{"cleve_version": cleve.GetVersion(), "email": email, "password": password, "auth_type": config.AuthType, "message": UserMessage{
+				Text:  "Incorrect email or password",
+				Class: "warning",
+			}})
+			return
+		}
+
+		session, err := db.CreateSession(ctx.Request.Context(), user.ID, ctx.GetHeader("User-Agent"), config.AuthType)
+		if err != nil {
+			slog.Error("auth", "message", "failed to create session", "error", err)
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"error": "failede to create session", "cleve_version": "cleve_version"})
+			return
+		}
+		auth.SetSessionCookie(ctx.Writer, session)
+
+		ctx.Redirect(http.StatusFound, nextURL)
+	}
+}
+
+func keycloakLoginHandler(config *auth.Config) gin.HandlerFunc {
+	client := keycloak.NewClientFromConfig(config)
+	return func(ctx *gin.Context) {
+		if err := ctx.Request.ParseForm(); err != nil {
+			slog.Error("failed to parse form data", "error", err)
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{"error": "failed to parse form data"})
+			return
+		}
+		if nextURL := ctx.Request.FormValue("next_url"); nextURL != "" {
+			keycloak.SetNextURLCookie(ctx.Writer, nextURL)
+		}
+		client.HandleLogin(ctx.Writer, ctx.Request)
+	}
+}
+
+func loginPageHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		if config.AuthType == auth.AuthNone {
+			ctx.HTML(http.StatusNotFound, "error404", gin.H{
+				"error": "Authentication is disabled",
+			})
+			return
+		}
+
+		_, valid, err := auth.CurrentSession(ctx.Request, db)
+		if err != nil {
+			slog.Error("failed to fetch session data", "error", err)
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{
+				"error": "Failed to fetch session data",
+			})
+		}
+		nextURL := auth.SafeRedirectURL(ctx.Query("next_url"))
+		if valid {
+			ctx.Redirect(http.StatusFound, nextURL)
+			return
+		}
+
+		switch config.AuthType {
+		case auth.AuthInternal:
+			ctx.HTML(http.StatusOK, "login", gin.H{"next_url": nextURL, "cleve_version": cleve.GetVersion(), "auth_type": config.AuthType})
+		case auth.AuthKeycloak:
+			var msg *UserMessage
+			if cookie, err := ctx.Cookie(keycloak.LoginErrorCookieName); err == nil {
+				msg = &UserMessage{Text: cookie, Class: "error"}
+				keycloak.DeleteLoginErrorCookie(ctx.Writer)
+			}
+			ctx.HTML(http.StatusOK, "login", gin.H{"next_url": nextURL, "cleve_version": cleve.GetVersion(), "auth_type": config.AuthType, "message": msg})
+			return
+		default:
+			ctx.HTML(http.StatusInternalServerError, "error500", gin.H{
+				"error": "Invalid authentication provider",
+			})
+		}
+	}
+}
+
+func loginCallbackHandler(db *mongo.DB, config *auth.Config) gin.HandlerFunc {
+	client := keycloak.NewClientFromConfig(config)
+	return func(ctx *gin.Context) {
+		client.HandleCallback(ctx.Writer, ctx.Request, db)
+	}
+}
