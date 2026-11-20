@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/gmc-norr/cleve/compare/v1.1.0...v1.2.0) (2026-11-20)
+
+
+### Features
+
+* add authentication ([#203](https://github.com/gmc-norr/cleve/issues/203)) ([444e827](https://github.com/gmc-norr/cleve/commit/444e827e2e2fd7c91cf90d5f9fa2b55301627334))
+
+
+### Bug Fixes
+
+* issue with generating binary for Github releases ([#208](https://github.com/gmc-norr/cleve/issues/208)) ([226fedd](https://github.com/gmc-norr/cleve/commit/226fedd56e99a13f3985a4982f0b3947094e362d))
+
 ## [1.1.0](https://github.com/gmc-norr/cleve/compare/v1.0.0...v1.1.0) (2026-10-23)
 
 
