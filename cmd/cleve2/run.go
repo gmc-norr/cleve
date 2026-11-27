@@ -168,7 +168,7 @@ func NewRunAddCmd(cfg *CliConfig) *cobra.Command {
 
 func NewRunDeleteCmd(cfg *CliConfig) *cobra.Command {
 	return &cobra.Command{
-		Use: "delete run_id",
+		Use:   "delete run_id",
 		Short: "Delete a sequencing run",
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
